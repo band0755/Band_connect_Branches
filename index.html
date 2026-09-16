@@ -348,26 +348,26 @@
       </div>
     </div>
 
-    <!-- TAB 2: GLOBAL BLUEPRINT STUDIO -->
+    <!-- TAB 2: GLOBAL BLUEPRINT STUDIO (CLEAN & SIMPLE) -->
     <div id="tab-templates" class="tab-content">
       <div class="panel">
         <div class="panel-header">
           <h3>Global Blueprint Studio</h3>
-          <span style="font-size: 0.8rem; color: var(--bc-text-muted);">Changes made here become the default for all patients on this extremity branch.</span>
+          <span style="font-size: 0.8rem; color: var(--bc-text-muted);">Select extremity and day to review or update the default message.</span>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
           <div>
             <div class="form-group">
-              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Select Extremity Branch</label>
-              <select id="tpl-branch" class="form-control">
+              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Extremity Branch</label>
+              <select id="tpl-branch" class="form-control" onchange="loadPresetTemplate()">
                 <option value="LE">Lower Extremity (Cuff)</option>
                 <option value="UE">Upper Extremity (Handle)</option>
               </select>
             </div>
 
             <div class="form-group" style="margin-top:14px;">
-              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Target Sequence Milestone</label>
-              <select id="tpl-step" class="form-control" onchange="syncOffsetField()">
+              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Milestone Day</label>
+              <select id="tpl-step" class="form-control" onchange="loadPresetTemplate()">
                 <option value="m_d1" data-offset="1">Day 1: Welcome & Setup</option>
                 <option value="m_d3" data-offset="3">Day 3: Cues & Haptics</option>
                 <option value="m_d7" data-offset="7">Day 7: Assessments & Charging</option>
@@ -380,25 +380,18 @@
               </select>
             </div>
 
-            <div class="form-group" style="margin-top:14px;">
-              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Day Offset (From Start Date)</label>
-              <input type="number" id="tpl-offset" class="form-control" value="1" />
-            </div>
-
-            <p style="font-size: 0.75rem; color: var(--bc-teal); margin-top: 12px; line-height: 1.4;">
-              💡 Tip: Use <code>{{first_name}}</code> anywhere in the subject or body to dynamically insert the patient's name.
-            </p>
+            <input type="hidden" id="tpl-offset" value="1" />
           </div>
 
           <div>
             <div class="form-group">
-              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Master Subject Line</label>
-              <input type="text" id="tpl-subject" class="form-control" placeholder="e.g. 🥳 CONGRATULATIONS!" />
+              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Subject Line</label>
+              <input type="text" id="tpl-subject" class="form-control" />
             </div>
 
             <div class="form-group" style="margin-top:14px;">
-              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Master Email Message (Plain Text)</label>
-              <textarea id="tpl-body" class="form-control" style="height: 200px; line-height: 1.5; resize: vertical;" placeholder="Hey {{first_name}},&#10;&#10;Congratulations on completing your first in-clinic visit..."></textarea>
+              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Email Message (Copy & Paste from Word)</label>
+              <textarea id="tpl-body" class="form-control" style="height: 230px; line-height: 1.5; resize: vertical;"></textarea>
             </div>
 
             <button class="btn-brand-pill" style="border-radius: 8px; margin-top: 10px;" onclick="saveTemplate()">
@@ -431,6 +424,100 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbzZhcXbEJAOBNSnXqHur3a-lw2UAH_Oi__vj9QPVuxanZP0G3v5UBCmhml8_CVYuwEe/exec";
     let activePatientData = null;
 
+    // Direct pre-loaded blueprints from the clinical emails Word docs
+    const DEFAULT_PRESETS = {
+      LE: {
+        m_d1: {
+          subj: '🥳 CONGRATULATIONS!',
+          body: `Hey,\n\nCongratulations on completing your first in-clinic visit with Band Connect![cite: 1]\n\nAs with any new experience, these first few days can be the hardest, but we’re here to help[cite: 1]. If you have any questions, please don’t hesitate to reply to this email or reach out to 513-202-3370[cite: 1].\n\nTo get started, follow the steps below:\nSTEP 1: Make sure your phone is connected to WiFi or has Cellular data enabled[cite: 1].\nSTEP 2: Log in to the Band Connect mobile app[cite: 1].\nSTEP 3: Once you’re logged in, the app will guide you through your assigned treatments[cite: 1]. Please complete all sessions and assessments displayed on the home screen each day[cite: 1].\n\nQuick Tip: Good form is key! Be sure to follow the pace and range of motion set by your clinician[cite: 1]. If using resistance bands, keep the cuff in the correct orientation[cite: 1].`
+        },
+        m_d3: {
+          subj: 'Stay on Track: Key Cues for Your Sessions',
+          body: `Hi,\n\nYou're already halfway through your first week of recovery[cite: 1]. Keep up the great work![cite: 1]\n\nAs you do your exercises with Band Connect, make sure to follow the text and audio cues[cite: 1]. When using the Band Connect Cuff, you’ll also feel the haptic cues (gentle vibrations)[cite: 1]. The Cuff will buzz to tell you when to start, and then buzz again after the “Hold” time to signal it’s time to return to the starting position[cite: 1].\n\nBy following these cues, you’ll stay aligned with what you and your clinician practiced in the clinic[cite: 1].`
+        },
+        m_d7: {
+          subj: 'One Week Down! Let’s Cover a Few Reminders',
+          body: `Hello,\n\nCongratulations on completing your first week of recovery![cite: 1] You’ve made it through one of the toughest parts of your journey[cite: 1].\n\nTo stay on track, please check the Assessments tab in the app and complete any items still marked in purple[cite: 1]. These are important for your clinician to monitor your progress and adjust your care plan[cite: 1].\n\nA few quick reminders:\n• Charge your Cuff overnight using the included charging cable[cite: 1].\n• Check your resistance bands before exercising[cite: 1].`
+        },
+        m_d10: {
+          subj: 'Build Your Routine – Every Session Counts!',
+          body: `Hello,\n\nYou're well on your way to a strong recovery![cite: 1] Progress might not always feel immediate, but every session you complete is another step toward your goals[cite: 1].\n\nBuilding a consistent exercise routine is one of the best things you can do for your recovery[cite: 1]. Making Band Connect part of your daily routine will help you stay on track and get the most from your treatment[cite: 1].\n\nQuick Tip: Follow the exercise pace set by your clinician in the app[cite: 1].`
+        },
+        m_d14: {
+          subj: 'Two Weeks Down! You’re on a roll!',
+          body: `Hi,\n\nCongratulations on completing your first two weeks of recovery with Band Connect![cite: 1] Your dedication is inspiring, and we hope you're starting to notice the progress[cite: 1].\n\nAs you continue, remember that Band Connect is designed to support, not replace, your in-person treatment[cite: 1]. Staying engaged with your clinician and attending in-clinic visits is essential to achieving your recovery goals[cite: 1].`
+        },
+        m_d21: {
+          subj: 'Three Weeks Down!',
+          body: `Hello,\n\nCongratulations—you’ve officially completed three weeks of treatment![cite: 1] That is an important milestone[cite: 1]. You’ve worked hard, your dedication is paying off, and we’re proud of the progress you're making[cite: 1].\n\nRecovery is hard work![cite: 1] If you ever feel frustrated, it’s okay to take a step back and rest[cite: 1]. Keep focusing on where you want to be by the end of therapy because you’ve got this![cite: 1]`
+        },
+        m_d28: {
+          subj: '1 Month Down - Keep it up!',
+          body: `Hello,\n\nMany people struggle to stick to their full treatment plan, but your commitment has been outstanding![cite: 1] Maintaining this level of accountability will have a direct, positive impact on your full recovery[cite: 1].\n\nOne of the best ways to stay motivated is by setting a personal goal[cite: 1]. Think about something meaningful you’d like to return to or improve—like walking longer distances, climbing stairs with ease, golfing, or gardening![cite: 1]`
+        },
+        m_d32: {
+          subj: 'Reminder: Complete Your Assessments',
+          body: `Hello,\n\nWe hope you’re feeling better as you continue your recovery journey with Band Connect![cite: 1] As part of your treatment plan, please remember to complete your assessments in the Assessments Tab of your Band Connect app[cite: 1].\n\nThese assessments help your clinician monitor your progress and make any necessary adjustments to best support your recovery[cite: 1].`
+        },
+        m_dis: {
+          subj: 'Congratulations on Completing Your Therapy with Band Connect!',
+          body: `Hello,\n\nCongratulations on your achievement![cite: 1] You've truly beaten the odds[cite: 1]. Your commitment to your recovery will undoubtedly have a lasting impact on your healing[cite: 1].\n\nWe have just two final actions for you:\n1. If you haven’t done so already, please return your kit to your clinic[cite: 1].\n2. Fill out our completion survey to share your experience with Band Connect[cite: 1].\n\nThank you once again, and best of luck with your continued recovery![cite: 1]`
+        }
+      },
+      UE: {
+        m_d1: {
+          subj: '🥳 CONGRATULATIONS!',
+          body: `Hey,\n\nCongratulations on completing your first in-clinic visit with Band Connect![cite: 2]\n\nWhen you log in to the Band Connect app today, it will guide you through your assigned treatments[cite: 2]. Before each exercise begins, make sure you start in the correct position by aligning the handle with the on-screen shadow[cite: 2].\n\nQuick Tip: Good form is key! If using resistance bands, keep your wrists firm and follow the pace set by your clinician[cite: 2].`
+        },
+        m_d3: {
+          subj: 'Stay on Track: Key Cues for Your Sessions',
+          body: `Hello,\n\nYou're halfway through the first week of treatment—keep up the hard work![cite: 2]\n\nAs you complete your exercises, follow the text and audio cues[cite: 2]. When using the Band Connect handles, you’ll also receive haptic cues (gentle vibrations) during each movement[cite: 2]. The handles will buzz to tell you when to start, and then buzz again after the “Hold” time[cite: 2].`
+        },
+        m_d7: {
+          subj: 'One Week Down! Let’s Cover a Few Reminders',
+          body: `Hello,\n\nCongratulations on completing your first week of recovery![cite: 2] By now, you should be familiar with Band Connect and your personalized therapy treatment[cite: 2].\n\nTo stay on track, please check the Assessments tab in the app and complete any items marked in purple[cite: 2].\n\nReminders: Plug the handles in overnight to recharge, and use the strain check before exercising[cite: 2].`
+        },
+        m_d10: {
+          subj: 'Build Your Routine – Every Session Counts!',
+          body: `Hello,\n\nYou're well on your way to a strong recovery![cite: 2] While progress might not always feel immediate, every session you complete is a step toward your goal[cite: 2].\n\nBuilding a consistent exercise routine is one of the best things you can do for your recovery[cite: 2]. Pay attention to the onscreen hold cues for the best results[cite: 2].`
+        },
+        m_d14: {
+          subj: 'Two Weeks Down! You’re on a roll!',
+          body: `Hi,\n\nCongratulations on completing your first two weeks of recovery with Band Connect![cite: 2] Your dedication is inspiring[cite: 2].\n\nStaying engaged with your clinician and attending in-clinic visits is essential to achieving your recovery goals[cite: 2]. Band Connect helps by tracking your exercises and giving real-time feedback to keep you on course[cite: 2].`
+        },
+        m_d21: {
+          subj: 'Three Weeks Down!',
+          body: `Hello,\n\nCongratulations—you’ve officially completed three weeks of treatment![cite: 2] That’s no small feat[cite: 2]. You’ve put in a lot of work, and your dedication is paying off[cite: 2].\n\nRemember this is hard work! If you find yourself getting frustrated, give yourself permission to step back and take a breather[cite: 2]. Keep visualizing where you want to be![cite: 2]`
+        },
+        m_d28: {
+          subj: '1 Month Down - Keep it up!',
+          body: `Hello,\n\nMany people struggle to stick to their full treatment plan, but your commitment has been outstanding![cite: 2]\n\nThink about a meaningful personal goal you’d like to return to—like lifting groceries, reaching overhead, cooking, or yard work[cite: 2]. Writing your goal down and keeping it visible can help you stay focused[cite: 2].`
+        },
+        m_d32: {
+          subj: 'Reminder: Complete Your Assessments',
+          body: `Hello,\n\nWe hope you’re feeling better as you continue your recovery journey with Band Connect![cite: 2] As part of your treatment plan, don’t forget to complete your assessments in the Assessments Tab of your Band Connect app[cite: 2].`
+        },
+        m_dis: {
+          subj: 'Congratulations on Completing Your Therapy with Band Connect!',
+          body: `Hello,\n\nCongratulations on your achievement![cite: 2] Your commitment to your recovery will undoubtedly have a lasting impact on your healing[cite: 2].\n\nPlease return your kit to your clinic and take a moment to share your experience on our completion survey[cite: 2]. Best of luck with your continued recovery![cite: 2]`
+        }
+      }
+    };
+
+    function loadPresetTemplate() {
+      const branch = document.getElementById('tpl-branch').value;
+      const stepSelect = document.getElementById('tpl-step');
+      const step = stepSelect.value;
+      
+      const offset = stepSelect.options[stepSelect.selectedIndex].getAttribute('data-offset');
+      document.getElementById('tpl-offset').value = offset || 1;
+
+      if (DEFAULT_PRESETS[branch] && DEFAULT_PRESETS[branch][step]) {
+        document.getElementById('tpl-subject').value = DEFAULT_PRESETS[branch][step].subj;
+        document.getElementById('tpl-body').value = DEFAULT_PRESETS[branch][step].body;
+      }
+    }
+
     function togglePasswordVisibility(inputId, iconId) {
       const input = document.getElementById(inputId);
       input.type = input.type === 'password' ? 'text' : 'password';
@@ -441,6 +528,7 @@
       if (pass === "BandConnect2026!") {
         document.getElementById('auth-overlay').style.display = 'none';
         loadPatients();
+        loadPresetTemplate();
       } else {
         document.getElementById('auth-err').style.display = 'block';
       }
@@ -455,15 +543,6 @@
       } else {
         document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
         document.getElementById('tab-templates').classList.add('active');
-      }
-    }
-
-    function syncOffsetField() {
-      const stepSelect = document.getElementById('tpl-step');
-      const selectedOption = stepSelect.options[stepSelect.selectedIndex];
-      const offset = selectedOption.getAttribute('data-offset');
-      if (offset !== null) {
-        document.getElementById('tpl-offset').value = offset;
       }
     }
 
@@ -559,7 +638,7 @@
             <input type="text" id="subj-${step.id}" class="form-control" style="font-size:0.8rem; margin-bottom:8px;" value="${step.subject}">
 
             <div style="font-size:0.75rem; color:var(--bc-text-muted); margin-bottom:4px;">Message:</div>
-            <textarea id="msg-${step.id}" class="form-control" style="height:110px; font-size:0.8rem; line-height:1.4; resize:vertical;">${cleanBody}</textarea>
+            <textarea id="msg-${step.id}" class="form-control" style="height:120px; font-size:0.8rem; line-height:1.4; resize:vertical;">${cleanBody}</textarea>
 
             <div style="display: flex; gap: 8px; margin-top: 10px;">
               <button class="btn-brand-pill" style="padding:8px 12px; font-size:0.75rem; width:50%; background:var(--bc-teal); color:#1a1727;" 
