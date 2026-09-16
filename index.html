@@ -348,30 +348,62 @@
       </div>
     </div>
 
-    <!-- TAB 2: TEMPLATES -->
+    <!-- TAB 2: GLOBAL BLUEPRINT STUDIO -->
     <div id="tab-templates" class="tab-content">
       <div class="panel">
         <div class="panel-header">
-          <h3>Branch Blueprint Studio</h3>
+          <h3>Global Blueprint Studio</h3>
+          <span style="font-size: 0.8rem; color: var(--bc-text-muted);">Changes made here become the default for all patients on this extremity branch.</span>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
           <div>
-            <label style="color:var(--bc-text-muted); font-size:0.8rem;">Select Blueprint</label>
-            <select id="tpl-branch" class="form-control">
-              <option value="UE">Upper Extremity (Handle)</option>
-              <option value="LE">Lower Extremity (Cuff)</option>
-            </select>
-            <label style="color:var(--bc-text-muted); font-size:0.8rem; margin-top:10px; display:block;">Milestone</label>
-            <input type="text" id="tpl-step" class="form-control" placeholder="e.g. Day 14 Survey" />
-            <label style="color:var(--bc-text-muted); font-size:0.8rem; margin-top:10px; display:block;">Day Offset</label>
-            <input type="number" id="tpl-offset" class="form-control" value="14" />
+            <div class="form-group">
+              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Select Extremity Branch</label>
+              <select id="tpl-branch" class="form-control">
+                <option value="LE">Lower Extremity (Cuff)</option>
+                <option value="UE">Upper Extremity (Handle)</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-top:14px;">
+              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Target Sequence Milestone</label>
+              <select id="tpl-step" class="form-control" onchange="syncOffsetField()">
+                <option value="m_d1" data-offset="1">Day 1: Welcome & Setup</option>
+                <option value="m_d3" data-offset="3">Day 3: Cues & Haptics</option>
+                <option value="m_d7" data-offset="7">Day 7: Assessments & Charging</option>
+                <option value="m_d10" data-offset="10">Day 10: Build Routine</option>
+                <option value="m_d14" data-offset="14">Day 14: Two Weeks Down</option>
+                <option value="m_d21" data-offset="21">Day 21: Three Weeks Milestone</option>
+                <option value="m_d28" data-offset="28">Day 28: 1 Month Goal Setting</option>
+                <option value="m_d32" data-offset="32">Day 32: Assessments Reminder</option>
+                <option value="m_dis" data-offset="0">Discharge: Therapy Completion</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-top:14px;">
+              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Day Offset (From Start Date)</label>
+              <input type="number" id="tpl-offset" class="form-control" value="1" />
+            </div>
+
+            <p style="font-size: 0.75rem; color: var(--bc-teal); margin-top: 12px; line-height: 1.4;">
+              💡 Tip: Use <code>{{first_name}}</code> anywhere in the subject or body to dynamically insert the patient's name.
+            </p>
           </div>
+
           <div>
-            <label style="color:var(--bc-text-muted); font-size:0.8rem;">Subject Line</label>
-            <input type="text" id="tpl-subject" class="form-control" placeholder="Subject line..." />
-            <label style="color:var(--bc-text-muted); font-size:0.8rem; margin-top:10px; display:block;">Email HTML Body</label>
-            <textarea id="tpl-body" class="form-control" style="height: 180px; font-family: monospace;"></textarea>
-            <button class="btn-brand-pill" style="border-radius: 8px; margin-top: 10px;" onclick="saveTemplate()">Save Template to Sequence</button>
+            <div class="form-group">
+              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Master Subject Line</label>
+              <input type="text" id="tpl-subject" class="form-control" placeholder="e.g. 🥳 CONGRATULATIONS!" />
+            </div>
+
+            <div class="form-group" style="margin-top:14px;">
+              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Master Email Message (Plain Text)</label>
+              <textarea id="tpl-body" class="form-control" style="height: 200px; line-height: 1.5; resize: vertical;" placeholder="Hey {{first_name}},&#10;&#10;Congratulations on completing your first in-clinic visit..."></textarea>
+            </div>
+
+            <button class="btn-brand-pill" style="border-radius: 8px; margin-top: 10px;" onclick="saveTemplate()">
+              💾 Save as Global Default
+            </button>
           </div>
         </div>
       </div>
@@ -423,6 +455,15 @@
       } else {
         document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
         document.getElementById('tab-templates').classList.add('active');
+      }
+    }
+
+    function syncOffsetField() {
+      const stepSelect = document.getElementById('tpl-step');
+      const selectedOption = stepSelect.options[stepSelect.selectedIndex];
+      const offset = selectedOption.getAttribute('data-offset');
+      if (offset !== null) {
+        document.getElementById('tpl-offset').value = offset;
       }
     }
 
@@ -499,7 +540,6 @@
 
         list.innerHTML = '';
         result.timeline.forEach(step => {
-          // Clean presentation text (strips raw tags for user editing)
           const cleanBody = (step.defaultBody || '').replace(/<\/?[^>]+(>|$)/g, '\n').replace(/\n\s*\n/g, '\n\n').trim();
 
           const card = document.createElement('div');
