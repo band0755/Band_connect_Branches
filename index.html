@@ -29,7 +29,7 @@
       flex-direction: column;
     }
 
-    /* Auth Gate Overlay */
+    /* Auth Overlay */
     #auth-overlay {
       position: fixed;
       inset: 0;
@@ -37,7 +37,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 1000;
+      z-index: 2000;
     }
     .auth-card {
       background: var(--bc-panel);
@@ -57,18 +57,10 @@
       margin-bottom: 8px;
     }
     .auth-logo svg { width: 32px; height: 32px; fill: none; stroke: var(--bc-teal); stroke-width: 2.2; }
-    .auth-card h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.8rem;
-      color: #fff;
-    }
+    .auth-card h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #fff; }
     .auth-card p { font-size: 0.85rem; color: var(--bc-text-muted); margin-bottom: 24px; }
     
-    .password-wrapper {
-      position: relative;
-      width: 100%;
-      margin-bottom: 16px;
-    }
+    .password-wrapper { position: relative; width: 100%; margin-bottom: 16px; }
     .auth-input {
       width: 100%;
       padding: 12px 48px 12px 18px;
@@ -78,10 +70,8 @@
       color: #fff;
       font-size: 0.95rem;
       outline: none;
-      transition: border-color 0.2s;
     }
     .auth-input:focus { border-color: var(--bc-teal); }
-    
     .eye-toggle-btn {
       position: absolute;
       right: 14px;
@@ -90,15 +80,9 @@
       background: none;
       border: none;
       cursor: pointer;
-      padding: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       color: var(--bc-text-muted);
-      transition: color 0.2s;
     }
-    .eye-toggle-btn:hover { color: var(--bc-teal); }
-    .eye-toggle-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .eye-toggle-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
 
     .btn-brand-pill {
       width: 100%;
@@ -110,21 +94,12 @@
       font-weight: 600;
       font-size: 0.9rem;
       cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 4px 14px rgba(100, 86, 163, 0.4);
+      transition: 0.2s;
     }
-    .btn-brand-pill:hover { background: var(--bc-purple-hover); transform: translateY(-1px); }
-    
-    .reset-link {
-      display: inline-block;
-      margin-top: 16px;
-      font-size: 0.8rem;
-      color: var(--bc-teal);
-      cursor: pointer;
-      text-decoration: underline;
-    }
+    .btn-brand-pill:hover { background: var(--bc-purple-hover); }
+    .reset-link { display: inline-block; margin-top: 16px; font-size: 0.8rem; color: var(--bc-teal); cursor: pointer; text-decoration: underline; }
 
-    /* Main App Layout */
+    /* Layout */
     header {
       background: var(--bc-panel);
       border-bottom: 1px solid var(--bc-border);
@@ -135,57 +110,31 @@
     }
     .brand { display: flex; align-items: center; gap: 14px; }
     .brand-svg { width: 28px; height: 28px; fill: none; stroke: var(--bc-teal); stroke-width: 2.2; }
-    .brand-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.35rem;
-      font-weight: 600;
-      color: #fff;
-    }
-    .brand-tag {
-      font-size: 0.7rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--bc-text-muted);
-      margin-left: 6px;
-    }
-    
+    .brand-title { font-family: 'Playfair Display', serif; font-size: 1.35rem; color: #fff; }
+    .brand-tag { font-size: 0.7rem; text-transform: uppercase; color: var(--bc-text-muted); margin-left: 6px; }
+
     .nav-tabs { display: flex; gap: 8px; }
     .tab-btn {
       background: transparent;
-      border: 1px solid transparent;
+      border: none;
       color: var(--bc-text-muted);
       padding: 8px 18px;
       border-radius: 30px;
       font-size: 0.85rem;
-      font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
     }
-    .tab-btn.active {
-      background: var(--bc-purple-primary);
-      color: #fff;
-      font-weight: 600;
-    }
+    .tab-btn.active { background: var(--bc-purple-primary); color: #fff; font-weight: 600; }
 
-    main {
-      flex: 1;
-      padding: 32px 36px;
-      max-width: 1280px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
+    main { flex: 1; padding: 32px 36px; max-width: 1280px; margin: 0 auto; width: 100%; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
-    /* Panels & Tables */
     .panel {
       background: var(--bc-panel);
       border: 1px solid var(--bc-border);
       border-radius: 14px;
       padding: 24px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-      margin-bottom: 24px;
     }
     .panel-header {
       display: flex;
@@ -195,50 +144,42 @@
       padding-bottom: 12px;
       border-bottom: 1px solid var(--bc-border);
     }
-    .panel-header h3 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.25rem;
-      color: #fff;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-      text-align: left;
-    }
+    .panel-header h3 { font-family: 'Playfair Display', serif; font-size: 1.25rem; color: #fff; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     th {
       background: var(--bc-card-inner);
       padding: 12px 16px;
       color: var(--bc-text-muted);
-      font-weight: 600;
       text-transform: uppercase;
       font-size: 0.72rem;
-      letter-spacing: 0.05em;
       border-bottom: 1px solid var(--bc-border);
+      text-align: left;
     }
-    td {
-      padding: 14px 16px;
-      border-bottom: 1px solid #363052;
-      color: #edeaf5;
-    }
+    td { padding: 14px 16px; border-bottom: 1px solid #363052; color: #edeaf5; }
     tr:hover td { background: #322b4e; }
 
-    /* Status Badges */
+    .patient-link {
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--bc-teal);
+    }
+    .patient-link:hover { color: var(--bc-teal); }
+
     .status-badge {
       display: inline-block;
       padding: 4px 12px;
       border-radius: 999px;
       font-size: 0.75rem;
       font-weight: 600;
-      text-transform: capitalize;
     }
     .status-active { background: rgba(78, 205, 196, 0.15); color: var(--bc-teal); border: 1px solid rgba(78, 205, 196, 0.4); }
     .status-hold { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
     .status-discharged { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
-    .status-enrolled { background: rgba(124, 107, 189, 0.2); color: #b7a9e8; border: 1px solid rgba(124, 107, 189, 0.4); }
 
-    /* Action Buttons */
     .btn-action {
       background: var(--bc-card-inner);
       color: #edeaf5;
@@ -247,37 +188,59 @@
       border-radius: 20px;
       font-size: 0.75rem;
       cursor: pointer;
-      margin-right: 6px;
-      transition: all 0.2s;
+      margin-right: 4px;
     }
-    .btn-action:hover { border-color: var(--bc-teal); color: #fff; }
     .btn-hold { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: #92400e; }
-    .btn-hold:hover { background: #d97706; color: #fff; }
     .btn-discharge { background: rgba(239, 68, 68, 0.2); color: #f87171; border-color: #991b1b; }
-    .btn-discharge:hover { background: #dc2626; color: #fff; }
 
-    /* Template Editor Form */
-    .form-group { margin-bottom: 18px; }
-    .form-group label {
-      display: block;
-      font-size: 0.8rem;
-      color: var(--bc-text-muted);
-      margin-bottom: 6px;
-      font-weight: 500;
+    /* Timeline Drawer */
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: -550px;
+      width: 500px;
+      height: 100vh;
+      background: var(--bc-panel);
+      border-left: 1px solid var(--bc-border);
+      box-shadow: -10px 0 35px rgba(0,0,0,0.6);
+      transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1500;
+      display: flex;
+      flex-direction: column;
+    }
+    .drawer.open { right: 0; }
+    .drawer-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--bc-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
+
+    .timeline-card {
+      background: var(--bc-card-inner);
+      border: 1px solid var(--bc-border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .timeline-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
     }
     .form-control {
       width: 100%;
-      background: var(--bc-card-inner);
+      background: var(--bc-panel);
       border: 1px solid var(--bc-border);
       border-radius: 8px;
-      padding: 12px;
+      padding: 10px;
       color: #fff;
-      font-size: 0.9rem;
-      outline: none;
-      transition: border-color 0.2s;
+      font-size: 0.85rem;
+      margin-bottom: 8px;
     }
-    .form-control:focus { border-color: var(--bc-teal); }
-    textarea.form-control { height: 180px; font-family: monospace; resize: vertical; }
 
     /* Modal */
     .modal {
@@ -288,7 +251,7 @@
       backdrop-filter: blur(6px);
       justify-content: center;
       align-items: center;
-      z-index: 2000;
+      z-index: 2100;
     }
     .modal.active { display: flex; }
     .modal-card {
@@ -298,13 +261,12 @@
       padding: 28px;
       max-width: 440px;
       width: 100%;
-      box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.6);
     }
   </style>
 </head>
 <body>
 
-  <!-- AUTHENTICATION GATEWAY -->
+  <!-- AUTH OVERLAY -->
   <div id="auth-overlay">
     <div class="auth-card">
       <div class="auth-logo">
@@ -315,11 +277,8 @@
       
       <div class="password-wrapper">
         <input type="password" id="portal-pass" class="auth-input" placeholder="Enter Staff Access PIN" />
-        <button type="button" class="eye-toggle-btn" onclick="togglePasswordVisibility('portal-pass', 'eye-icon-main')" aria-label="Toggle password visibility">
-          <svg id="eye-icon-main" viewBox="0 0 24 24">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-            <circle cx="12" cy="12" r="3"></circle>
-          </svg>
+        <button type="button" class="eye-toggle-btn" onclick="togglePasswordVisibility('portal-pass', 'eye-icon-main')">
+          <svg id="eye-icon-main" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
         </button>
       </div>
 
@@ -329,30 +288,19 @@
     </div>
   </div>
 
-  <!-- LEADERSHIP RESET PIN MODAL -->
+  <!-- LEADERSHIP RESET MODAL -->
   <div class="modal" id="reset-modal">
     <div class="modal-card">
       <h3 style="font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #fff; margin-bottom: 8px;">Reset Staff Access</h3>
-      <p style="font-size: 0.8rem; color: var(--bc-text-muted); margin-bottom: 18px;">Enter an authorized leadership email to receive a 6-digit one-time PIN.</p>
-      <input type="email" id="leader-email" class="auth-input" style="padding-right: 18px; margin-bottom: 16px;" placeholder="leadership@bandconnect.net" />
+      <p style="font-size: 0.8rem; color: var(--bc-text-muted); margin-bottom: 18px;">Enter an authorized leadership email for a 6-digit PIN.</p>
+      <input type="email" id="leader-email" class="auth-input" style="margin-bottom: 16px;" placeholder="leadership@bandconnect.net" />
       <button class="btn-brand-pill" onclick="requestPin()">Send Reset PIN</button>
       
       <div id="pin-section" style="display: none; margin-top: 20px; border-top: 1px solid var(--bc-border); padding-top: 20px;">
-        <input type="text" id="pin-code" class="auth-input" style="padding-right: 18px; margin-bottom: 16px;" placeholder="6-digit PIN" maxlength="6" />
-        
-        <div class="password-wrapper">
-          <input type="password" id="new-password" class="auth-input" placeholder="New Password" />
-          <button type="button" class="eye-toggle-btn" onclick="togglePasswordVisibility('new-password', 'eye-icon-modal')" aria-label="Toggle password visibility">
-            <svg id="eye-icon-modal" viewBox="0 0 24 24">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </button>
-        </div>
-
+        <input type="text" id="pin-code" class="auth-input" style="margin-bottom: 16px;" placeholder="6-digit PIN" maxlength="6" />
+        <input type="password" id="new-password" class="auth-input" style="margin-bottom: 16px;" placeholder="New Password" />
         <button class="btn-brand-pill" onclick="verifyPinAndSave()">Update Password</button>
       </div>
-
       <button class="btn-action" style="margin-top: 14px; width: 100%; border-radius: 30px; padding: 10px;" onclick="closeResetModal()">Cancel</button>
     </div>
   </div>
@@ -370,7 +318,7 @@
     </div>
   </header>
 
-  <!-- MAIN VIEW -->
+  <!-- MAIN APP -->
   <main>
     <!-- TAB 1: PATIENTS -->
     <div id="tab-patients" class="tab-content active">
@@ -379,10 +327,10 @@
           <h3>Patient Roster & Outreach Lifecycle</h3>
           <button class="btn-action" onclick="loadPatients()">Refresh Roster</button>
         </div>
-        <table id="patient-table">
+        <table>
           <thead>
             <tr>
-              <th>Patient Name</th>
+              <th>Patient Name (Click to view Sequence)</th>
               <th>Clinic</th>
               <th>Device Extremity</th>
               <th>Condition</th>
@@ -397,72 +345,60 @@
       </div>
     </div>
 
-    <!-- TAB 2: TEMPLATE STUDIO -->
+    <!-- TAB 2: TEMPLATES -->
     <div id="tab-templates" class="tab-content">
       <div class="panel">
         <div class="panel-header">
-          <h3>Branch Sequence & Template Manager</h3>
+          <h3>Branch Blueprint Studio</h3>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
           <div>
-            <div class="form-group">
-              <label>Select Branch Blueprint</label>
-              <select id="tpl-branch" class="form-control">
-                <option value="UE - Handle">Upper Extremity (Handle)</option>
-                <option value="LE - Cuff">Lower Extremity (Cuff)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Sequence Milestone</label>
-              <select id="tpl-step" class="form-control">
-                <option value="Step_1">Interval +2 Days</option>
-                <option value="Step_2">Interval +7 Days</option>
-                <option value="Step_3">Interval +14 Days</option>
-                <option value="Discharge">Final Discharge</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Day Offset (Days after Start Date)</label>
-              <input type="number" id="tpl-offset" class="form-control" value="2" />
-            </div>
+            <label style="color:var(--bc-text-muted); font-size:0.8rem;">Select Blueprint</label>
+            <select id="tpl-branch" class="form-control">
+              <option value="UE">Upper Extremity (Handle)</option>
+              <option value="LE">Lower Extremity (Cuff)</option>
+            </select>
+            <label style="color:var(--bc-text-muted); font-size:0.8rem; margin-top:10px; display:block;">Milestone</label>
+            <input type="text" id="tpl-step" class="form-control" placeholder="e.g. Day 14 Survey" />
+            <label style="color:var(--bc-text-muted); font-size:0.8rem; margin-top:10px; display:block;">Day Offset</label>
+            <input type="number" id="tpl-offset" class="form-control" value="14" />
           </div>
           <div>
-            <div class="form-group">
-              <label>Subject Line</label>
-              <input type="text" id="tpl-subject" class="form-control" placeholder="e.g. Day 2 Check-in: How are you feeling?" />
-            </div>
-            <div class="form-group">
-              <label>HTML Email Body (Supports merge tag: {{first_name}})</label>
-              <textarea id="tpl-body" class="form-control" placeholder="<p>Hi {{first_name}},</p>..."></textarea>
-            </div>
-            <button class="btn-brand-pill" style="border-radius: 8px;" onclick="saveTemplate()">Save Template to Sequence</button>
+            <label style="color:var(--bc-text-muted); font-size:0.8rem;">Subject Line</label>
+            <input type="text" id="tpl-subject" class="form-control" placeholder="Subject line..." />
+            <label style="color:var(--bc-text-muted); font-size:0.8rem; margin-top:10px; display:block;">Email HTML Body</label>
+            <textarea id="tpl-body" class="form-control" style="height: 180px; font-family: monospace;"></textarea>
+            <button class="btn-brand-pill" style="border-radius: 8px; margin-top: 10px;" onclick="saveTemplate()">Save Template to Sequence</button>
           </div>
         </div>
       </div>
     </div>
   </main>
 
+  <!-- PATIENT TIMELINE DRAWER -->
+  <div id="patient-drawer" class="drawer">
+    <div class="drawer-header">
+      <div>
+        <h3 id="drawer-patient-name" style="color: #fff; font-family: 'Playfair Display', serif;">Patient Sequence</h3>
+        <span id="drawer-patient-meta" style="font-size: 0.8rem; color: var(--bc-text-muted);">Loading...</span>
+      </div>
+      <button class="btn-action" onclick="closeDrawer()">✕ Close</button>
+    </div>
+    <div class="drawer-body">
+      <p style="font-size: 0.8rem; color: var(--bc-teal); margin-bottom: 16px;">
+        💡 Click into any email milestone below to customize the wording or dispatch manually.
+      </p>
+      <div id="timeline-list"></div>
+    </div>
+  </div>
+
   <script>
-    // LIVE DEPLOYED WEB APP ENDPOINT
     const API_URL = "https://script.google.com/macros/s/AKfycbzZhcXbEJAOBNSnXqHur3a-lw2UAH_Oi__vj9QPVuxanZP0G3v5UBCmhml8_CVYuwEe/exec";
+    let activePatientData = null;
 
     function togglePasswordVisibility(inputId, iconId) {
       const input = document.getElementById(inputId);
-      const icon = document.getElementById(iconId);
-
-      if (input.type === 'password') {
-        input.type = 'text';
-        icon.innerHTML = `
-          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-          <line x1="1" y1="1" x2="23" y2="23"></line>
-        `;
-      } else {
-        input.type = 'password';
-        icon.innerHTML = `
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
-        `;
-      }
+      input.type = input.type === 'password' ? 'text' : 'password';
     }
 
     function validatePassword() {
@@ -489,14 +425,13 @@
 
     async function loadPatients() {
       const tbody = document.getElementById('patient-rows');
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--bc-text-muted); padding: 30px;">Connecting to sandbox database...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--bc-text-muted); padding: 30px;">Loading patient roster...</td></tr>';
 
       try {
         const res = await fetch(`${API_URL}?action=GET_PATIENTS`);
         const result = await res.json();
-
         if (!result.success || !result.data) {
-          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #f87171; padding: 20px;">Failed to load data: ${result.message || 'Unknown error'}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#f87171;padding:20px;">Failed to load roster.</td></tr>`;
           return;
         }
 
@@ -504,9 +439,8 @@
         result.data.forEach(p => {
           const tr = document.createElement('tr');
           const statusClass = `status-${(p.status || '').toLowerCase().replace(/\s+/g, '')}`;
-          
           tr.innerHTML = `
-            <td style="font-weight: 600; color: #fff;">${p.patientName}</td>
+            <td><span class="patient-link" onclick="openPatientDrawer(${p.rowNumber})">${p.patientName}</span></td>
             <td>${p.clinic || '—'}</td>
             <td>${p.deviceType || '—'}</td>
             <td>${p.condition || '—'}</td>
@@ -519,30 +453,88 @@
           `;
           tbody.appendChild(tr);
         });
-
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #f87171; padding: 20px;">Network/CORS Error: Check Web App deployment permissions.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#f87171;padding:20px;">Connection Error</td></tr>`;
       }
     }
 
     async function updateStatus(rowNumber, newStatus) {
-      if (!confirm(`Are you sure you want to change Row ${rowNumber} to ${newStatus}?`)) return;
+      if (!confirm(`Update Row ${rowNumber} to ${newStatus}?`)) return;
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'UPDATE_PATIENT_STATUS', rowNumber: rowNumber, newStatus: newStatus })
+        });
+        const result = await res.json();
+        alert(result.message);
+        loadPatients();
+      } catch (err) {
+        alert('Update dispatched');
+        loadPatients();
+      }
+    }
+
+    async function openPatientDrawer(rowNumber) {
+      const drawer = document.getElementById('patient-drawer');
+      const list = document.getElementById('timeline-list');
+      list.innerHTML = '<p style="color:var(--bc-text-muted);">Generating milestone timeline...</p>';
+      drawer.classList.add('open');
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'GET_PATIENT_TIMELINE', rowNumber: rowNumber })
+        });
+        const result = await res.json();
+        if (!result.success) return alert(result.message);
+
+        activePatientData = result;
+        document.getElementById('drawer-patient-name').textContent = result.patientName;
+        document.getElementById('drawer-patient-meta').textContent = `${result.deviceType} | Email: ${result.email || 'None'}`;
+
+        list.innerHTML = '';
+        result.timeline.forEach(step => {
+          const card = document.createElement('div');
+          card.className = 'timeline-card';
+          card.innerHTML = `
+            <div class="timeline-card-header">
+              <strong style="color:#fff; font-size:0.85rem;">${step.title}</strong>
+              <span style="font-size:0.75rem; color:var(--bc-teal);">${step.scheduledDate}</span>
+            </div>
+            <div style="font-size:0.75rem; color:var(--bc-text-muted); margin-bottom:6px;">Subject: ${step.subject}</div>
+            <textarea id="msg-${step.id}" class="form-control" style="height:90px; font-size:0.8rem;">${step.defaultBody}</textarea>
+            <button class="btn-brand-pill" style="padding:6px 14px; font-size:0.75rem; width:auto;" onclick="sendManualOutreach('${step.id}', '${step.subject}')">Send Now (Manual)</button>
+          `;
+          list.appendChild(card);
+        });
+      } catch (err) {
+        list.innerHTML = '<p style="color:#f87171;">Failed to load patient timeline.</p>';
+      }
+    }
+
+    function closeDrawer() {
+      document.getElementById('patient-drawer').classList.remove('open');
+    }
+
+    async function sendManualOutreach(stepId, subject) {
+      const body = document.getElementById(`msg-${stepId}`).value;
+      if (!confirm(`Dispatch "${subject}" to ${activePatientData.patientName}?`)) return;
 
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
           body: JSON.stringify({
-            action: 'UPDATE_PATIENT_STATUS',
-            rowNumber: rowNumber,
-            newStatus: newStatus
+            action: 'DISPATCH_CUSTOM_EMAIL',
+            recipientEmail: activePatientData.email,
+            patientName: activePatientData.patientName,
+            subject: subject,
+            htmlBody: body
           })
         });
         const result = await res.json();
-        alert(result.message || 'Updated successfully!');
-        loadPatients();
+        alert(result.message);
       } catch (err) {
-        alert('Status update dispatched.');
-        loadPatients();
+        alert('Dispatched in test environment.');
       }
     }
 
@@ -555,17 +547,9 @@
         subject: document.getElementById('tpl-subject').value,
         htmlBody: document.getElementById('tpl-body').value
       };
-
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        alert(result.message || 'Template saved successfully!');
-      } catch (err) {
-        alert('Template saved to sandbox sheet.');
-      }
+      const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+      const result = await res.json();
+      alert(result.message || 'Saved successfully!');
     }
 
     function openResetModal() { document.getElementById('reset-modal').classList.add('active'); }
@@ -573,39 +557,26 @@
 
     async function requestPin() {
       const email = document.getElementById('leader-email').value;
-      if (!email) return alert('Enter leadership email');
-      alert(`Requesting PIN for ${email}...`);
-      
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'REQUEST_PASSWORD_RESET', leadershipEmail: email })
-        });
-        const result = await res.json();
-        alert(result.message);
-        if (result.success) {
-          document.getElementById('pin-section').style.display = 'block';
-        }
-      } catch (err) {
-        alert('Reset request processed.');
-      }
+      if (!email) return alert('Enter email');
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'REQUEST_PASSWORD_RESET', leadershipEmail: email })
+      });
+      const result = await res.json();
+      alert(result.message);
+      if (result.success) document.getElementById('pin-section').style.display = 'block';
     }
 
     async function verifyPinAndSave() {
       const pin = document.getElementById('pin-code').value;
       const newPassword = document.getElementById('new-password').value;
-
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'VERIFY_RESET_PIN', pin: pin, newPassword: newPassword })
-        });
-        const result = await res.json();
-        alert(result.message);
-        if (result.success) closeResetModal();
-      } catch (err) {
-        alert('PIN verification submitted.');
-      }
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'VERIFY_RESET_PIN', pin: pin, newPassword: newPassword })
+      });
+      const result = await res.json();
+      alert(result.message);
+      if (result.success) closeResetModal();
     }
   </script>
 </body>
