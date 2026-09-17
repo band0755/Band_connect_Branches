@@ -1,740 +1,379 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Band Connect — Staff Communication Portal</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap');
+/**
+ * PortalApi.gs
+ * Backend API for Band Connect GitHub Pages Web Portal
+ */
 
-    :root {
-      --bc-bg: #221e35;
-      --bc-panel: #2c2744;
-      --bc-card-inner: #1f1a30;
-      --bc-border: #423b63;
-      --bc-purple-primary: #6456a3;
-      --bc-purple-hover: #7868bd;
-      --bc-teal: #4ecdc4;
-      --bc-teal-hover: #3dbbb2;
-      --bc-text-primary: #f8fafc;
-      --bc-text-muted: #aba5c0;
+const CONFIG = {
+  SHEET_NAME: 'Patient Master',
+  TEMPLATE_SHEET: 'Templates',
+  PIN_PROP_KEY: 'PORTAL_ACCESS_PIN',
+  DEFAULT_PIN: 'BandConnect2026!',
+  AUTHORIZED_LEADERSHIP: ['rohit@bandconnect.net', 'saurav@bandconnect.net'],
+  
+  // Safe Sandbox Configuration
+  SANDBOX_TEST_MODE: true,
+  TEST_EMAIL_OVERRIDE: 'saurav@bandconnect.net',
+  GITHUB_LOGO_URL: 'https://raw.githubusercontent.com/band0755/band-connect-logo/main/WhatsApp%20Image%202026-09-11%20at%205.49.25%20PM%20(1).jpeg'
+};
+
+function doGet(e) {
+  const params = e ? e.parameter : {};
+  const action = params.action;
+
+  if (action === 'GET_PATIENTS') {
+    return handleGetPatients();
+  }
+  if (action === 'VERIFY_PIN') {
+    return handleVerifyLoginPin(params.pin);
+  }
+  if (action === 'GET_PATIENT_TIMELINE') {
+    return handleGetPatientTimeline({ rowNumber: params.rowNumber });
+  }
+  if (action === 'DISPATCH_CUSTOM_EMAIL') {
+    return handleDispatchCustomEmail({
+      recipientEmail: params.recipientEmail,
+      subject: params.subject,
+      htmlBody: params.bodyText || params.htmlBody,
+      patientName: params.patientName
+    });
+  }
+
+  return createJsonResponse({ success: false, message: 'Invalid action parameter' });
+}
+
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    const action = payload.action;
+
+    switch (action) {
+      case 'VERIFY_PIN':
+        return handleVerifyLoginPin(payload.pin);
+      case 'UPDATE_PATIENT_STATUS':
+        return handleUpdateStatus(payload);
+      case 'SAVE_TEMPLATE':
+        return handleSaveTemplate(payload);
+      case 'GET_PATIENT_TIMELINE':
+        return handleGetPatientTimeline(payload);
+      case 'DISPATCH_CUSTOM_EMAIL':
+        return handleDispatchCustomEmail(payload);
+      case 'REQUEST_PASSWORD_RESET':
+        return handleRequestReset(payload);
+      case 'VERIFY_RESET_PIN':
+        return handleVerifyReset(payload);
+      default:
+        return createJsonResponse({ success: false, message: 'Unknown action' });
+    }
+  } catch (err) {
+    return createJsonResponse({ success: false, message: `Server Error: ${err.message}` });
+  }
+}
+
+// ----------------------------------------------------
+// AUTHENTICATION
+// ----------------------------------------------------
+
+function handleVerifyLoginPin(inputPin) {
+  const storedPin = PropertiesService.getScriptProperties().getProperty(CONFIG.PIN_PROP_KEY) || CONFIG.DEFAULT_PIN;
+  if (String(inputPin).trim() === storedPin.trim()) {
+    return createJsonResponse({ success: true, message: 'Access granted' });
+  }
+  return createJsonResponse({ success: false, message: 'Incorrect PIN. Access denied.' });
+}
+
+function handleRequestReset(payload) {
+  const email = String(payload.leadershipEmail || '').trim().toLowerCase();
+  if (!CONFIG.AUTHORIZED_LEADERSHIP.includes(email)) {
+    return createJsonResponse({ success: false, message: 'Unauthorized leadership email.' });
+  }
+  const pin = Math.floor(100000 + Math.random() * 900000).toString();
+  CacheService.getScriptCache().put(`RESET_PIN_${email}`, pin, 600);
+  GmailApp.sendEmail(email, 'Band Connect: Portal Reset PIN', `Your reset verification PIN is: ${pin} (Expires in 10 mins)`);
+  return createJsonResponse({ success: true, message: 'Reset PIN sent to leadership email.' });
+}
+
+function handleVerifyReset(payload) {
+  const { pin, newPassword } = payload;
+  const cache = CacheService.getScriptCache();
+  let valid = false;
+  for (let email of CONFIG.AUTHORIZED_LEADERSHIP) {
+    if (cache.get(`RESET_PIN_${email}`) === pin) {
+      valid = true;
+      cache.remove(`RESET_PIN_${email}`);
+      break;
+    }
+  }
+  if (!valid) return createJsonResponse({ success: false, message: 'Invalid or expired PIN.' });
+  PropertiesService.getScriptProperties().setProperty(CONFIG.PIN_PROP_KEY, newPassword);
+  return createJsonResponse({ success: true, message: 'Portal PIN successfully updated!' });
+}
+
+// ----------------------------------------------------
+// PATIENT MASTER DATA
+// ----------------------------------------------------
+
+function handleGetPatients() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
+  if (!sheet) {
+    return createJsonResponse({ success: false, message: `Sheet "${CONFIG.SHEET_NAME}" not found.` });
+  }
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) {
+    return createJsonResponse({ success: true, data: [] });
+  }
+
+  const patientList = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const patientName = String(row[0] || '').trim();
+    if (!patientName) continue;
+
+    patientList.push({
+      rowNumber: i + 1,
+      patientName: patientName,
+      clinician: String(row[1] || ''),
+      clinic: String(row[2] || ''),
+      deviceType: String(row[5] || ''),
+      status: String(row[6] || 'Active'),
+      startDate: row[7] ? new Date(row[7]).toLocaleDateString() : '—',
+      condition: String(row[9] || '—'),
+      email: String(row[66] || '')
+    });
+  }
+
+  return createJsonResponse({ success: true, data: patientList });
+}
+
+function handleUpdateStatus(payload) {
+  const { rowNumber, newStatus } = payload;
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAME);
+  if (!sheet || !rowNumber || !newStatus) {
+    return createJsonResponse({ success: false, message: 'Missing parameters' });
+  }
+
+  sheet.getRange(rowNumber, 7).setValue(newStatus);
+  return createJsonResponse({ success: true, message: `Row ${rowNumber} updated to ${newStatus}` });
+}
+
+// ----------------------------------------------------
+// TIMELINE GENERATION & TEMPLATES
+// ----------------------------------------------------
+
+function handleGetPatientTimeline(payload) {
+  const { rowNumber } = payload;
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAME);
+  if (!sheet || !rowNumber) {
+    return createJsonResponse({ success: false, message: 'Invalid patient row' });
+  }
+
+  const rowData = sheet.getRange(rowNumber, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const patientName = String(rowData[0] || '').trim();
+  const deviceType  = String(rowData[5] || 'Handle').trim();
+  const rawStartDate = rowData[7];
+  const email       = String(rowData[66] || '').trim();
+
+  const startDate = rawStartDate ? new Date(rawStartDate) : new Date();
+  const isUE = /handle|ue|upper/i.test(deviceType);
+  const branchKey = isUE ? 'UE' : 'LE';
+  const firstName = patientName.split(' ')[0] || 'there';
+
+  const customTemplates = getCustomTemplatesMap();
+
+  const milestones = [
+    { id: 'm_d1', dayOffset: 1, title: 'Day 1: Welcome & Setup', defaultSubj: '🥳 CONGRATULATIONS!' },
+    { id: 'm_d3', dayOffset: 3, title: 'Day 3: Cues & Haptics', defaultSubj: 'Stay on Track: Key Cues for Your Sessions' },
+    { id: 'm_d7', dayOffset: 7, title: 'Day 7: Assessments & Charging', defaultSubj: 'One Week Down! Let’s Cover a Few Reminders' },
+    { id: 'm_d10', dayOffset: 10, title: 'Day 10: Build Routine', defaultSubj: 'Build Your Routine – Every Session Counts!' },
+    { id: 'm_d14', dayOffset: 14, title: 'Day 14: Two Weeks Down', defaultSubj: 'Two Weeks Down! You’re on a roll!' },
+    { id: 'm_d21', dayOffset: 21, title: 'Day 21: Three Weeks Milestone', defaultSubj: 'Three Weeks Down!' },
+    { id: 'm_d28', dayOffset: 28, title: 'Day 28: 1 Month Goal Setting', defaultSubj: '1 Month Down - Keep it up!' },
+    { id: 'm_d32', dayOffset: 32, title: 'Day 32: Assessments Reminder', defaultSubj: 'Reminder: Complete Your Assessments' },
+    { id: 'm_dis', dayOffset: null, title: 'Discharge: Completion', defaultSubj: 'Congratulations on Completing Your Therapy with Band Connect!' }
+  ];
+
+  const timeline = milestones.map(m => {
+    let dateStr = 'On Discharge';
+    let isoDate = '';
+    if (m.dayOffset !== null) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + m.dayOffset);
+      dateStr = d.toLocaleDateString();
+      isoDate = Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd');
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background-color: var(--bc-bg);
-      color: var(--bc-text-primary);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+    const key = `${branchKey}_${m.id}`.toUpperCase();
+    const custom = customTemplates[key];
 
-    /* Auth Overlay */
-    #auth-overlay {
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at top center, #2e284a, #161324);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-    }
-    .auth-card {
-      background: var(--bc-panel);
-      border: 1px solid var(--bc-border);
-      padding: 36px 32px;
-      border-radius: 16px;
-      width: 100%;
-      max-width: 420px;
-      text-align: center;
-      box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.6);
-    }
-    .auth-logo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-    .auth-logo svg { width: 32px; height: 32px; fill: none; stroke: var(--bc-teal); stroke-width: 2.2; }
-    .auth-card h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #fff; }
-    .auth-card p { font-size: 0.85rem; color: var(--bc-text-muted); margin-bottom: 24px; }
-    
-    .password-wrapper { position: relative; width: 100%; margin-bottom: 16px; }
-    .auth-input {
-      width: 100%;
-      padding: 12px 48px 12px 18px;
-      border-radius: 30px;
-      border: 1px solid var(--bc-border);
-      background: var(--bc-card-inner);
-      color: #fff;
-      font-size: 0.95rem;
-      outline: none;
-    }
-    .auth-input:focus { border-color: var(--bc-teal); }
-    .eye-toggle-btn {
-      position: absolute;
-      right: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--bc-text-muted);
-    }
-    .eye-toggle-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+    const subject = custom ? custom.subject : m.defaultSubj;
+    let body = custom ? custom.body : generateBlueprintCopy(branchKey, m.id);
 
-    .btn-brand-pill {
-      width: 100%;
-      background: var(--bc-purple-primary);
-      color: #fff;
-      border: none;
-      padding: 12px;
-      border-radius: 30px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .btn-brand-pill:hover { background: var(--bc-purple-hover); }
-    .reset-link { display: inline-block; margin-top: 16px; font-size: 0.8rem; color: var(--bc-teal); cursor: pointer; text-decoration: underline; }
+    body = personalizeGreeting(body, firstName);
 
-    /* Layout */
-    header {
-      background: var(--bc-panel);
-      border-bottom: 1px solid var(--bc-border);
-      padding: 18px 36px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .brand { display: flex; align-items: center; gap: 14px; }
-    .brand-svg { width: 28px; height: 28px; fill: none; stroke: var(--bc-teal); stroke-width: 2.2; }
-    .brand-title { font-family: 'Playfair Display', serif; font-size: 1.35rem; color: #fff; }
-    .brand-tag { font-size: 0.7rem; text-transform: uppercase; color: var(--bc-text-muted); margin-left: 6px; }
-
-    .nav-tabs { display: flex; gap: 8px; }
-    .tab-btn {
-      background: transparent;
-      border: none;
-      color: var(--bc-text-muted);
-      padding: 8px 18px;
-      border-radius: 30px;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-    .tab-btn.active { background: var(--bc-purple-primary); color: #fff; font-weight: 600; }
-
-    main { flex: 1; padding: 32px 36px; max-width: 1280px; margin: 0 auto; width: 100%; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-
-    .panel {
-      background: var(--bc-panel);
-      border: 1px solid var(--bc-border);
-      border-radius: 14px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--bc-border);
-    }
-    .panel-header h3 { font-family: 'Playfair Display', serif; font-size: 1.25rem; color: #fff; }
-
-    /* Tables */
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th {
-      background: var(--bc-card-inner);
-      padding: 12px 16px;
-      color: var(--bc-text-muted);
-      text-transform: uppercase;
-      font-size: 0.72rem;
-      border-bottom: 1px solid var(--bc-border);
-      text-align: left;
-    }
-    td { padding: 14px 16px; border-bottom: 1px solid #363052; color: #edeaf5; }
-    tr:hover td { background: #322b4e; }
-
-    .patient-link {
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: underline;
-      text-decoration-color: var(--bc-teal);
-    }
-    .patient-link:hover { color: var(--bc-teal); }
-
-    .status-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    .status-active { background: rgba(78, 205, 196, 0.15); color: var(--bc-teal); border: 1px solid rgba(78, 205, 196, 0.4); }
-    .status-hold { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
-    .status-discharged { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
-
-    .btn-action {
-      background: var(--bc-card-inner);
-      color: #edeaf5;
-      border: 1px solid var(--bc-border);
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      margin-right: 4px;
-    }
-    .btn-hold { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: #92400e; }
-    .btn-discharge { background: rgba(239, 68, 68, 0.2); color: #f87171; border-color: #991b1b; }
-
-    /* Timeline Drawer */
-    .drawer {
-      position: fixed;
-      top: 0;
-      right: -550px;
-      width: 520px;
-      height: 100vh;
-      background: var(--bc-panel);
-      border-left: 1px solid var(--bc-border);
-      box-shadow: -10px 0 35px rgba(0,0,0,0.6);
-      transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: 1500;
-      display: flex;
-      flex-direction: column;
-    }
-    .drawer.open { right: 0; }
-    .drawer-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--bc-border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
-
-    .timeline-card {
-      background: var(--bc-card-inner);
-      border: 1px solid var(--bc-border);
-      border-radius: 10px;
-      padding: 16px;
-      margin-bottom: 16px;
-    }
-    .timeline-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .form-control {
-      width: 100%;
-      background: var(--bc-panel);
-      border: 1px solid var(--bc-border);
-      border-radius: 8px;
-      padding: 10px;
-      color: #fff;
-      font-size: 0.85rem;
-      margin-bottom: 8px;
-      outline: none;
-    }
-    .form-control:focus { border-color: var(--bc-teal); }
-
-    /* Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 12, 25, 0.75);
-      backdrop-filter: blur(6px);
-      justify-content: center;
-      align-items: center;
-      z-index: 2100;
-    }
-    .modal.active { display: flex; }
-    .modal-card {
-      background: var(--bc-panel);
-      border: 1px solid var(--bc-border);
-      border-radius: 16px;
-      padding: 28px;
-      max-width: 440px;
-      width: 100%;
-    }
-  </style>
-</head>
-<body>
-
-  <!-- AUTH OVERLAY -->
-  <div id="auth-overlay">
-    <div class="auth-card">
-      <div class="auth-logo">
-        <svg viewBox="0 0 24 24"><path d="M2 12c3-4 6-4 8 0s5 4 8 0 4-4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <h2>Band Connect</h2>
-      </div>
-      <p>Clinical Communications & Lifecycle Portal</p>
-      
-      <div class="password-wrapper">
-        <input type="password" id="portal-pass" class="auth-input" placeholder="Enter Staff Access PIN" />
-        <button type="button" class="eye-toggle-btn" onclick="togglePasswordVisibility('portal-pass', 'eye-icon-main')">
-          <svg id="eye-icon-main" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-        </button>
-      </div>
-
-      <button class="btn-brand-pill" onclick="validatePassword()">Access Portal</button>
-      <div id="auth-err" style="color: #f87171; font-size: 0.8rem; margin-top: 12px; display: none;">Invalid PIN code. Please try again.</div>
-      <span class="reset-link" onclick="openResetModal()">Forgot Password / Reset Access</span>
-    </div>
-  </div>
-
-  <!-- LEADERSHIP RESET MODAL -->
-  <div class="modal" id="reset-modal">
-    <div class="modal-card">
-      <h3 style="font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #fff; margin-bottom: 8px;">Reset Staff Access</h3>
-      <p style="font-size: 0.8rem; color: var(--bc-text-muted); margin-bottom: 18px;">Enter an authorized leadership email for a 6-digit PIN.</p>
-      <input type="email" id="leader-email" class="auth-input" style="margin-bottom: 16px;" placeholder="leadership@bandconnect.net" />
-      <button class="btn-brand-pill" onclick="requestPin()">Send Reset PIN</button>
-      
-      <div id="pin-section" style="display: none; margin-top: 20px; border-top: 1px solid var(--bc-border); padding-top: 20px;">
-        <input type="text" id="pin-code" class="auth-input" style="margin-bottom: 16px;" placeholder="6-digit PIN" maxlength="6" />
-        <input type="password" id="new-password" class="auth-input" style="margin-bottom: 16px;" placeholder="New Password" />
-        <button class="btn-brand-pill" onclick="verifyPinAndSave()">Update Password</button>
-      </div>
-      <button class="btn-action" style="margin-top: 14px; width: 100%; border-radius: 30px; padding: 10px;" onclick="closeResetModal()">Cancel</button>
-    </div>
-  </div>
-
-  <!-- APP HEADER -->
-  <header>
-    <div class="brand">
-      <svg class="brand-svg" viewBox="0 0 24 24"><path d="M2 12c3-4 6-4 8 0s5 4 8 0 4-4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="brand-title">Band Connect</span>
-      <span class="brand-tag">Staff Portal</span>
-    </div>
-    <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('patients')">Patient Directory</button>
-      <button class="tab-btn" onclick="switchTab('templates')">Template Studio</button>
-    </div>
-  </header>
-
-  <!-- MAIN APP -->
-  <main>
-    <!-- TAB 1: PATIENTS -->
-    <div id="tab-patients" class="tab-content active">
-      <div class="panel">
-        <div class="panel-header">
-          <h3>Patient Roster & Outreach Lifecycle</h3>
-          <button class="btn-action" onclick="loadPatients()">Refresh Roster</button>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Patient Name (Click to view Sequence)</th>
-              <th>Clinic</th>
-              <th>Device Extremity</th>
-              <th>Condition</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="patient-rows">
-            <tr><td colspan="6" style="text-align: center; color: var(--bc-text-muted); padding: 30px;">Loading patient records...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- TAB 2: GLOBAL BLUEPRINT STUDIO (CLEAN & SIMPLE) -->
-    <div id="tab-templates" class="tab-content">
-      <div class="panel">
-        <div class="panel-header">
-          <h3>Global Blueprint Studio</h3>
-          <span style="font-size: 0.8rem; color: var(--bc-text-muted);">Select extremity and day to review or update the default message.</span>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
-          <div>
-            <div class="form-group">
-              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Extremity Branch</label>
-              <select id="tpl-branch" class="form-control" onchange="loadPresetTemplate()">
-                <option value="LE">Lower Extremity (Cuff)</option>
-                <option value="UE">Upper Extremity (Handle)</option>
-              </select>
-            </div>
-
-            <div class="form-group" style="margin-top:14px;">
-              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Milestone Day</label>
-              <select id="tpl-step" class="form-control" onchange="loadPresetTemplate()">
-                <option value="m_d1" data-offset="1">Day 1: Welcome & Setup</option>
-                <option value="m_d3" data-offset="3">Day 3: Cues & Haptics</option>
-                <option value="m_d7" data-offset="7">Day 7: Assessments & Charging</option>
-                <option value="m_d10" data-offset="10">Day 10: Build Routine</option>
-                <option value="m_d14" data-offset="14">Day 14: Two Weeks Down</option>
-                <option value="m_d21" data-offset="21">Day 21: Three Weeks Milestone</option>
-                <option value="m_d28" data-offset="28">Day 28: 1 Month Goal Setting</option>
-                <option value="m_d32" data-offset="32">Day 32: Assessments Reminder</option>
-                <option value="m_dis" data-offset="0">Discharge: Therapy Completion</option>
-              </select>
-            </div>
-
-            <input type="hidden" id="tpl-offset" value="1" />
-          </div>
-
-          <div>
-            <div class="form-group">
-              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Subject Line</label>
-              <input type="text" id="tpl-subject" class="form-control" />
-            </div>
-
-            <div class="form-group" style="margin-top:14px;">
-              <label style="color:var(--bc-text-muted); font-size:0.8rem; display:block; margin-bottom:4px;">Email Message (Copy & Paste from Word)</label>
-              <textarea id="tpl-body" class="form-control" style="height: 230px; line-height: 1.5; resize: vertical;"></textarea>
-            </div>
-
-            <button class="btn-brand-pill" style="border-radius: 8px; margin-top: 10px;" onclick="saveTemplate()">
-              💾 Save as Global Default
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- PATIENT TIMELINE DRAWER -->
-  <div id="patient-drawer" class="drawer">
-    <div class="drawer-header">
-      <div>
-        <h3 id="drawer-patient-name" style="color: #fff; font-family: 'Playfair Display', serif;">Patient Sequence</h3>
-        <span id="drawer-patient-meta" style="font-size: 0.8rem; color: var(--bc-text-muted);">Loading...</span>
-      </div>
-      <button class="btn-action" onclick="closeDrawer()">✕ Close</button>
-    </div>
-    <div class="drawer-body">
-      <p style="font-size: 0.8rem; color: var(--bc-teal); margin-bottom: 16px;">
-        💡 Select a date with the calendar picker to queue automated delivery, or dispatch immediately.
-      </p>
-      <div id="timeline-list"></div>
-    </div>
-  </div>
-
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzZhcXbEJAOBNSnXqHur3a-lw2UAH_Oi__vj9QPVuxanZP0G3v5UBCmhml8_CVYuwEe/exec";
-    let activePatientData = null;
-
-    // Direct pre-loaded blueprints from the clinical emails Word docs
-    const DEFAULT_PRESETS = {
-      LE: {
-        m_d1: {
-          subj: '🥳 CONGRATULATIONS!',
-          body: `Hey,\n\nCongratulations on completing your first in-clinic visit with Band Connect![cite: 1]\n\nAs with any new experience, these first few days can be the hardest, but we’re here to help[cite: 1]. If you have any questions, please don’t hesitate to reply to this email or reach out to 513-202-3370[cite: 1].\n\nTo get started, follow the steps below:\nSTEP 1: Make sure your phone is connected to WiFi or has Cellular data enabled[cite: 1].\nSTEP 2: Log in to the Band Connect mobile app[cite: 1].\nSTEP 3: Once you’re logged in, the app will guide you through your assigned treatments[cite: 1]. Please complete all sessions and assessments displayed on the home screen each day[cite: 1].\n\nQuick Tip: Good form is key! Be sure to follow the pace and range of motion set by your clinician[cite: 1]. If using resistance bands, keep the cuff in the correct orientation[cite: 1].`
-        },
-        m_d3: {
-          subj: 'Stay on Track: Key Cues for Your Sessions',
-          body: `Hi,\n\nYou're already halfway through your first week of recovery[cite: 1]. Keep up the great work![cite: 1]\n\nAs you do your exercises with Band Connect, make sure to follow the text and audio cues[cite: 1]. When using the Band Connect Cuff, you’ll also feel the haptic cues (gentle vibrations)[cite: 1]. The Cuff will buzz to tell you when to start, and then buzz again after the “Hold” time to signal it’s time to return to the starting position[cite: 1].\n\nBy following these cues, you’ll stay aligned with what you and your clinician practiced in the clinic[cite: 1].`
-        },
-        m_d7: {
-          subj: 'One Week Down! Let’s Cover a Few Reminders',
-          body: `Hello,\n\nCongratulations on completing your first week of recovery![cite: 1] You’ve made it through one of the toughest parts of your journey[cite: 1].\n\nTo stay on track, please check the Assessments tab in the app and complete any items still marked in purple[cite: 1]. These are important for your clinician to monitor your progress and adjust your care plan[cite: 1].\n\nA few quick reminders:\n• Charge your Cuff overnight using the included charging cable[cite: 1].\n• Check your resistance bands before exercising[cite: 1].`
-        },
-        m_d10: {
-          subj: 'Build Your Routine – Every Session Counts!',
-          body: `Hello,\n\nYou're well on your way to a strong recovery![cite: 1] Progress might not always feel immediate, but every session you complete is another step toward your goals[cite: 1].\n\nBuilding a consistent exercise routine is one of the best things you can do for your recovery[cite: 1]. Making Band Connect part of your daily routine will help you stay on track and get the most from your treatment[cite: 1].\n\nQuick Tip: Follow the exercise pace set by your clinician in the app[cite: 1].`
-        },
-        m_d14: {
-          subj: 'Two Weeks Down! You’re on a roll!',
-          body: `Hi,\n\nCongratulations on completing your first two weeks of recovery with Band Connect![cite: 1] Your dedication is inspiring, and we hope you're starting to notice the progress[cite: 1].\n\nAs you continue, remember that Band Connect is designed to support, not replace, your in-person treatment[cite: 1]. Staying engaged with your clinician and attending in-clinic visits is essential to achieving your recovery goals[cite: 1].`
-        },
-        m_d21: {
-          subj: 'Three Weeks Down!',
-          body: `Hello,\n\nCongratulations—you’ve officially completed three weeks of treatment![cite: 1] That is an important milestone[cite: 1]. You’ve worked hard, your dedication is paying off, and we’re proud of the progress you're making[cite: 1].\n\nRecovery is hard work![cite: 1] If you ever feel frustrated, it’s okay to take a step back and rest[cite: 1]. Keep focusing on where you want to be by the end of therapy because you’ve got this![cite: 1]`
-        },
-        m_d28: {
-          subj: '1 Month Down - Keep it up!',
-          body: `Hello,\n\nMany people struggle to stick to their full treatment plan, but your commitment has been outstanding![cite: 1] Maintaining this level of accountability will have a direct, positive impact on your full recovery[cite: 1].\n\nOne of the best ways to stay motivated is by setting a personal goal[cite: 1]. Think about something meaningful you’d like to return to or improve—like walking longer distances, climbing stairs with ease, golfing, or gardening![cite: 1]`
-        },
-        m_d32: {
-          subj: 'Reminder: Complete Your Assessments',
-          body: `Hello,\n\nWe hope you’re feeling better as you continue your recovery journey with Band Connect![cite: 1] As part of your treatment plan, please remember to complete your assessments in the Assessments Tab of your Band Connect app[cite: 1].\n\nThese assessments help your clinician monitor your progress and make any necessary adjustments to best support your recovery[cite: 1].`
-        },
-        m_dis: {
-          subj: 'Congratulations on Completing Your Therapy with Band Connect!',
-          body: `Hello,\n\nCongratulations on your achievement![cite: 1] You've truly beaten the odds[cite: 1]. Your commitment to your recovery will undoubtedly have a lasting impact on your healing[cite: 1].\n\nWe have just two final actions for you:\n1. If you haven’t done so already, please return your kit to your clinic[cite: 1].\n2. Fill out our completion survey to share your experience with Band Connect[cite: 1].\n\nThank you once again, and best of luck with your continued recovery![cite: 1]`
-        }
-      },
-      UE: {
-        m_d1: {
-          subj: '🥳 CONGRATULATIONS!',
-          body: `Hey,\n\nCongratulations on completing your first in-clinic visit with Band Connect![cite: 2]\n\nWhen you log in to the Band Connect app today, it will guide you through your assigned treatments[cite: 2]. Before each exercise begins, make sure you start in the correct position by aligning the handle with the on-screen shadow[cite: 2].\n\nQuick Tip: Good form is key! If using resistance bands, keep your wrists firm and follow the pace set by your clinician[cite: 2].`
-        },
-        m_d3: {
-          subj: 'Stay on Track: Key Cues for Your Sessions',
-          body: `Hello,\n\nYou're halfway through the first week of treatment—keep up the hard work![cite: 2]\n\nAs you complete your exercises, follow the text and audio cues[cite: 2]. When using the Band Connect handles, you’ll also receive haptic cues (gentle vibrations) during each movement[cite: 2]. The handles will buzz to tell you when to start, and then buzz again after the “Hold” time[cite: 2].`
-        },
-        m_d7: {
-          subj: 'One Week Down! Let’s Cover a Few Reminders',
-          body: `Hello,\n\nCongratulations on completing your first week of recovery![cite: 2] By now, you should be familiar with Band Connect and your personalized therapy treatment[cite: 2].\n\nTo stay on track, please check the Assessments tab in the app and complete any items marked in purple[cite: 2].\n\nReminders: Plug the handles in overnight to recharge, and use the strain check before exercising[cite: 2].`
-        },
-        m_d10: {
-          subj: 'Build Your Routine – Every Session Counts!',
-          body: `Hello,\n\nYou're well on your way to a strong recovery![cite: 2] While progress might not always feel immediate, every session you complete is a step toward your goal[cite: 2].\n\nBuilding a consistent exercise routine is one of the best things you can do for your recovery[cite: 2]. Pay attention to the onscreen hold cues for the best results[cite: 2].`
-        },
-        m_d14: {
-          subj: 'Two Weeks Down! You’re on a roll!',
-          body: `Hi,\n\nCongratulations on completing your first two weeks of recovery with Band Connect![cite: 2] Your dedication is inspiring[cite: 2].\n\nStaying engaged with your clinician and attending in-clinic visits is essential to achieving your recovery goals[cite: 2]. Band Connect helps by tracking your exercises and giving real-time feedback to keep you on course[cite: 2].`
-        },
-        m_d21: {
-          subj: 'Three Weeks Down!',
-          body: `Hello,\n\nCongratulations—you’ve officially completed three weeks of treatment![cite: 2] That’s no small feat[cite: 2]. You’ve put in a lot of work, and your dedication is paying off[cite: 2].\n\nRemember this is hard work! If you find yourself getting frustrated, give yourself permission to step back and take a breather[cite: 2]. Keep visualizing where you want to be![cite: 2]`
-        },
-        m_d28: {
-          subj: '1 Month Down - Keep it up!',
-          body: `Hello,\n\nMany people struggle to stick to their full treatment plan, but your commitment has been outstanding![cite: 2]\n\nThink about a meaningful personal goal you’d like to return to—like lifting groceries, reaching overhead, cooking, or yard work[cite: 2]. Writing your goal down and keeping it visible can help you stay focused[cite: 2].`
-        },
-        m_d32: {
-          subj: 'Reminder: Complete Your Assessments',
-          body: `Hello,\n\nWe hope you’re feeling better as you continue your recovery journey with Band Connect![cite: 2] As part of your treatment plan, don’t forget to complete your assessments in the Assessments Tab of your Band Connect app[cite: 2].`
-        },
-        m_dis: {
-          subj: 'Congratulations on Completing Your Therapy with Band Connect!',
-          body: `Hello,\n\nCongratulations on your achievement![cite: 2] Your commitment to your recovery will undoubtedly have a lasting impact on your healing[cite: 2].\n\nPlease return your kit to your clinic and take a moment to share your experience on our completion survey[cite: 2]. Best of luck with your continued recovery![cite: 2]`
-        }
-      }
+    return {
+      id: m.id,
+      title: m.title,
+      scheduledDate: dateStr,
+      isoDate: isoDate,
+      subject: subject,
+      branch: branchKey,
+      defaultBody: body
     };
+  });
 
-    function loadPresetTemplate() {
-      const branch = document.getElementById('tpl-branch').value;
-      const stepSelect = document.getElementById('tpl-step');
-      const step = stepSelect.value;
-      
-      const offset = stepSelect.options[stepSelect.selectedIndex].getAttribute('data-offset');
-      document.getElementById('tpl-offset').value = offset || 1;
+  return createJsonResponse({
+    success: true,
+    patientName: patientName,
+    email: email,
+    deviceType: deviceType,
+    timeline: timeline
+  });
+}
 
-      if (DEFAULT_PRESETS[branch] && DEFAULT_PRESETS[branch][step]) {
-        document.getElementById('tpl-subject').value = DEFAULT_PRESETS[branch][step].subj;
-        document.getElementById('tpl-body').value = DEFAULT_PRESETS[branch][step].body;
-      }
+function getCustomTemplatesMap() {
+  const map = {};
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const tplSheet = ss.getSheetByName(CONFIG.TEMPLATE_SHEET);
+  if (!tplSheet) return map;
+
+  const data = tplSheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    const branch = String(data[i][0] || '').toUpperCase().trim();
+    const milestoneId = String(data[i][1] || '').trim();
+    const subject = String(data[i][3] || '').trim();
+    const body = String(data[i][4] || '').trim();
+
+    if (branch && milestoneId) {
+      map[`${branch}_${milestoneId}`.toUpperCase()] = { subject, body };
     }
+  }
+  return map;
+}
 
-    function togglePasswordVisibility(inputId, iconId) {
-      const input = document.getElementById(inputId);
-      input.type = input.type === 'password' ? 'text' : 'password';
+function personalizeGreeting(rawText, firstName) {
+  if (!rawText) return '';
+  let cleaned = rawText
+    .replace(/{{\s*contact\.firstname\s*}}/gi, firstName)
+    .replace(/{{\s*first_name\s*}}/gi, firstName);
+
+  if (/^(Hello|Hey|Hi|Dear)\s*,/i.test(cleaned)) {
+    cleaned = cleaned.replace(/^(Hello|Hey|Hi|Dear)\s*,/i, `$1 ${firstName},`);
+  }
+  return cleaned;
+}
+
+function handleSaveTemplate(payload) {
+  const { branch, step, offset, subject, htmlBody } = payload;
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let tplSheet = ss.getSheetByName(CONFIG.TEMPLATE_SHEET);
+  
+  if (!tplSheet) {
+    tplSheet = ss.insertSheet(CONFIG.TEMPLATE_SHEET);
+    tplSheet.appendRow(['Branch', 'Milestone ID', 'Day Offset', 'Subject', 'Body Text', 'Last Updated']);
+  }
+
+  const data = tplSheet.getDataRange().getValues();
+  let existingRow = -1;
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).toUpperCase() === String(branch).toUpperCase() && 
+        String(data[i][1]) === String(step)) {
+      existingRow = i + 1;
+      break;
     }
+  }
 
-    function validatePassword() {
-      const pass = document.getElementById('portal-pass').value;
-      if (pass === "BandConnect2026!") {
-        document.getElementById('auth-overlay').style.display = 'none';
-        loadPatients();
-        loadPresetTemplate();
-      } else {
-        document.getElementById('auth-err').style.display = 'block';
-      }
-    }
+  const timestamp = new Date().toLocaleString();
+  if (existingRow !== -1) {
+    tplSheet.getRange(existingRow, 3, 1, 4).setValues([[offset, subject, htmlBody, timestamp]]);
+  } else {
+    tplSheet.appendRow([branch, step, offset, subject, htmlBody, timestamp]);
+  }
 
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      if (tabId === 'patients') {
-        document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
-        document.getElementById('tab-patients').classList.add('active');
-      } else {
-        document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
-        document.getElementById('tab-templates').classList.add('active');
-      }
-    }
+  return createJsonResponse({ 
+    success: true, 
+    message: `Default template for ${branch} (${step}) updated successfully!` 
+  });
+}
 
-    async function loadPatients() {
-      const tbody = document.getElementById('patient-rows');
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--bc-text-muted); padding: 30px;">Loading patient roster...</td></tr>';
+// ----------------------------------------------------
+// EMAIL DISPATCH ENGINE
+// ----------------------------------------------------
 
-      try {
-        const res = await fetch(`${API_URL}?action=GET_PATIENTS`);
-        const result = await res.json();
-        if (!result.success || !result.data) {
-          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#f87171;padding:20px;">Failed to load roster.</td></tr>`;
-          return;
-        }
+function handleDispatchCustomEmail(payload) {
+  const { recipientEmail, subject, htmlBody, patientName } = payload;
+  if (!recipientEmail || !htmlBody) {
+    return createJsonResponse({ success: false, message: 'Missing recipient or email body' });
+  }
 
-        tbody.innerHTML = '';
-        result.data.forEach(p => {
-          const tr = document.createElement('tr');
-          const statusClass = `status-${(p.status || '').toLowerCase().replace(/\s+/g, '')}`;
-          tr.innerHTML = `
-            <td><span class="patient-link" onclick="openPatientDrawer(${p.rowNumber})">${p.patientName}</span></td>
-            <td>${p.clinic || '—'}</td>
-            <td>${p.deviceType || '—'}</td>
-            <td>${p.condition || '—'}</td>
-            <td><span class="status-badge ${statusClass}">${p.status || 'Active'}</span></td>
-            <td>
-              <button class="btn-action" onclick="updateStatus(${p.rowNumber}, 'Active')">Active</button>
-              <button class="btn-action btn-hold" onclick="updateStatus(${p.rowNumber}, 'Hold')">Hold</button>
-              <button class="btn-action btn-discharge" onclick="updateStatus(${p.rowNumber}, 'Discharged')">Discharge</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#f87171;padding:20px;">Connection Error</td></tr>`;
-      }
-    }
+  const target = CONFIG.SANDBOX_TEST_MODE ? CONFIG.TEST_EMAIL_OVERRIDE : recipientEmail;
+  const banner = CONFIG.SANDBOX_TEST_MODE ? `
+    <div style="background:#fef3c7;border:1px solid #f59e0b;padding:12px;border-radius:6px;margin-bottom:18px;color:#92400e;font-family:sans-serif;font-size:13px;">
+      ⚠️ <strong>PORTAL MANUAL DISPATCH TEST</strong><br>
+      <strong>Intended Recipient:</strong> ${recipientEmail}<br>
+      <strong>Patient:</strong> ${patientName}
+    </div>` : '';
 
-    async function updateStatus(rowNumber, newStatus) {
-      if (!confirm(`Update Row ${rowNumber} to ${newStatus}?`)) return;
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'UPDATE_PATIENT_STATUS', rowNumber: rowNumber, newStatus: newStatus })
-        });
-        const result = await res.json();
-        alert(result.message);
-        loadPatients();
-      } catch (err) {
-        alert('Update dispatched');
-        loadPatients();
-      }
-    }
+  const formattedBody = htmlBody.includes('<p>') 
+    ? htmlBody 
+    : htmlBody.split(/\n\s*\n/).map(para => `<p style="margin-bottom: 14px;">${para.replace(/\n/g, '<br>')}</p>`).join('');
 
-    async function openPatientDrawer(rowNumber) {
-      const drawer = document.getElementById('patient-drawer');
-      const list = document.getElementById('timeline-list');
-      list.innerHTML = '<p style="color:var(--bc-text-muted); font-size:0.85rem;">Generating milestone timeline...</p>';
-      drawer.classList.add('open');
+  const fullHtml = `
+    <div style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #1f2937; line-height: 1.6; max-width: 600px;">
+      ${banner}
+      ${formattedBody}
+      <p style="margin-top: 20px; margin-bottom: 0; color: #4b5563;">
+        Tara<br>
+        The Band Connect Support Team<br>
+        (513) 202-3370<br>
+        <a href="mailto:support@bandconnect.net" style="color: #2563eb; text-decoration: none;">support@bandconnect.net</a>
+      </p>
+      <div style="margin-top: 16px;">
+        <img src="${CONFIG.GITHUB_LOGO_URL}" alt="Band Connect" width="130" style="display: block; width: 130px; height: auto; border: 0;" />
+      </div>
+    </div>
+  `;
 
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'GET_PATIENT_TIMELINE', rowNumber: rowNumber })
-        });
-        const result = await res.json();
-        if (!result.success) return alert(result.message);
+  GmailApp.sendEmail(target, (CONFIG.SANDBOX_TEST_MODE ? '[SANDBOX TEST] ' : '') + subject, '', {
+    htmlBody: fullHtml,
+    name: 'The Band Connect Support Team',
+    replyTo: 'support@bandconnect.net'
+  });
 
-        activePatientData = result;
-        activePatientData.rowNumber = rowNumber;
+  return createJsonResponse({ success: true, message: `Dispatched safely to ${target}` });
+}
 
-        document.getElementById('drawer-patient-name').textContent = result.patientName;
-        document.getElementById('drawer-patient-meta').textContent = `${result.deviceType} | Email: ${result.email || 'None'}`;
+function generateBlueprintCopy(branch, milestoneId) {
+  const isUE = branch === 'UE';
+  const journey = isUE ? 'treatment' : 'recovery';
+  const hardware = isUE ? 'handles' : 'cuff';
 
-        list.innerHTML = '';
-        result.timeline.forEach(step => {
-          const cleanBody = (step.defaultBody || '').replace(/<\/?[^>]+(>|$)/g, '\n').replace(/\n\s*\n/g, '\n\n').trim();
+  switch (milestoneId) {
+    case 'm_d1':
+      return `Hey,\n\nCongratulations on completing your first in-clinic visit with Band Connect!\n\nWhen you log in to the app today, it will guide you through your assigned sessions and assessments. Good form is key—make sure to maintain the correct orientation with your ${hardware}!`;
+    case 'm_d3':
+      return `Hello,\n\nYou're halfway through your first week of ${journey}—keep up the great work!\n\nRemember to follow the onscreen text and gentle haptic buzzing cues on your ${hardware}. The device will buzz to tell you when to start and buzz again once your hold time is completed.`;
+    case 'm_d7':
+      return `Hello,\n\nCongratulations on completing your first week! Please check the Assessments tab in the app and complete any items marked in purple.\n\nQuick reminder: remember to charge your ${hardware} using the included cable!`;
+    case 'm_d10':
+      return `Hello,\n\nBuilding a consistent exercise routine is one of the best things you can do for your ${journey}. Following the pace and hold times set by your clinician ensures optimal results.`;
+    case 'm_d14':
+      return `Hi,\n\nCongratulations on completing two weeks! Remember that Band Connect works alongside your in-person clinic visits to keep you supported every step of the way.`;
+    case 'm_d21':
+      return `Hello,\n\nThree weeks completed! That is an important milestone. Every rep brings you closer to your recovery goals—keep up the amazing work.`;
+    case 'm_d28':
+      return `Hello,\n\nOne month down! Think about a personal activity you are looking forward to enjoying again and keep that goal in focus this week.`;
+    case 'm_d32':
+      return `Hello,\n\nQuick reminder to complete your progress assessments in the app to keep your clinician updated on your recovery.`;
+    case 'm_dis':
+      return `Hello,\n\nCongratulations on completing your therapy with Band Connect! Please remember to return your kit to your clinic during your next visit.`;
+    default:
+      return `Hello,\n\nKeep up the great work with your Band Connect ${journey}!`;
+  }
+}
 
-          const card = document.createElement('div');
-          card.className = 'timeline-card';
-          card.innerHTML = `
-            <div class="timeline-card-header">
-              <strong style="color:#fff; font-size:0.85rem;">${step.title}</strong>
-              <span style="font-size:0.75rem; color:var(--bc-teal);">${step.scheduledDate}</span>
-            </div>
-
-            <div style="margin-bottom: 8px;">
-              <label style="font-size:0.75rem; color:var(--bc-text-muted); display:block; margin-bottom:4px;">Target Dispatch Date:</label>
-              <input type="date" id="date-${step.id}" class="form-control" style="padding:6px 10px; font-size:0.8rem;" value="${step.isoDate || ''}">
-            </div>
-
-            <div style="font-size:0.75rem; color:var(--bc-text-muted); margin-bottom:4px;">Subject:</div>
-            <input type="text" id="subj-${step.id}" class="form-control" style="font-size:0.8rem; margin-bottom:8px;" value="${step.subject}">
-
-            <div style="font-size:0.75rem; color:var(--bc-text-muted); margin-bottom:4px;">Message:</div>
-            <textarea id="msg-${step.id}" class="form-control" style="height:120px; font-size:0.8rem; line-height:1.4; resize:vertical;">${cleanBody}</textarea>
-
-            <div style="display: flex; gap: 8px; margin-top: 10px;">
-              <button class="btn-brand-pill" style="padding:8px 12px; font-size:0.75rem; width:50%; background:var(--bc-teal); color:#1a1727;" 
-                onclick="processOutreach('${step.id}', 'MANUAL_NOW')">
-                🚀 Send Now (Manual)
-              </button>
-              <button class="btn-brand-pill" style="padding:8px 12px; font-size:0.75rem; width:50%; background:var(--bc-purple-primary);" 
-                onclick="processOutreach('${step.id}', 'SCHEDULE_AUTO')">
-                📅 Set Automated
-              </button>
-            </div>
-          `;
-          list.appendChild(card);
-        });
-      } catch (err) {
-        list.innerHTML = '<p style="color:#f87171; font-size:0.85rem;">Failed to load patient timeline.</p>';
-      }
-    }
-
-    function closeDrawer() {
-      document.getElementById('patient-drawer').classList.remove('open');
-    }
-
-    async function processOutreach(stepId, mode) {
-      const chosenDate = document.getElementById(`date-${stepId}`).value;
-      const subject = document.getElementById(`subj-${stepId}`).value;
-      const bodyText = document.getElementById(`msg-${stepId}`).value;
-
-      const confirmMsg = mode === 'MANUAL_NOW'
-        ? `Send this email right now to ${activePatientData.patientName}?`
-        : `Schedule this email for ${chosenDate} for ${activePatientData.patientName}?`;
-
-      if (!confirm(confirmMsg)) return;
-
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'SCHEDULE_PATIENT_EMAIL',
-            dispatchMode: mode,
-            rowNumber: activePatientData.rowNumber,
-            milestoneId: stepId,
-            sendDate: chosenDate,
-            subject: subject,
-            bodyText: bodyText,
-            recipientEmail: activePatientData.email,
-            patientName: activePatientData.patientName
-          })
-        });
-        const result = await res.json();
-        alert(result.message);
-      } catch (err) {
-        alert('Request processed in sandbox environment.');
-      }
-    }
-
-    async function saveTemplate() {
-      const payload = {
-        action: 'SAVE_TEMPLATE',
-        branch: document.getElementById('tpl-branch').value,
-        step: document.getElementById('tpl-step').value,
-        offset: parseInt(document.getElementById('tpl-offset').value, 10),
-        subject: document.getElementById('tpl-subject').value,
-        htmlBody: document.getElementById('tpl-body').value
-      };
-      const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-      const result = await res.json();
-      alert(result.message || 'Saved successfully!');
-    }
-
-    function openResetModal() { document.getElementById('reset-modal').classList.add('active'); }
-    function closeResetModal() { document.getElementById('reset-modal').classList.remove('active'); }
-
-    async function requestPin() {
-      const email = document.getElementById('leader-email').value;
-      if (!email) return alert('Enter email');
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'REQUEST_PASSWORD_RESET', leadershipEmail: email })
-      });
-      const result = await res.json();
-      alert(result.message);
-      if (result.success) document.getElementById('pin-section').style.display = 'block';
-    }
-
-    async function verifyPinAndSave() {
-      const pin = document.getElementById('pin-code').value;
-      const newPassword = document.getElementById('new-password').value;
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'VERIFY_RESET_PIN', pin: pin, newPassword: newPassword })
-      });
-      const result = await res.json();
-      alert(result.message);
-      if (result.success) closeResetModal();
-    }
-  </script>
-</body>
-</html>
+function createJsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
