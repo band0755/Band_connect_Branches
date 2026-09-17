@@ -59,12 +59,40 @@
       display: flex; align-items: center; justify-content: center; gap: 10px;
     }
     .auth-box p { font-size: 14px; color: var(--bc-text-muted); margin-bottom: 24px; }
+    
+    /* Password / PIN Wrapper with Eye Toggle */
+    .password-wrapper {
+      position: relative;
+      width: 100%;
+      margin-bottom: 16px;
+    }
     .auth-input {
-      width: 100%; padding: 12px 16px; background: rgba(22, 19, 41, 0.7);
+      width: 100%; padding: 12px 42px 12px 16px; background: rgba(22, 19, 41, 0.7);
       border: 1px solid var(--bc-border); border-radius: 30px; color: #fff;
-      font-size: 15px; text-align: center; margin-bottom: 16px; outline: none;
+      font-size: 15px; text-align: center; outline: none;
     }
     .auth-input:focus { border-color: var(--bc-purple-primary); }
+    .toggle-password-btn {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--bc-text-muted);
+      cursor: pointer;
+      font-size: 15px;
+      outline: none;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s ease;
+    }
+    .toggle-password-btn:hover {
+      color: #ffffff;
+    }
+
     .btn-auth {
       width: 100%; padding: 12px; background: var(--bc-purple-primary); border: none;
       border-radius: 30px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
@@ -135,46 +163,37 @@
     td { padding: 14px 16px; border-bottom: 1px solid var(--bc-border); color: var(--bc-text); vertical-align: middle; }
     tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
     
-    /* ----------------------------------------------------
-       SHEET-MATCHED STATUS STYLES (Color-Matched Borders & Fonts)
-       ---------------------------------------------------- */
+    /* Sheet Matched Status Colors */
     .status-select {
       font-size: 12px; font-weight: 700; padding: 6px 12px;
       border-radius: 20px; outline: none; cursor: pointer;
       transition: all 0.2s ease;
     }
-
-    /* Active -> Green */
     .status-active {
       background: rgba(16, 185, 129, 0.12) !important;
       color: #34d399 !important;
       border: 1px solid #10b981 !important;
     }
-    /* Enrolled -> Yellow */
     .status-enrolled {
       background: rgba(245, 158, 11, 0.12) !important;
       color: #fbbf24 !important;
       border: 1px solid #f59e0b !important;
     }
-    /* Dropped Out -> Red */
     .status-dropped-out {
       background: rgba(239, 68, 68, 0.12) !important;
       color: #f87171 !important;
       border: 1px solid #ef4444 !important;
     }
-    /* Hold -> Pink */
     .status-hold {
       background: rgba(236, 72, 153, 0.12) !important;
       color: #f472b6 !important;
       border: 1px solid #ec4899 !important;
     }
-    /* Discharged -> Blue */
     .status-discharged {
       background: rgba(59, 130, 246, 0.12) !important;
       color: #60a5fa !important;
       border: 1px solid #3b82f6 !important;
     }
-    /* Didn't Start -> White */
     .status-didnt-start {
       background: rgba(255, 255, 255, 0.08) !important;
       color: #ffffff !important;
@@ -281,7 +300,15 @@
         <div>band<strong style="font-weight: 300;">CONNECT</strong></div>
       </div>
       <p>Provider Outreach & Roster Portal</p>
-      <input type="password" id="pinInput" class="auth-input" placeholder="Enter Authorization PIN" autofocus />
+      
+      <!-- PIN Input with Eye Toggle -->
+      <div class="password-wrapper">
+        <input type="password" id="pinInput" class="auth-input" placeholder="Enter Authorization PIN" autofocus />
+        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('pinInput', 'loginEyeIcon')" title="Toggle PIN Visibility">
+          <i id="loginEyeIcon" class="fa-solid fa-eye"></i>
+        </button>
+      </div>
+
       <button class="btn-auth" onclick="submitLogin()">Access Portal</button>
       <div>
         <button class="auth-link" onclick="openForgotView()">Forgot / Reset PIN?</button>
@@ -297,7 +324,9 @@
         <span style="font-size: 18px; color: var(--bc-teal);">Security Verification</span>
       </div>
       <p>Enter an authorized leadership email (Rohit, Abby, or Tara) to receive a 6-digit verification code.</p>
-      <input type="email" id="resetEmailInput" class="auth-input" placeholder="e.g. r.nayak@bandconnect.net" />
+      <div class="password-wrapper">
+        <input type="email" id="resetEmailInput" class="auth-input" placeholder="e.g. r.nayak@bandconnect.net" style="padding-right: 16px;" />
+      </div>
       <button class="btn-auth" onclick="requestResetCode()">Send 6-Digit Code</button>
       <div>
         <button class="auth-link" onclick="backToLogin()">← Back to Login</button>
@@ -313,8 +342,15 @@
         <span style="font-size: 18px; color: var(--bc-purple-primary);">Set New PIN</span>
       </div>
       <p id="verifyInstruction">Enter the 6-digit verification code sent to your email.</p>
-      <input type="text" id="resetCodeInput" class="auth-input" placeholder="6-Digit Verification Code" maxlength="6" />
-      <input type="password" id="newPinInput" class="auth-input" placeholder="Enter New Portal PIN" />
+      <div class="password-wrapper">
+        <input type="text" id="resetCodeInput" class="auth-input" placeholder="6-Digit Verification Code" maxlength="6" style="padding-right: 16px;" />
+      </div>
+      <div class="password-wrapper">
+        <input type="password" id="newPinInput" class="auth-input" placeholder="Enter New Portal PIN" />
+        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('newPinInput', 'resetEyeIcon')" title="Toggle PIN Visibility">
+          <i id="resetEyeIcon" class="fa-solid fa-eye"></i>
+        </button>
+      </div>
       <button class="btn-auth" onclick="verifyAndSetNewPin()">Update Portal PIN</button>
       <div>
         <button class="auth-link" onclick="backToLogin()">Cancel</button>
@@ -444,6 +480,23 @@
       document.getElementById('spinner-overlay').style.display = 'none';
     }
 
+    // Toggle Eye Visibility for Passwords/PINs
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (!input || !icon) return;
+
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    }
+
     function openPicker(inputId) {
       const input = document.getElementById(inputId);
       if (!input) return;
@@ -454,7 +507,7 @@
       }
     }
 
-    // Helper: Map status string to sheet-matched CSS class
+    // Map status string to sheet-matched CSS class
     function getStatusClass(status) {
       const normalized = (status || '').toLowerCase().trim();
       switch (normalized) {
@@ -634,7 +687,6 @@
       const statusFilter = document.getElementById('filterStatus').value;
 
       const filtered = patientStore.filter(p => {
-        // Universal search box
         const matchesSearch = !searchQ || 
           (p.patientName && p.patientName.toLowerCase().includes(searchQ)) ||
           (p.clinician && p.clinician.toLowerCase().includes(searchQ)) ||
@@ -642,7 +694,6 @@
           (p.condition && p.condition.toLowerCase().includes(searchQ)) ||
           (p.status && p.status.toLowerCase().includes(searchQ));
 
-        // Column dropdown filters
         const matchesClinician = !clinicianFilter || p.clinician === clinicianFilter;
         const matchesClinic = !clinicFilter || p.clinic === clinicFilter;
         const matchesDevice = !deviceFilter || p.deviceType === deviceFilter;
@@ -721,7 +772,6 @@
         if (json.success) {
           const p = patientStore.find(item => item.rowNumber === rowNumber);
           if (p) p.status = newStatus;
-          // Dynamically reassign class color immediately
           selectElement.className = `status-select ${getStatusClass(newStatus)}`;
           alert(`✅ ${json.message}`);
         } else {
