@@ -147,12 +147,19 @@
       background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px;
       border: 1px solid var(--bc-border); margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px;
     }
-    .schedule-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .schedule-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .schedule-control label { font-size: 12px; color: var(--bc-text-muted); font-weight: 500; }
     .date-picker, .time-picker {
       background: var(--bc-midnight); border: 1px solid var(--bc-border);
-      color: var(--bc-teal); font-size: 12px; padding: 6px 10px; border-radius: 6px; outline: none;
+      color: var(--bc-teal); font-size: 12px; padding: 6px 8px; border-radius: 6px; outline: none;
     }
+    .btn-apply-cal {
+      padding: 6px 12px; font-size: 11px; font-weight: 700; background: var(--bc-teal);
+      color: #000; border: none; border-radius: 16px; cursor: pointer; display: inline-flex;
+      align-items: center; gap: 5px; transition: opacity 0.2s;
+    }
+    .btn-apply-cal:hover { opacity: 0.85; }
+
     .checkbox-container {
       display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--bc-text-muted); cursor: pointer; margin-top: 4px;
     }
@@ -557,12 +564,19 @@
             <div class="schedule-row">
               <label><i class="fa-regular fa-calendar"></i> Date:</label>
               <input type="date" id="date_${idx}" class="date-picker" value="${item.isoDate || ''}" />
-              <label><i class="fa-regular fa-clock"></i> Time (optional):</label>
+              <label><i class="fa-regular fa-clock"></i> Time:</label>
               <input type="time" id="time_${idx}" class="time-picker" />
+              <button 
+                type="button" 
+                class="btn-apply-cal" 
+                title="Erase old appointment and update Google Calendar"
+                onclick="applyCalendarUpdate(${idx}, '${item.id}', '${escapeHtml(item.title)}')">
+                <i class="fa-solid fa-arrows-rotate"></i> Apply to Calendar
+              </button>
             </div>
             <label class="checkbox-container">
-              <input type="checkbox" id="cal_sync_${idx}" />
-              <span>Sync this check-in to Google Calendar</span>
+              <input type="checkbox" id="cal_sync_${idx}" checked />
+              <span>Include in Calendar when scheduling outreach below</span>
             </label>
           </div>
 
@@ -586,6 +600,37 @@
         `;
         container.appendChild(card);
       });
+    }
+
+    async function applyCalendarUpdate(idx, milestoneId, milestoneTitle) {
+      if (!activePatient) return;
+      const newDate = document.getElementById(`date_${idx}`).value;
+      const timeVal = document.getElementById(`time_${idx}`).value;
+
+      if (!newDate) return alert("Please select a date first.");
+
+      showSpinner(`Replacing previous calendar appointment with ${newDate}...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'UPDATE_CALENDAR_EVENT',
+            rowNumber: activePatient.rowNumber,
+            patientName: activePatient.patientName,
+            recipientEmail: activePatient.email,
+            milestoneId: milestoneId,
+            milestoneTitle: milestoneTitle,
+            newDate: newDate,
+            timeStr: timeVal
+          })
+        });
+        const json = await res.json();
+        alert(json.success ? `✅ ${json.message}` : `❌ ${json.message}`);
+      } catch (err) {
+        alert("Calendar update failed: " + err.message);
+      } finally {
+        hideSpinner();
+      }
     }
 
     async function dispatchManual(idx, milestoneId) {
