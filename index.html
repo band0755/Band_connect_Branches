@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="color-scheme: dark;">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,10 +18,11 @@
       --bc-teal: #38bdf8;
       --bc-pill-bg: #4f3b7d;
       --bc-green: #10b981;
+      color-scheme: dark;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bc-midnight); color: var(--bc-text); min-height: 100vh; }
+    body { background-color: var(--bc-midnight); color: var(--bc-text); min-height: 100vh; color-scheme: dark; }
 
     /* Buffer Spinner Overlay */
     .spinner-overlay {
@@ -160,29 +161,42 @@
     .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .card-top h4 { font-size: 15px; font-weight: 600; color: #fff; }
     
-    /* Schedule & Calendar Controls */
+    /* Schedule Controls & Strict White Pickers */
     .schedule-control {
       background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px;
       border: 1px solid var(--bc-border); margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px;
     }
     .schedule-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .schedule-control label { font-size: 12px; color: var(--bc-text-muted); font-weight: 500; }
+    .schedule-control label { font-size: 12px; color: #ffffff !important; font-weight: 600; display: inline-flex; align-items: center; }
     
-    /* Dark Theme Picker with Bright White Icons */
-    .date-picker, .time-picker {
-      background: var(--bc-midnight); border: 1px solid var(--bc-border);
-      color: #ffffff; font-size: 12px; padding: 6px 10px; border-radius: 6px; outline: none;
-      color-scheme: dark;
-    }
-    .date-picker::-webkit-calendar-picker-indicator,
-    .time-picker::-webkit-calendar-picker-indicator {
-      cursor: pointer;
-      filter: invert(1) brightness(1.2);
-      opacity: 1;
-    }
     .schedule-icon {
       color: #ffffff !important;
-      margin-right: 4px;
+      font-size: 14px;
+      margin-right: 6px;
+    }
+
+    /* Force Chrome/Safari WebKit Calendar & Clock Icons to White */
+    input[type="date"].date-picker, 
+    input[type="time"].time-picker {
+      background: #161329 !important;
+      border: 1px solid var(--bc-border) !important;
+      color: #ffffff !important;
+      font-size: 13px !important;
+      padding: 6px 10px !important;
+      border-radius: 6px !important;
+      outline: none !important;
+      color-scheme: dark !important;
+    }
+
+    input[type="date"].date-picker::-webkit-calendar-picker-indicator,
+    input[type="time"].time-picker::-webkit-calendar-picker-indicator {
+      display: block !important;
+      -webkit-appearance: none !important;
+      filter: invert(100%) hue-rotate(180deg) brightness(200%) !important;
+      cursor: pointer !important;
+      opacity: 1 !important;
+      width: 16px !important;
+      height: 16px !important;
     }
 
     .btn-apply-cal {
