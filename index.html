@@ -37,6 +37,24 @@
     .spinner-text { font-size: 14px; color: var(--bc-text); font-weight: 500; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* Custom Logo Styles */
+    .bc-brand-icon {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      border-radius: 6px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .bc-brand-icon-lg {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+
     /* Auth Screens */
     .auth-container {
       display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;
@@ -47,8 +65,8 @@
       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
     }
     .auth-logo {
-      font-size: 26px; font-weight: 800; letter-spacing: 1px; margin-bottom: 8px;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
+      font-size: 24px; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 8px;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
     }
     .auth-box p { font-size: 14px; color: var(--bc-text-muted); margin-bottom: 24px; }
     .auth-input {
@@ -73,7 +91,7 @@
       padding: 16px 32px; display: flex; justify-content: space-between; align-items: center;
     }
     .brand-title { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
-    .brand-title span { font-weight: 400; font-size: 13px; color: var(--bc-text-muted); margin-left: 8px; }
+    .brand-title span { font-weight: 400; font-size: 13px; color: var(--bc-text-muted); margin-left: 6px; }
 
     /* Dashboard Layout */
     #dashboard-view { display: none; padding: 32px; max-width: 1500px; margin: 0 auto; }
@@ -142,17 +160,31 @@
     .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .card-top h4 { font-size: 15px; font-weight: 600; color: #fff; }
     
-    /* Schedule & Calendar Sync */
+    /* Schedule & Calendar Controls */
     .schedule-control {
       background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px;
       border: 1px solid var(--bc-border); margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px;
     }
     .schedule-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .schedule-control label { font-size: 12px; color: var(--bc-text-muted); font-weight: 500; }
+    
+    /* Dark Theme Picker with Bright White Icons */
     .date-picker, .time-picker {
       background: var(--bc-midnight); border: 1px solid var(--bc-border);
-      color: var(--bc-teal); font-size: 12px; padding: 6px 8px; border-radius: 6px; outline: none;
+      color: #ffffff; font-size: 12px; padding: 6px 10px; border-radius: 6px; outline: none;
+      color-scheme: dark;
     }
+    .date-picker::-webkit-calendar-picker-indicator,
+    .time-picker::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      filter: invert(1) brightness(1.2);
+      opacity: 1;
+    }
+    .schedule-icon {
+      color: #ffffff !important;
+      margin-right: 4px;
+    }
+
     .btn-apply-cal {
       padding: 6px 12px; font-size: 11px; font-weight: 700; background: var(--bc-teal);
       color: #000; border: none; border-radius: 16px; cursor: pointer; display: inline-flex;
@@ -195,9 +227,9 @@
   <!-- Login Section -->
   <section id="login-view" class="auth-container">
     <div class="auth-box">
-      <div class="auth-logo">
-        <i class="fa-solid fa-wave-square" style="color: var(--bc-purple-primary);"></i>
-        <span>band<strong style="font-weight: 300;">CONNECT</strong></span>
+      <div class="login-logo auth-logo" style="flex-direction: column; gap: 6px;">
+        <img src="band_connect_logo.jpeg" alt="Band Connect" class="bc-brand-icon-lg" />
+        <div>band<strong style="font-weight: 300;">CONNECT</strong></div>
       </div>
       <p>Provider Outreach & Roster Portal</p>
       <input type="password" id="pinInput" class="auth-input" placeholder="Enter Authorization PIN" autofocus />
@@ -211,9 +243,9 @@
   <!-- Step 1: Forgot Password Email Entry -->
   <section id="forgot-view" class="auth-container" style="display: none;">
     <div class="auth-box">
-      <div class="auth-logo">
-        <i class="fa-solid fa-shield-halved" style="color: var(--bc-teal);"></i>
-        <span>Security Check</span>
+      <div class="auth-logo" style="flex-direction: column; gap: 6px;">
+        <img src="band_connect_logo.jpeg" alt="Band Connect" class="bc-brand-icon-lg" />
+        <span style="font-size: 18px; color: var(--bc-teal);">Security Verification</span>
       </div>
       <p>Enter an authorized leadership email (Rohit, Abby, or Tara) to receive a 6-digit verification code.</p>
       <input type="email" id="resetEmailInput" class="auth-input" placeholder="e.g. r.nayak@bandconnect.net" />
@@ -227,9 +259,9 @@
   <!-- Step 2: Code Verification & New PIN -->
   <section id="verify-view" class="auth-container" style="display: none;">
     <div class="auth-box">
-      <div class="auth-logo">
-        <i class="fa-solid fa-key" style="color: var(--bc-purple-primary);"></i>
-        <span>Set New PIN</span>
+      <div class="auth-logo" style="flex-direction: column; gap: 6px;">
+        <img src="band_connect_logo.jpeg" alt="Band Connect" class="bc-brand-icon-lg" />
+        <span style="font-size: 18px; color: var(--bc-purple-primary);">Set New PIN</span>
       </div>
       <p id="verifyInstruction">Enter the 6-digit verification code sent to your email.</p>
       <input type="text" id="resetCodeInput" class="auth-input" placeholder="6-Digit Verification Code" maxlength="6" />
@@ -244,7 +276,7 @@
   <!-- Navigation -->
   <header id="mainNav" class="top-nav" style="display: none;">
     <div class="brand-title">
-      <i class="fa-solid fa-wave-square" style="color: var(--bc-purple-primary);"></i>
+      <img src="band_connect_logo.jpeg" alt="Band Connect" class="bc-brand-icon" />
       <span>band<strong style="font-weight: 300;">CONNECT</strong></span>
       <span>| Roster Engine</span>
     </div>
@@ -320,7 +352,7 @@
       document.getElementById('spinner-overlay').style.display = 'none';
     }
 
-    // Login & Reset Views
+    // Auth Flows
     function openForgotView() {
       document.getElementById('login-view').style.display = 'none';
       document.getElementById('forgot-view').style.display = 'flex';
@@ -562,9 +594,9 @@
 
           <div class="schedule-control">
             <div class="schedule-row">
-              <label><i class="fa-regular fa-calendar"></i> Date:</label>
+              <label><i class="fa-regular fa-calendar schedule-icon"></i> Date:</label>
               <input type="date" id="date_${idx}" class="date-picker" value="${item.isoDate || ''}" />
-              <label><i class="fa-regular fa-clock"></i> Time:</label>
+              <label><i class="fa-regular fa-clock schedule-icon"></i> Time:</label>
               <input type="time" id="time_${idx}" class="time-picker" />
               <button 
                 type="button" 
