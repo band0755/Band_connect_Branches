@@ -385,7 +385,7 @@
       renderPatients(filtered);
     }
 
-    // Dynamic Condition Subsection Manager
+    // Condition Subsections
     function openConditionModal() { document.getElementById('conditionModal').style.display = 'flex'; }
     function closeConditionModal() { document.getElementById('conditionModal').style.display = 'none'; }
 
@@ -416,7 +416,7 @@
       }
     }
 
-    // Patient Timeline Drawer
+    // Timeline Drawer
     async function openPatientTimeline(rowNumber) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
       if (!activePatient) return;
@@ -453,8 +453,8 @@
           </div>
 
           <!-- Interval Decisions & Date Picker Row -->
-          <div class="schedule-control">
-            <div class="schedule-row" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
+          <div class="schedule-control" style="background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px; border: 1px solid var(--bc-border); margin-bottom: 14px;">
+            <div class="schedule-row" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
               <span style="font-size:12px; color:var(--bc-text-muted);">Interval Day:</span>
               <input type="number" id="offset_${idx}" class="interval-input" value="${item.dayOffset}" title="Custom interval days from patient start date" />
 
@@ -480,8 +480,16 @@
           <label style="font-size:11px; color:var(--bc-text-muted);">Dedicated Condition Copy</label>
           <textarea id="body_${idx}" class="card-textarea">${item.defaultBody}</textarea>
 
-          <div style="display:flex; gap:8px;">
-            <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">🚀 Send Now</button>
+          <!-- Action Buttons with Schedule Outreach Included -->
+          <div style="display:flex; gap:8px; flex-wrap: wrap;">
+            <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">
+              🚀 Send Now
+            </button>
+            
+            <button class="btn-pill" style="background: #2563eb; color: #ffffff; font-size: 12px;" onclick="scheduleOutreach(${idx}, '${item.id}', '${item.title}')">
+              📅 Schedule Outreach
+            </button>
+
             <button class="btn-pill" style="background:transparent; border:1px dashed var(--bc-teal); color:var(--bc-teal); font-size:12px;" 
               onclick="saveConditionDefault(${idx}, '${item.branch}', '${item.condition}', '${item.id}')">
               💾 Save Condition Default
@@ -491,7 +499,7 @@
         container.appendChild(card);
       });
 
-      // Inline "+ Add Sequence Step" card at the bottom of the timeline
+      // Inline "+ Add Sequence Step" card
       const addStepCard = document.createElement('div');
       addStepCard.className = 'add-step-card';
       addStepCard.innerHTML = `
@@ -535,11 +543,46 @@
         });
         const json = await res.json();
         alert(json.message);
-        
-        // Refresh drawer cards dynamically
         openPatientTimeline(activePatient.rowNumber);
       } catch (err) {
         alert("Failed to add sequence step: " + err.message);
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    async function scheduleOutreach(idx, milestoneId, milestoneTitle) {
+      if (!activePatient || !activePatient.email) return alert("Patient is missing an email address.");
+      const chosenDate = document.getElementById(`date_${idx}`).value;
+      const chosenTime = document.getElementById(`time_${idx}`).value;
+      const subject = document.getElementById(`subj_${idx}`).value.trim();
+      const body = document.getElementById(`body_${idx}`).value.trim();
+
+      if (!chosenDate) return alert("Please select a target date first.");
+      if (!subject || !body) return alert("Subject and email body cannot be empty.");
+
+      showSpinner(`Queueing outreach for ${chosenDate}...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'SCHEDULE_OUTREACH_AND_CALENDAR',
+            rowNumber: activePatient.rowNumber,
+            patientName: activePatient.patientName,
+            recipientEmail: activePatient.email,
+            milestoneId: milestoneId,
+            milestoneTitle: milestoneTitle,
+            sendDate: chosenDate,
+            timeStr: chosenTime,
+            subject: subject,
+            bodyText: body,
+            syncCalendar: true
+          })
+        });
+        const json = await res.json();
+        alert(json.success ? `✅ ${json.message}` : `❌ ${json.message}`);
+      } catch (err) {
+        alert("Scheduling error: " + err.message);
       } finally {
         hideSpinner();
       }
