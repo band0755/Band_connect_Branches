@@ -131,11 +131,16 @@
       outline: none; cursor: pointer;
     }
     .th-filter-select:focus { border-color: var(--bc-teal); color: #fff; }
+    .th-filter-select optgroup {
+      background: #201a38;
+      color: var(--bc-teal);
+      font-weight: 700;
+    }
 
     td { padding: 14px 16px; border-bottom: 1px solid var(--bc-border); color: var(--bc-text); vertical-align: middle; }
     tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
 
-    /* Sheet Matched Status Colors */
+    /* Status Badges */
     .status-select {
       font-size: 12px; font-weight: 700; padding: 6px 12px;
       border-radius: 20px; outline: none; cursor: pointer;
@@ -348,11 +353,11 @@
             </th>
             <th style="min-width: 110px;">
               <span class="th-title">Branch</span>
-              <select id="filterDevice" class="th-filter-select" onchange="applyAllFilters()">
+              <select id="filterDevice" class="th-filter-select" onchange="onBranchFilterChanged()">
                 <option value="">All Branches</option>
               </select>
             </th>
-            <th style="min-width: 140px;">
+            <th style="min-width: 160px;">
               <span class="th-title">Condition / Injury</span>
               <select id="filterCondition" class="th-filter-select" onchange="applyAllFilters()">
                 <option value="">All Conditions</option>
@@ -430,6 +435,12 @@
     let activePatient = null;
     let pendingResetEmail = '';
 
+    // Branch-mapped Condition lists
+    let conditionMap = {
+      UE: new Set(['General']),
+      LE: new Set(['General'])
+    };
+
     function showSpinner(msg = "Processing request...") {
       document.getElementById('spinnerText').innerText = msg;
       document.getElementById('spinner-overlay').style.display = 'flex';
@@ -467,6 +478,11 @@
         case "didnt start": return 'status-didnt-start';
         default: return 'status-active';
       }
+    }
+
+    // Helper: Normalize device to branch
+    function getBranchFromDevice(dev) {
+      return /handle|ue|upper/i.test(dev || '') ? 'UE' : 'LE';
     }
 
     // ----------------------------------------------------
@@ -585,7 +601,7 @@
         const json = await res.json();
         if (json.success) {
           patientStore = json.data;
-          populateColumnFilterDropdowns(patientStore);
+          await populateColumnFilterDropdowns(patientStore);
           applyAllFilters();
         } else {
           alert("Failed to load roster: " + json.message);
@@ -597,23 +613,90 @@
       }
     }
 
-    function populateColumnFilterDropdowns(patients) {
+    async function populateColumnFilterDropdowns(patients) {
       const clinicians = new Set();
       const clinics = new Set();
       const devices = new Set();
-      const conditions = new Set();
 
+      conditionMap = {
+        UE: new Set(['General']),
+        LE: new Set(['General'])
+      };
+
+      // 1. Collect from active roster patients
       patients.forEach(p => {
         if (p.clinician) clinicians.add(p.clinician);
         if (p.clinic) clinics.add(p.clinic);
         if (p.deviceType) devices.add(p.deviceType);
-        if (p.condition && p.condition !== '—') conditions.add(p.condition);
+        
+        const branch = getBranchFromDevice(p.deviceType);
+        if (p.condition && p.condition !== '—') {
+          conditionMap[branch].add(p.condition);
+        }
       });
+
+      // 2. Load from Templates sheet (includes newly added sub-sections)
+      try {
+        const condRes = await fetch(`${API_URL}?action=GET_CONDITIONS`);
+        const condJson = await condRes.json();
+        if (condJson.success) {
+          (condJson.UE || []).forEach(c => { if (c) conditionMap.UE.add(c); });
+          (condJson.LE || []).forEach(c => { if (c) conditionMap.LE.add(c); });
+        }
+      } catch (e) {
+        console.warn("Could not fetch conditions from template sheet:", e);
+      }
 
       fillDropdown('filterClinician', Array.from(clinicians).sort(), 'All Clinicians');
       fillDropdown('filterClinic', Array.from(clinics).sort(), 'All Clinics');
       fillDropdown('filterDevice', Array.from(devices).sort(), 'All Branches');
-      fillDropdown('filterCondition', Array.from(conditions).sort(), 'All Conditions');
+
+      renderConditionDropdown();
+    }
+
+    // Renders the Condition/Injury dropdown with UE and LE grouped cleanly
+    function renderConditionDropdown() {
+      const select = document.getElementById('filterCondition');
+      const currentVal = select.value;
+      const branchSelected = document.getElementById('filterDevice').value;
+
+      select.innerHTML = '<option value="">All Conditions</option>';
+
+      // If a specific Branch is selected, only show that branch's injuries
+      const showUE = !branchSelected || /handle|ue/i.test(branchSelected);
+      const showLE = !branchSelected || /cuff|le/i.test(branchSelected);
+
+      if (showUE) {
+        const optgroupUE = document.createElement('optgroup');
+        optgroupUE.label = 'UE (Handle / Upper Extremity)';
+        Array.from(conditionMap.UE).sort().forEach(cond => {
+          const opt = document.createElement('option');
+          opt.value = cond;
+          opt.textContent = cond;
+          optgroupUE.appendChild(opt);
+        });
+        select.appendChild(optgroupUE);
+      }
+
+      if (showLE) {
+        const optgroupLE = document.createElement('optgroup');
+        optgroupLE.label = 'LE (Cuff / Lower Extremity)';
+        Array.from(conditionMap.LE).sort().forEach(cond => {
+          const opt = document.createElement('option');
+          opt.value = cond;
+          opt.textContent = cond;
+          optgroupLE.appendChild(opt);
+        });
+        select.appendChild(optgroupLE);
+      }
+
+      select.value = currentVal;
+    }
+
+    // When the user changes the Branch filter, auto-adjust the condition list
+    function onBranchFilterChanged() {
+      renderConditionDropdown();
+      applyAllFilters();
     }
 
     function fillDropdown(elementId, items, placeholder) {
@@ -664,6 +747,7 @@
       document.getElementById('filterCondition').value = '';
       document.getElementById('filterStatus').value = '';
       document.getElementById('searchInput').value = '';
+      renderConditionDropdown();
       applyAllFilters();
     }
 
@@ -755,14 +839,18 @@
           method: 'POST',
           body: JSON.stringify({
             action: 'ADD_NEW_CONDITION',
-            branch,
-            conditionName,
-            baseIntervals
+            branch: branch,
+            conditionName: conditionName,
+            baseIntervals: baseIntervals
           })
         });
         const json = await res.json();
         alert(json.message);
         closeConditionModal();
+        
+        // Immediately add to local set and redraw dropdown filter
+        conditionMap[branch].add(conditionName);
+        renderConditionDropdown();
       } finally {
         hideSpinner();
       }
@@ -873,7 +961,7 @@
         return alert("Please enter a valid day offset number (e.g. 5, 10, 14).");
       }
 
-      const branch = /handle|ue|upper/i.test(activePatient.deviceType) ? 'UE' : 'LE';
+      const branch = getBranchFromDevice(activePatient.deviceType);
       const condition = activePatient.condition || 'General';
 
       showSpinner(`Appending Day ${offset} step to ${condition}...`);
@@ -948,9 +1036,9 @@
             action: 'UPDATE_CALENDAR_EVENT',
             patientName: activePatient.patientName,
             recipientEmail: activePatient.email,
-            milestoneTitle,
-            newDate,
-            timeStr
+            milestoneTitle: milestoneTitle,
+            newDate: newDate,
+            timeStr: timeStr
           })
         });
         const json = await res.json();
@@ -971,12 +1059,12 @@
           method: 'POST',
           body: JSON.stringify({
             action: 'SAVE_CONDITION_TEMPLATE',
-            branch,
-            condition,
-            milestoneId,
-            dayOffset,
-            subject,
-            bodyText
+            branch: branch,
+            condition: condition,
+            milestoneId: milestoneId,
+            dayOffset: dayOffset,
+            subject: subject,
+            bodyText: bodyText
           })
         });
         const json = await res.json();
@@ -997,7 +1085,7 @@
             action: 'DISPATCH_CUSTOM_EMAIL',
             recipientEmail: activePatient.email,
             patientName: activePatient.patientName,
-            subject,
+            subject: subject,
             htmlBody: body
           })
         });
