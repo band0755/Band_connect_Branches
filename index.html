@@ -221,7 +221,7 @@
   <!-- Login Section -->
   <section id="login-view" class="auth-container">
     <div class="auth-box">
-      <div class="auth-logo" style="flex-direction: column; gap: 6px;">
+      <div class="login-logo auth-logo" style="flex-direction: column; gap: 6px;">
         <img src="band_connect_logo.jpeg" alt="Band Connect" class="bc-brand-icon-lg" />
         <div>band<strong style="font-weight: 300;">CONNECT</strong></div>
       </div>
@@ -481,7 +481,9 @@
       }
     }
 
-    // Auth Flows
+    // ----------------------------------------------------
+    // AUTHENTICATION & PASSWORD RESET (RESTRICTED LEADERSHIP)
+    // ----------------------------------------------------
     function openForgotView() {
       document.getElementById('login-view').style.display = 'none';
       document.getElementById('forgot-view').style.display = 'flex';
@@ -519,9 +521,9 @@
 
     async function requestResetCode() {
       const email = document.getElementById('resetEmailInput').value.trim();
-      if (!email) return alert("Please enter an authorized leadership email.");
+      if (!email) return alert("Please enter an authorized leadership email (Rohit, Abby, or Tara).");
 
-      showSpinner("Validating email and sending 6-digit code...");
+      showSpinner("Validating email and dispatching 6-digit code...");
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
@@ -585,7 +587,9 @@
       document.getElementById('pinInput').value = '';
     }
 
-    // Dashboard Data & Column Filters
+    // ----------------------------------------------------
+    // DASHBOARD & COLUMN FILTERS
+    // ----------------------------------------------------
     async function fetchPatients() {
       showSpinner("Loading patient roster...");
       try {
@@ -743,7 +747,9 @@
       }
     }
 
-    // Condition Subsections Manager
+    // ----------------------------------------------------
+    // CONDITION SUBSECTIONS & TIMELINE
+    // ----------------------------------------------------
     function openConditionModal() { document.getElementById('conditionModal').style.display = 'flex'; }
     function closeConditionModal() { document.getElementById('conditionModal').style.display = 'none'; }
 
@@ -774,7 +780,6 @@
       }
     }
 
-    // Timeline Drawer
     async function openPatientTimeline(rowNumber) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
       if (!activePatient) return;
@@ -810,7 +815,6 @@
             <span style="color:var(--bc-teal); font-size:12px;">Condition: ${escapeHtml(item.condition)}</span>
           </div>
 
-          <!-- Interval Decisions & Date Picker Row -->
           <div style="background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px; border: 1px solid var(--bc-border); margin-bottom: 14px;">
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
               <span style="font-size:12px; color:var(--bc-text-muted);">Interval Day:</span>
@@ -838,7 +842,6 @@
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Dedicated Condition Copy</label>
           <textarea id="body_${idx}" class="card-textarea">${escapeHtml(item.defaultBody)}</textarea>
 
-          <!-- Buttons Row with Schedule Outreach Prominently Included -->
           <div style="display:flex; gap:8px; flex-wrap: wrap;">
             <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">
               🚀 Send Now
@@ -857,7 +860,6 @@
         container.appendChild(card);
       });
 
-      // Inline "+ Add Sequence Step" card at the bottom
       const addStepCard = document.createElement('div');
       addStepCard.className = 'add-step-card';
       addStepCard.innerHTML = `
