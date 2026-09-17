@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" style="color-scheme: dark;">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,11 +18,10 @@
       --bc-teal: #38bdf8;
       --bc-pill-bg: #4f3b7d;
       --bc-green: #10b981;
-      color-scheme: dark;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bc-midnight); color: var(--bc-text); min-height: 100vh; color-scheme: dark; }
+    body { background-color: var(--bc-midnight); color: var(--bc-text); min-height: 100vh; }
 
     /* Buffer Spinner Overlay */
     .spinner-overlay {
@@ -161,46 +160,55 @@
     .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .card-top h4 { font-size: 15px; font-weight: 600; color: #fff; }
     
-    /* Schedule Controls & Strict White Pickers */
+    /* Picker Wrapper & Emoji Styling */
     .schedule-control {
       background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px;
       border: 1px solid var(--bc-border); margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px;
     }
-    .schedule-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .schedule-control label { font-size: 12px; color: #ffffff !important; font-weight: 600; display: inline-flex; align-items: center; }
+    .schedule-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     
-    .schedule-icon {
-      color: #ffffff !important;
-      font-size: 14px;
-      margin-right: 6px;
+    .picker-box {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bc-midnight);
+      border: 1px solid var(--bc-border);
+      border-radius: 8px;
+      padding: 4px 10px;
+      gap: 6px;
+      cursor: pointer;
+      transition: border-color 0.2s;
     }
-
-    /* Force Chrome/Safari WebKit Calendar & Clock Icons to White */
-    input[type="date"].date-picker, 
-    input[type="time"].time-picker {
-      background: #161329 !important;
-      border: 1px solid var(--bc-border) !important;
+    .picker-box:hover {
+      border-color: var(--bc-teal);
+    }
+    .picker-emoji {
+      font-size: 17px;
+      line-height: 1;
+      cursor: pointer;
+      user-select: none;
+    }
+    .picker-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--bc-text-muted);
+    }
+    .native-input {
+      background: transparent !important;
+      border: none !important;
       color: #ffffff !important;
       font-size: 13px !important;
-      padding: 6px 10px !important;
-      border-radius: 6px !important;
       outline: none !important;
-      color-scheme: dark !important;
+      cursor: pointer;
+      padding: 2px 0;
     }
-
-    input[type="date"].date-picker::-webkit-calendar-picker-indicator,
-    input[type="time"].time-picker::-webkit-calendar-picker-indicator {
-      display: block !important;
+    /* Hide the default black internal calendar/clock glyphs completely */
+    .native-input::-webkit-calendar-picker-indicator {
+      display: none !important;
       -webkit-appearance: none !important;
-      filter: invert(100%) hue-rotate(180deg) brightness(200%) !important;
-      cursor: pointer !important;
-      opacity: 1 !important;
-      width: 16px !important;
-      height: 16px !important;
     }
 
     .btn-apply-cal {
-      padding: 6px 12px; font-size: 11px; font-weight: 700; background: var(--bc-teal);
+      padding: 7px 14px; font-size: 11px; font-weight: 700; background: var(--bc-teal);
       color: #000; border: none; border-radius: 16px; cursor: pointer; display: inline-flex;
       align-items: center; gap: 5px; transition: opacity 0.2s;
     }
@@ -364,6 +372,21 @@
 
     function hideSpinner() {
       document.getElementById('spinner-overlay').style.display = 'none';
+    }
+
+    // Helper: Trigger native calendar/time picker drop-down on click
+    function openPicker(inputId) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      if (typeof input.showPicker === 'function') {
+        try {
+          input.showPicker();
+        } catch (e) {
+          input.focus();
+        }
+      } else {
+        input.focus();
+      }
     }
 
     // Auth Flows
@@ -608,10 +631,20 @@
 
           <div class="schedule-control">
             <div class="schedule-row">
-              <label><i class="fa-regular fa-calendar schedule-icon"></i> Date:</label>
-              <input type="date" id="date_${idx}" class="date-picker" value="${item.isoDate || ''}" />
-              <label><i class="fa-regular fa-clock schedule-icon"></i> Time:</label>
-              <input type="time" id="time_${idx}" class="time-picker" />
+              <!-- Clickable Emoji & Date Input -->
+              <div class="picker-box" onclick="openPicker('date_${idx}')">
+                <span class="picker-emoji">📅</span>
+                <span class="picker-label">Date:</span>
+                <input type="date" id="date_${idx}" class="native-input" value="${item.isoDate || ''}" />
+              </div>
+
+              <!-- Clickable Emoji & Time Input -->
+              <div class="picker-box" onclick="openPicker('time_${idx}')">
+                <span class="picker-emoji">🕒</span>
+                <span class="picker-label">Time:</span>
+                <input type="time" id="time_${idx}" class="native-input" />
+              </div>
+
               <button 
                 type="button" 
                 class="btn-apply-cal" 
@@ -620,6 +653,7 @@
                 <i class="fa-solid fa-arrows-rotate"></i> Apply to Calendar
               </button>
             </div>
+            
             <label class="checkbox-container">
               <input type="checkbox" id="cal_sync_${idx}" checked />
               <span>Include in Calendar when scheduling outreach below</span>
