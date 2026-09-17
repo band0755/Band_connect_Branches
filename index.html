@@ -135,7 +135,7 @@
     td { padding: 14px 16px; border-bottom: 1px solid var(--bc-border); color: var(--bc-text); vertical-align: middle; }
     tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
 
-    /* Sheet Matched Status Dropdown Styles */
+    /* Sheet Matched Status Colors */
     .status-select {
       font-size: 12px; font-weight: 700; padding: 6px 12px;
       border-radius: 20px; outline: none; cursor: pointer;
@@ -439,7 +439,6 @@
       document.getElementById('spinner-overlay').style.display = 'none';
     }
 
-    // Toggle Eye Visibility for Passwords/PINs
     function togglePasswordVisibility(inputId, iconId) {
       const input = document.getElementById(inputId);
       const icon = document.getElementById(iconId);
@@ -456,17 +455,6 @@
       }
     }
 
-    function openPicker(inputId) {
-      const input = document.getElementById(inputId);
-      if (!input) return;
-      if (typeof input.showPicker === 'function') {
-        try { input.showPicker(); } catch (e) { input.focus(); }
-      } else {
-        input.focus();
-      }
-    }
-
-    // Map status string to sheet-matched CSS class
     function getStatusClass(status) {
       const normalized = (status || '').toLowerCase().trim();
       switch (normalized) {
@@ -482,7 +470,7 @@
     }
 
     // ----------------------------------------------------
-    // AUTHENTICATION & PASSWORD RESET (RESTRICTED LEADERSHIP)
+    // AUTHENTICATION & PASSWORD RESET
     // ----------------------------------------------------
     function openForgotView() {
       document.getElementById('login-view').style.display = 'none';
