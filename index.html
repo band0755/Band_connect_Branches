@@ -128,6 +128,24 @@
     }
     .card-textarea { min-height: 100px; resize: vertical; }
 
+    /* Add Sequence Step Card */
+    .add-step-card {
+      background: rgba(22, 19, 41, 0.4);
+      border: 2px dashed var(--bc-border);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+    .add-step-card:hover {
+      border-color: var(--bc-teal);
+      background: rgba(56, 189, 248, 0.04);
+    }
+
     /* Modal for New Condition / Subsection */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 2000;
@@ -436,7 +454,7 @@
 
           <!-- Interval Decisions & Date Picker Row -->
           <div class="schedule-control">
-            <div class="schedule-row">
+            <div class="schedule-row" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
               <span style="font-size:12px; color:var(--bc-text-muted);">Interval Day:</span>
               <input type="number" id="offset_${idx}" class="interval-input" value="${item.dayOffset}" title="Custom interval days from patient start date" />
 
@@ -450,7 +468,7 @@
                 <input type="time" id="time_${idx}" class="native-input" />
               </div>
 
-              <button class="btn-apply-cal" onclick="applyCalendar(${idx}, '${item.id}', '${item.title}')">
+              <button class="btn-pill" style="padding: 6px 12px; font-size: 11px; background: var(--bc-teal); color: #000;" onclick="applyCalendar(${idx}, '${item.id}', '${item.title}')">
                 Apply Calendar
               </button>
             </div>
@@ -472,6 +490,59 @@
         `;
         container.appendChild(card);
       });
+
+      // Inline "+ Add Sequence Step" card at the bottom of the timeline
+      const addStepCard = document.createElement('div');
+      addStepCard.className = 'add-step-card';
+      addStepCard.innerHTML = `
+        <div style="font-size: 14px; font-weight: 700; color: var(--bc-teal);">
+          <i class="fa-solid fa-plus-circle"></i> Add Next Outreach Step
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%; margin-top: 6px;">
+          <span style="font-size: 12px; color: var(--bc-text-muted);">Send on Day:</span>
+          <input type="number" id="newStepOffset" class="interval-input" placeholder="e.g. 5" style="width: 70px;" />
+          <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px; padding: 7px 16px;" onclick="addSequenceStep()">
+            + Append Step
+          </button>
+        </div>
+      `;
+      container.appendChild(addStepCard);
+    }
+
+    async function addSequenceStep() {
+      const offsetInput = document.getElementById('newStepOffset');
+      const offset = parseInt(offsetInput.value.trim());
+
+      if (isNaN(offset) || offset <= 0) {
+        return alert("Please enter a valid day offset number (e.g. 5, 10, 14).");
+      }
+
+      const branch = /handle|ue|upper/i.test(activePatient.deviceType) ? 'UE' : 'LE';
+      const condition = activePatient.condition || 'General';
+
+      showSpinner(`Appending Day ${offset} step to ${condition}...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'ADD_SEQUENCE_STEP',
+            branch: branch,
+            condition: condition,
+            dayOffset: offset,
+            subject: `Day ${offset}: ${condition} Progression`,
+            bodyText: `Hello {{first_name}},\n\nHere is your Day ${offset} check-in for your ${condition} recovery plan. Keep up the consistent work!`
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        
+        // Refresh drawer cards dynamically
+        openPatientTimeline(activePatient.rowNumber);
+      } catch (err) {
+        alert("Failed to add sequence step: " + err.message);
+      } finally {
+        hideSpinner();
+      }
     }
 
     async function applyCalendar(idx, milestoneId, milestoneTitle) {
