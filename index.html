@@ -375,6 +375,7 @@
         if (json.success) {
           const p = patientStore.find(item => item.rowNumber === rowNumber);
           if (p) p.status = newStatus;
+          alert(`✅ ${json.message}`);
         } else {
           alert(`Update failed: ${json.message}`);
         }
@@ -445,7 +446,7 @@
             </div>
             <label class="checkbox-container">
               <input type="checkbox" id="cal_sync_${idx}" />
-              <span>Sync this appointment to Google Calendar</span>
+              <span>Sync this check-in to Google Calendar</span>
             </label>
           </div>
 
@@ -459,8 +460,8 @@
             <button class="btn-action btn-manual" onclick="dispatchManual(${idx}, '${item.id}')">
               🚀 Send Now
             </button>
-            <button class="btn-action btn-cal" onclick="bookCalendarVisit(${idx}, '${escapeHtml(item.title)}')">
-              📅 Book / Sync Visit
+            <button class="btn-action btn-cal" onclick="scheduleOutreach(${idx}, '${item.id}', '${escapeHtml(item.title)}')">
+              📅 Schedule Outreach
             </button>
             <button class="btn-action btn-global" title="Save this subject and body as the default for all future ${item.branch} patients" onclick="saveAsGlobalDefault(${idx}, '${item.branch}', '${item.id}')">
               💾 Set as Global Default
@@ -498,35 +499,39 @@
       }
     }
 
-    async function bookCalendarVisit(idx, title) {
+    async function scheduleOutreach(idx, milestoneId, milestoneTitle) {
+      if (!activePatient || !activePatient.email) return alert("Patient has no email address.");
       const chosenDate = document.getElementById(`date_${idx}`).value;
       const chosenTime = document.getElementById(`time_${idx}`).value;
       const syncCal = document.getElementById(`cal_sync_${idx}`).checked;
+      const subject = document.getElementById(`subj_${idx}`).value.trim();
+      const body = document.getElementById(`body_${idx}`).value.trim();
 
-      if (!chosenDate) return alert("Please select a date.");
+      if (!chosenDate) return alert("Please select a target date.");
+      if (!subject || !body) return alert("Subject and body cannot be empty.");
 
-      if (!syncCal) {
-        return alert(`Date set to ${chosenDate}. (Google Calendar sync was unchecked, so no calendar event was created).`);
-      }
-
-      showSpinner(`Creating Google Calendar appointment for ${chosenDate}...`);
+      showSpinner(`Scheduling outreach for ${chosenDate}...`);
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
           body: JSON.stringify({
-            action: 'SCHEDULE_CALENDAR_VISIT',
+            action: 'SCHEDULE_OUTREACH_AND_CALENDAR',
+            rowNumber: activePatient.rowNumber,
             patientName: activePatient.patientName,
             recipientEmail: activePatient.email,
-            milestoneTitle: title,
-            dateStr: chosenDate,
+            milestoneId: milestoneId,
+            milestoneTitle: milestoneTitle,
+            sendDate: chosenDate,
             timeStr: chosenTime,
-            notes: document.getElementById(`body_${idx}`).value.substring(0, 150) + '...'
+            subject: subject,
+            bodyText: body,
+            syncCalendar: syncCal
           })
         });
         const json = await res.json();
         alert(json.success ? `✅ ${json.message}` : `❌ ${json.message}`);
       } catch (err) {
-        alert("Calendar sync failed: " + err.message);
+        alert("Scheduling failed: " + err.message);
       } finally {
         hideSpinner();
       }
