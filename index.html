@@ -37,31 +37,35 @@
     .spinner-text { font-size: 14px; color: var(--bc-text); font-weight: 500; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Login Screen */
-    #login-view {
+    /* Auth Screens */
+    .auth-container {
       display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;
     }
-    .login-box {
+    .auth-box {
       background: var(--bc-card); border: 1px solid var(--bc-border); border-radius: 20px;
       padding: 40px 32px; width: 100%; max-width: 420px; text-align: center;
       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
     }
-    .login-logo {
+    .auth-logo {
       font-size: 26px; font-weight: 800; letter-spacing: 1px; margin-bottom: 8px;
       display: flex; align-items: center; justify-content: center; gap: 8px;
     }
-    .login-box p { font-size: 14px; color: var(--bc-text-muted); margin-bottom: 24px; }
-    .login-input {
+    .auth-box p { font-size: 14px; color: var(--bc-text-muted); margin-bottom: 24px; }
+    .auth-input {
       width: 100%; padding: 12px 16px; background: rgba(22, 19, 41, 0.7);
       border: 1px solid var(--bc-border); border-radius: 30px; color: #fff;
-      font-size: 16px; text-align: center; margin-bottom: 18px; outline: none;
+      font-size: 15px; text-align: center; margin-bottom: 16px; outline: none;
     }
-    .login-input:focus { border-color: var(--bc-purple-primary); }
-    .btn-login {
+    .auth-input:focus { border-color: var(--bc-purple-primary); }
+    .btn-auth {
       width: 100%; padding: 12px; background: var(--bc-purple-primary); border: none;
       border-radius: 30px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
     }
-    .btn-login:hover { background: var(--bc-purple-hover); }
+    .btn-auth:hover { background: var(--bc-purple-hover); }
+    .auth-link {
+      display: inline-block; margin-top: 18px; font-size: 13px; color: var(--bc-teal);
+      cursor: pointer; text-decoration: underline; background: none; border: none;
+    }
 
     /* Navigation */
     .top-nav {
@@ -182,15 +186,51 @@
   </div>
 
   <!-- Login Section -->
-  <section id="login-view">
-    <div class="login-box">
-      <div class="login-logo">
+  <section id="login-view" class="auth-container">
+    <div class="auth-box">
+      <div class="auth-logo">
         <i class="fa-solid fa-wave-square" style="color: var(--bc-purple-primary);"></i>
         <span>band<strong style="font-weight: 300;">CONNECT</strong></span>
       </div>
       <p>Provider Outreach & Roster Portal</p>
-      <input type="password" id="pinInput" class="login-input" placeholder="Enter Authorization PIN" autofocus />
-      <button class="btn-login" onclick="submitLogin()">Access Portal</button>
+      <input type="password" id="pinInput" class="auth-input" placeholder="Enter Authorization PIN" autofocus />
+      <button class="btn-auth" onclick="submitLogin()">Access Portal</button>
+      <div>
+        <button class="auth-link" onclick="openForgotView()">Forgot / Reset PIN?</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 1: Forgot Password Email Entry -->
+  <section id="forgot-view" class="auth-container" style="display: none;">
+    <div class="auth-box">
+      <div class="auth-logo">
+        <i class="fa-solid fa-shield-halved" style="color: var(--bc-teal);"></i>
+        <span>Security Check</span>
+      </div>
+      <p>Enter an authorized leadership email (Rohit, Abby, or Tara) to receive a 6-digit verification code.</p>
+      <input type="email" id="resetEmailInput" class="auth-input" placeholder="e.g. r.nayak@bandconnect.net" />
+      <button class="btn-auth" onclick="requestResetCode()">Send 6-Digit Code</button>
+      <div>
+        <button class="auth-link" onclick="backToLogin()">← Back to Login</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 2: Code Verification & New PIN -->
+  <section id="verify-view" class="auth-container" style="display: none;">
+    <div class="auth-box">
+      <div class="auth-logo">
+        <i class="fa-solid fa-key" style="color: var(--bc-purple-primary);"></i>
+        <span>Set New PIN</span>
+      </div>
+      <p id="verifyInstruction">Enter the 6-digit verification code sent to your email.</p>
+      <input type="text" id="resetCodeInput" class="auth-input" placeholder="6-Digit Verification Code" maxlength="6" />
+      <input type="password" id="newPinInput" class="auth-input" placeholder="Enter New Portal PIN" />
+      <button class="btn-auth" onclick="verifyAndSetNewPin()">Update Portal PIN</button>
+      <div>
+        <button class="auth-link" onclick="backToLogin()">Cancel</button>
+      </div>
     </div>
   </section>
 
@@ -262,6 +302,7 @@
 
     let patientStore = [];
     let activePatient = null;
+    let pendingResetEmail = '';
 
     function showSpinner(msg = "Processing request...") {
       document.getElementById('spinnerText').innerText = msg;
@@ -270,6 +311,19 @@
 
     function hideSpinner() {
       document.getElementById('spinner-overlay').style.display = 'none';
+    }
+
+    // Login & Reset Views
+    function openForgotView() {
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('forgot-view').style.display = 'flex';
+    }
+
+    function backToLogin() {
+      document.getElementById('forgot-view').style.display = 'none';
+      document.getElementById('verify-view').style.display = 'none';
+      document.getElementById('login-view').style.display = 'flex';
+      document.getElementById('pinInput').value = '';
     }
 
     async function submitLogin() {
@@ -295,6 +349,67 @@
       }
     }
 
+    async function requestResetCode() {
+      const email = document.getElementById('resetEmailInput').value.trim();
+      if (!email) return alert("Please enter an authorized leadership email.");
+
+      showSpinner("Validating email and sending 6-digit code...");
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'REQUEST_PASSWORD_RESET',
+            leadershipEmail: email
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          pendingResetEmail = email;
+          document.getElementById('forgot-view').style.display = 'none';
+          document.getElementById('verify-view').style.display = 'flex';
+          document.getElementById('verifyInstruction').innerText = `Enter the 6-digit verification code sent to ${email}.`;
+        } else {
+          alert(`❌ ${json.message}`);
+        }
+      } catch (err) {
+        alert("Reset request failed: " + err.message);
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    async function verifyAndSetNewPin() {
+      const code = document.getElementById('resetCodeInput').value.trim();
+      const newPin = document.getElementById('newPinInput').value.trim();
+
+      if (!code || code.length !== 6) return alert("Please enter the 6-digit code.");
+      if (!newPin) return alert("Please enter the new PIN.");
+
+      showSpinner("Verifying code & updating PIN...");
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'VERIFY_RESET_PIN',
+            leadershipEmail: pendingResetEmail,
+            code: code,
+            newPin: newPin
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          alert(`✅ ${json.message}`);
+          backToLogin();
+        } else {
+          alert(`❌ ${json.message}`);
+        }
+      } catch (err) {
+        alert("Verification failed: " + err.message);
+      } finally {
+        hideSpinner();
+      }
+    }
+
     function logout() {
       document.getElementById('dashboard-view').style.display = 'none';
       document.getElementById('mainNav').style.display = 'none';
@@ -302,6 +417,7 @@
       document.getElementById('pinInput').value = '';
     }
 
+    // Dashboard Data & Status Sync
     async function fetchPatients() {
       showSpinner("Loading patient roster...");
       try {
