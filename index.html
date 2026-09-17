@@ -23,74 +23,35 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bc-midnight); color: var(--bc-text); min-height: 100vh; }
 
-    /* Buffer Spinner Overlay */
+    /* Buffer Spinner */
     .spinner-overlay {
       position: fixed; inset: 0; background: rgba(22, 19, 41, 0.85); backdrop-filter: blur(6px);
-      display: none; align-items: center; justify-content: center; flex-direction: column;
-      z-index: 9999;
+      display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 9999;
     }
     .spinner {
-      width: 44px; height: 44px; border: 4px solid var(--bc-border);
-      border-top-color: var(--bc-purple-primary); border-radius: 50%;
-      animation: spin 0.8s linear infinite; margin-bottom: 14px;
+      width: 44px; height: 44px; border: 4px solid var(--bc-border); border-top-color: var(--bc-purple-primary);
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 14px;
     }
-    .spinner-text { font-size: 14px; color: var(--bc-text); font-weight: 500; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Custom Logo Styles */
-    .bc-brand-icon {
-      width: 28px; height: 28px; object-fit: contain; border-radius: 6px; display: inline-block; vertical-align: middle;
-    }
-    .bc-brand-icon-lg {
-      width: 48px; height: 48px; object-fit: contain; border-radius: 10px; margin-bottom: 8px; display: inline-block;
-    }
+    .bc-brand-icon { width: 28px; height: 28px; object-fit: contain; border-radius: 6px; }
+    .bc-brand-icon-lg { width: 48px; height: 48px; object-fit: contain; border-radius: 10px; margin-bottom: 8px; }
 
     /* Auth Screens */
-    .auth-container {
-      display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;
-    }
+    .auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
     .auth-box {
       background: var(--bc-card); border: 1px solid var(--bc-border); border-radius: 20px;
       padding: 40px 32px; width: 100%; max-width: 420px; text-align: center;
       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
     }
-    .auth-logo {
-      font-size: 24px; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 8px;
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-    }
-    .auth-box p { font-size: 14px; color: var(--bc-text-muted); margin-bottom: 24px; }
-    
-    /* Password / PIN Wrapper with Eye Toggle */
-    .password-wrapper {
-      position: relative;
-      width: 100%;
-      margin-bottom: 16px;
-    }
+    .password-wrapper { position: relative; width: 100%; margin-bottom: 16px; }
     .auth-input {
       width: 100%; padding: 12px 42px 12px 16px; background: rgba(22, 19, 41, 0.7);
-      border: 1px solid var(--bc-border); border-radius: 30px; color: #fff;
-      font-size: 15px; text-align: center; outline: none;
+      border: 1px solid var(--bc-border); border-radius: 30px; color: #fff; font-size: 15px; text-align: center; outline: none;
     }
-    .auth-input:focus { border-color: var(--bc-purple-primary); }
     .toggle-password-btn {
-      position: absolute;
-      right: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: var(--bc-text-muted);
-      cursor: pointer;
-      font-size: 15px;
-      outline: none;
-      padding: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: color 0.2s ease;
-    }
-    .toggle-password-btn:hover {
-      color: #ffffff;
+      position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none;
+      border: none; color: var(--bc-text-muted); cursor: pointer;
     }
 
     .btn-auth {
@@ -98,352 +59,149 @@
       border-radius: 30px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
     }
     .btn-auth:hover { background: var(--bc-purple-hover); }
-    .auth-link {
-      display: inline-block; margin-top: 18px; font-size: 13px; color: var(--bc-teal);
-      cursor: pointer; text-decoration: underline; background: none; border: none;
-    }
 
-    /* Navigation */
+    /* Top Nav */
     .top-nav {
       background: var(--bc-card); border-bottom: 1px solid var(--bc-border);
       padding: 16px 32px; display: flex; justify-content: space-between; align-items: center;
     }
     .brand-title { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
-    .brand-title span { font-weight: 400; font-size: 13px; color: var(--bc-text-muted); margin-left: 6px; }
 
     /* Dashboard Layout */
     #dashboard-view { display: none; padding: 32px; max-width: 1550px; margin: 0 auto; }
-    .toolbar-bar {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 20px; flex-wrap: wrap; gap: 16px;
-    }
+    .toolbar-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
     .search-input {
       padding: 10px 20px; background: var(--bc-card); border: 1px solid var(--bc-border);
-      border-radius: 30px; color: #fff; font-size: 14px; min-width: 320px; outline: none;
+      border-radius: 30px; color: #fff; font-size: 14px; min-width: 300px; outline: none;
     }
-    .search-input:focus { border-color: var(--bc-purple-primary); }
     .btn-pill {
-      padding: 10px 22px; background: var(--bc-pill-bg); border: 1px solid var(--bc-border);
+      padding: 10px 20px; background: var(--bc-pill-bg); border: 1px solid var(--bc-border);
       border-radius: 30px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
       display: inline-flex; align-items: center; gap: 8px;
     }
     .btn-pill:hover { background: var(--bc-purple-primary); }
 
-    /* Filter Reset Bar */
-    .filter-reset-row {
-      display: flex; justify-content: flex-end; margin-bottom: 12px; gap: 10px;
-    }
-    .btn-clear-filters {
-      padding: 6px 14px; background: transparent; border: 1px dashed var(--bc-border);
-      color: var(--bc-text-muted); font-size: 12px; border-radius: 20px; cursor: pointer;
-    }
-    .btn-clear-filters:hover { color: #fff; border-color: var(--bc-teal); }
-
-    /* Table & Column Header Filters */
+    /* Table & Status Colors */
     .table-container {
-      background: var(--bc-card); border: 1px solid var(--bc-border); border-radius: 16px;
-      overflow-x: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      background: var(--bc-card); border: 1px solid var(--bc-border); border-radius: 16px; overflow-x: auto;
     }
     table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-    th {
-      background: rgba(0, 0, 0, 0.35); padding: 14px 16px; color: var(--bc-text-muted);
-      font-weight: 600; border-bottom: 1px solid var(--bc-border); vertical-align: top;
-    }
-    .th-title {
-      display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
-      margin-bottom: 6px; font-weight: 700; color: #e2e8f0;
-    }
-    .th-filter-select {
-      width: 100%; background: #161329; border: 1px solid var(--bc-border);
-      color: #94a3b8; font-size: 11px; padding: 4px 6px; border-radius: 6px;
-      outline: none; cursor: pointer;
-    }
-    .th-filter-select:focus { border-color: var(--bc-teal); color: #fff; }
+    th { background: rgba(0,0,0,0.35); padding: 14px 16px; color: var(--bc-text-muted); font-size: 11px; text-transform: uppercase; }
+    td { padding: 14px 16px; border-bottom: 1px solid var(--bc-border); }
 
-    td { padding: 14px 16px; border-bottom: 1px solid var(--bc-border); color: var(--bc-text); vertical-align: middle; }
-    tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
-    
-    /* Sheet Matched Status Colors */
-    .status-select {
-      font-size: 12px; font-weight: 700; padding: 6px 12px;
-      border-radius: 20px; outline: none; cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .status-active {
-      background: rgba(16, 185, 129, 0.12) !important;
-      color: #34d399 !important;
-      border: 1px solid #10b981 !important;
-    }
-    .status-enrolled {
-      background: rgba(245, 158, 11, 0.12) !important;
-      color: #fbbf24 !important;
-      border: 1px solid #f59e0b !important;
-    }
-    .status-dropped-out {
-      background: rgba(239, 68, 68, 0.12) !important;
-      color: #f87171 !important;
-      border: 1px solid #ef4444 !important;
-    }
-    .status-hold {
-      background: rgba(236, 72, 153, 0.12) !important;
-      color: #f472b6 !important;
-      border: 1px solid #ec4899 !important;
-    }
-    .status-discharged {
-      background: rgba(59, 130, 246, 0.12) !important;
-      color: #60a5fa !important;
-      border: 1px solid #3b82f6 !important;
-    }
-    .status-didnt-start {
-      background: rgba(255, 255, 255, 0.08) !important;
-      color: #ffffff !important;
-      border: 1px solid rgba(255, 255, 255, 0.5) !important;
-    }
-    .status-select option {
-      background: #161329;
-      color: #ffffff;
-    }
+    .status-select { font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; outline: none; cursor: pointer; }
+    .status-active { background: rgba(16, 185, 129, 0.12)!important; color: #34d399!important; border: 1px solid #10b981!important; }
+    .status-enrolled { background: rgba(245, 158, 11, 0.12)!important; color: #fbbf24!important; border: 1px solid #f59e0b!important; }
+    .status-dropped-out { background: rgba(239, 68, 68, 0.12)!important; color: #f87171!important; border: 1px solid #ef4444!important; }
+    .status-hold { background: rgba(236, 72, 153, 0.12)!important; color: #f472b6!important; border: 1px solid #ec4899!important; }
+    .status-discharged { background: rgba(59, 130, 246, 0.12)!important; color: #60a5fa!important; border: 1px solid #3b82f6!important; }
+    .status-didnt-start { background: rgba(255, 255, 255, 0.08)!important; color: #ffffff!important; border: 1px solid rgba(255,255,255,0.4)!important; }
 
     /* Drawer */
-    .drawer-overlay {
-      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: none; z-index: 1000;
-    }
+    .drawer-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: none; z-index: 1000; }
     .drawer-panel {
-      position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 600px;
+      position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 620px;
       background: var(--bc-card); border-left: 1px solid var(--bc-border);
       display: flex; flex-direction: column; z-index: 1001;
       transform: translateX(100%); transition: transform 0.25s ease-in-out;
     }
     .drawer-open { transform: translateX(0); }
-    .drawer-header {
-      padding: 24px; border-bottom: 1px solid var(--bc-border);
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .drawer-header h3 { font-size: 19px; font-weight: 700; }
-    .drawer-header p { font-size: 13px; color: var(--bc-text-muted); margin-top: 4px; }
-    .btn-close { background: none; border: none; color: var(--bc-text-muted); font-size: 18px; cursor: pointer; }
-    .btn-close:hover { color: #fff; }
-
-    .drawer-body { padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 24px; }
-    .milestone-card {
-      background: var(--bc-card-inner); border: 1px solid var(--bc-border);
-      border-radius: 14px; padding: 20px;
-    }
-    .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .card-top h4 { font-size: 15px; font-weight: 600; color: #fff; }
+    .drawer-header { padding: 24px; border-bottom: 1px solid var(--bc-border); display: flex; justify-content: space-between; align-items: center; }
+    .drawer-body { padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
     
-    /* Schedule Controls & Clickable Emojis */
-    .schedule-control {
-      background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px;
-      border: 1px solid var(--bc-border); margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px;
-    }
-    .schedule-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    
+    .milestone-card { background: var(--bc-card-inner); border: 1px solid var(--bc-border); border-radius: 14px; padding: 20px; }
     .picker-box {
       display: inline-flex; align-items: center; background: var(--bc-midnight);
-      border: 1px solid var(--bc-border); border-radius: 8px; padding: 4px 10px; gap: 6px;
-      cursor: pointer; transition: border-color 0.2s;
+      border: 1px solid var(--bc-border); border-radius: 8px; padding: 4px 10px; gap: 6px; cursor: pointer;
     }
-    .picker-box:hover { border-color: var(--bc-teal); }
-    .picker-emoji { font-size: 17px; line-height: 1; cursor: pointer; user-select: none; }
-    .picker-label { font-size: 12px; font-weight: 600; color: var(--bc-text-muted); }
-    .native-input {
-      background: transparent !important; border: none !important; color: #ffffff !important;
-      font-size: 13px !important; outline: none !important; cursor: pointer; padding: 2px 0;
-    }
-    .native-input::-webkit-calendar-picker-indicator { display: none !important; -webkit-appearance: none !important; }
-
-    .btn-apply-cal {
-      padding: 7px 14px; font-size: 11px; font-weight: 700; background: var(--bc-teal);
-      color: #000; border: none; border-radius: 16px; cursor: pointer; display: inline-flex;
-      align-items: center; gap: 5px; transition: opacity 0.2s;
-    }
-    .btn-apply-cal:hover { opacity: 0.85; }
-
-    .checkbox-container {
-      display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--bc-text-muted); cursor: pointer; margin-top: 4px;
+    .native-input { background: transparent!important; border: none!important; color: #fff!important; outline: none!important; font-size: 13px; }
+    .native-input::-webkit-calendar-picker-indicator { display: none!important; }
+    
+    .interval-input {
+      width: 55px; background: var(--bc-midnight); border: 1px solid var(--bc-border);
+      border-radius: 6px; color: var(--bc-teal); font-weight: 700; text-align: center; padding: 4px; font-size: 12px;
     }
 
-    .input-label { font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 6px; }
     .card-input, .card-textarea {
       width: 100%; background: var(--bc-midnight); border: 1px solid var(--bc-border);
-      border-radius: 8px; color: #fff; padding: 10px 14px; font-size: 13px;
-      margin-bottom: 14px; outline: none;
+      border-radius: 8px; color: #fff; padding: 10px; font-size: 13px; margin-bottom: 12px; outline: none;
     }
-    .card-textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
-    
-    .card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .btn-action {
-      flex: 1; min-width: 125px; padding: 9px 12px; border: none; border-radius: 20px;
-      font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex;
-      align-items: center; justify-content: center; gap: 6px; transition: opacity 0.2s;
+    .card-textarea { min-height: 100px; resize: vertical; }
+
+    /* Modal for New Condition / Subsection */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 2000;
     }
-    .btn-manual { background: var(--bc-purple-primary); color: white; }
-    .btn-cal { background: #2563eb; color: white; }
-    .btn-global { background: transparent; border: 1px dashed var(--bc-teal); color: var(--bc-teal); }
-    .btn-action:hover { opacity: 0.88; }
+    .modal-box {
+      background: var(--bc-card); border: 1px solid var(--bc-border); border-radius: 16px;
+      padding: 28px; width: 100%; max-width: 480px;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Spinner Overlay -->
   <div id="spinner-overlay" class="spinner-overlay">
     <div class="spinner"></div>
-    <div id="spinnerText" class="spinner-text">Processing request...</div>
+    <div id="spinnerText" style="font-size: 14px;">Processing request...</div>
   </div>
 
   <!-- Login Section -->
   <section id="login-view" class="auth-container">
     <div class="auth-box">
-      <div class="login-logo auth-logo" style="flex-direction: column; gap: 6px;">
-        <img src="band_connect_logo.jpeg" alt="Band Connect" class="bc-brand-icon-lg" />
-        <div>band<strong style="font-weight: 300;">CONNECT</strong></div>
-      </div>
-      <p>Provider Outreach & Roster Portal</p>
+      <img src="band_connect_logo.jpeg" alt="Band Connect" class="bc-brand-icon-lg" />
+      <div style="font-size: 24px; font-weight: 800; margin-bottom: 8px;">bandCONNECT</div>
+      <p style="color: var(--bc-text-muted); font-size: 13px; margin-bottom: 24px;">Condition Outreach & Timeline Engine</p>
       
-      <!-- PIN Input with Eye Toggle -->
       <div class="password-wrapper">
         <input type="password" id="pinInput" class="auth-input" placeholder="Enter Authorization PIN" autofocus />
-        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('pinInput', 'loginEyeIcon')" title="Toggle PIN Visibility">
-          <i id="loginEyeIcon" class="fa-solid fa-eye"></i>
+        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('pinInput', 'loginEye')">
+          <i id="loginEye" class="fa-solid fa-eye"></i>
         </button>
       </div>
 
       <button class="btn-auth" onclick="submitLogin()">Access Portal</button>
-      <div>
-        <button class="auth-link" onclick="openForgotView()">Forgot / Reset PIN?</button>
-      </div>
     </div>
   </section>
 
-  <!-- Step 1: Forgot Password Email Entry -->
-  <section id="forgot-view" class="auth-container" style="display: none;">
-    <div class="auth-box">
-      <div class="auth-logo" style="flex-direction: column; gap: 6px;">
-        <img src="band_connect_logo.jpeg" alt="Band Connect" class="bc-brand-icon-lg" />
-        <span style="font-size: 18px; color: var(--bc-teal);">Security Verification</span>
-      </div>
-      <p>Enter an authorized leadership email (Rohit, Abby, or Tara) to receive a 6-digit verification code.</p>
-      <div class="password-wrapper">
-        <input type="email" id="resetEmailInput" class="auth-input" placeholder="e.g. r.nayak@bandconnect.net" style="padding-right: 16px;" />
-      </div>
-      <button class="btn-auth" onclick="requestResetCode()">Send 6-Digit Code</button>
-      <div>
-        <button class="auth-link" onclick="backToLogin()">← Back to Login</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Step 2: Code Verification & New PIN -->
-  <section id="verify-view" class="auth-container" style="display: none;">
-    <div class="auth-box">
-      <div class="auth-logo" style="flex-direction: column; gap: 6px;">
-        <img src="band_connect_logo.jpeg" alt="Band Connect" class="bc-brand-icon-lg" />
-        <span style="font-size: 18px; color: var(--bc-purple-primary);">Set New PIN</span>
-      </div>
-      <p id="verifyInstruction">Enter the 6-digit verification code sent to your email.</p>
-      <div class="password-wrapper">
-        <input type="text" id="resetCodeInput" class="auth-input" placeholder="6-Digit Verification Code" maxlength="6" style="padding-right: 16px;" />
-      </div>
-      <div class="password-wrapper">
-        <input type="password" id="newPinInput" class="auth-input" placeholder="Enter New Portal PIN" />
-        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('newPinInput', 'resetEyeIcon')" title="Toggle PIN Visibility">
-          <i id="resetEyeIcon" class="fa-solid fa-eye"></i>
-        </button>
-      </div>
-      <button class="btn-auth" onclick="verifyAndSetNewPin()">Update Portal PIN</button>
-      <div>
-        <button class="auth-link" onclick="backToLogin()">Cancel</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Navigation -->
+  <!-- Top Nav -->
   <header id="mainNav" class="top-nav" style="display: none;">
     <div class="brand-title">
       <img src="band_connect_logo.jpeg" alt="Band Connect" class="bc-brand-icon" />
-      <span>band<strong style="font-weight: 300;">CONNECT</strong></span>
-      <span>| Roster Engine</span>
+      <span>band<strong>CONNECT</strong> | Condition Sequencing</span>
     </div>
-    <button class="btn-pill" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Exit</button>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-pill" style="background: var(--bc-teal); color: #000;" onclick="openConditionModal()">
+        <i class="fa-solid fa-folder-plus"></i> Add Sub-Section
+      </button>
+      <button class="btn-pill" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Exit</button>
+    </div>
   </header>
 
   <!-- Main Dashboard -->
   <main id="dashboard-view">
     <div class="toolbar-bar">
       <div>
-        <h2 style="font-size: 22px; font-weight: 700;">Patient Management</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Direct live sync with Patient Master database</span>
+        <h2 style="font-size: 22px; font-weight: 700;">Patient Roster</h2>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Dynamic injury conditions & customizable scheduling intervals</span>
       </div>
-      <div style="display: flex; gap: 12px; align-items: center;">
-        <input 
-          type="text" 
-          id="searchInput" 
-          class="search-input" 
-          placeholder="🔍 Universal Search across roster..." 
-          oninput="applyAllFilters()" 
-        />
-        <button class="btn-pill" onclick="fetchPatients()">
-          <i class="fa-solid fa-rotate-right"></i> Refresh
-        </button>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search patient, injury, clinic..." oninput="filterPatients()" />
+        <button class="btn-pill" onclick="fetchPatients()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
       </div>
-    </div>
-
-    <div class="filter-reset-row">
-      <button class="btn-clear-filters" onclick="resetAllColumnFilters()">
-        <i class="fa-solid fa-filter-circle-xmark"></i> Clear Column Filters
-      </button>
     </div>
 
     <div class="table-container">
       <table>
         <thead>
           <tr>
-            <th style="min-width: 170px;">
-              <span class="th-title">Patient Name</span>
-            </th>
-            <th style="min-width: 140px;">
-              <span class="th-title">Clinician</span>
-              <select id="filterClinician" class="th-filter-select" onchange="applyAllFilters()">
-                <option value="">All Clinicians</option>
-              </select>
-            </th>
-            <th style="min-width: 140px;">
-              <span class="th-title">Clinic</span>
-              <select id="filterClinic" class="th-filter-select" onchange="applyAllFilters()">
-                <option value="">All Clinics</option>
-              </select>
-            </th>
-            <th style="min-width: 110px;">
-              <span class="th-title">Device</span>
-              <select id="filterDevice" class="th-filter-select" onchange="applyAllFilters()">
-                <option value="">All Devices</option>
-              </select>
-            </th>
-            <th style="min-width: 140px;">
-              <span class="th-title">Condition</span>
-              <select id="filterCondition" class="th-filter-select" onchange="applyAllFilters()">
-                <option value="">All Conditions</option>
-              </select>
-            </th>
-            <th style="min-width: 110px;">
-              <span class="th-title">Start Date</span>
-            </th>
-            <th style="min-width: 150px;">
-              <span class="th-title">Status (Live Sync)</span>
-              <select id="filterStatus" class="th-filter-select" onchange="applyAllFilters()">
-                <option value="">All Statuses</option>
-                <option value="Active">Active</option>
-                <option value="Enrolled">Enrolled</option>
-                <option value="Hold">Hold</option>
-                <option value="Discharged">Discharged</option>
-                <option value="Dropped Out">Dropped Out</option>
-                <option value="Didn't Start">Didn't Start</option>
-              </select>
-            </th>
-            <th style="min-width: 100px;">
-              <span class="th-title">Action</span>
-            </th>
+            <th>Patient Name</th>
+            <th>Clinician</th>
+            <th>Clinic</th>
+            <th>Branch</th>
+            <th>Condition / Injury</th>
+            <th>Start Date</th>
+            <th>Status</th>
+            <th>Outreach Timeline</th>
           </tr>
         </thead>
         <tbody id="patientTableBody"></tbody>
@@ -451,15 +209,42 @@
     </div>
   </main>
 
+  <!-- Add Subsection/Condition Modal -->
+  <div id="conditionModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-layer-group" style="color: var(--bc-teal);"></i> Add New Injury Subsection</h3>
+      <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
+        Create a dedicated injury path under UE or LE with custom dispatch day intervals.
+      </p>
+
+      <label style="font-size: 12px; color: var(--bc-text-muted);">Select Branch:</label>
+      <select id="modalBranch" class="auth-input" style="text-align: left; margin-bottom: 12px;">
+        <option value="UE">UE (Upper Extremity / Handle)</option>
+        <option value="LE">LE (Lower Extremity / Cuff)</option>
+      </select>
+
+      <label style="font-size: 12px; color: var(--bc-text-muted);">Condition / Injury Name:</label>
+      <input type="text" id="modalConditionName" class="auth-input" placeholder="e.g. Rotator Cuff Tear (RCR) or ACL" style="margin-bottom: 12px;" />
+
+      <label style="font-size: 12px; color: var(--bc-text-muted);">Interval Decisions (Day Offsets, comma-separated):</label>
+      <input type="text" id="modalIntervals" class="auth-input" placeholder="e.g. 2, 4, 6, 8, 14" value="2, 4, 6, 8" style="margin-bottom: 20px;" />
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn-pill" style="background: transparent;" onclick="closeConditionModal()">Cancel</button>
+        <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="submitNewCondition()">Save Sub-Section</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Timeline Drawer -->
   <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
   <aside id="timelineDrawer" class="drawer-panel">
     <div class="drawer-header">
       <div>
         <h3 id="drawerPatientName">Patient Name</h3>
-        <p id="drawerMeta">Device | Email</p>
+        <p id="drawerMeta" style="color: var(--bc-teal);">Branch | Injury</p>
       </div>
-      <button class="btn-close" onclick="closeDrawer()"><i class="fa-solid fa-xmark"></i></button>
+      <button class="btn-close" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;" onclick="closeDrawer()">&times;</button>
     </div>
     <div class="drawer-body" id="drawerCards"></div>
   </aside>
@@ -469,77 +254,24 @@
 
     let patientStore = [];
     let activePatient = null;
-    let pendingResetEmail = '';
 
-    function showSpinner(msg = "Processing request...") {
+    function showSpinner(msg = "Processing...") {
       document.getElementById('spinnerText').innerText = msg;
       document.getElementById('spinner-overlay').style.display = 'flex';
     }
+    function hideSpinner() { document.getElementById('spinner-overlay').style.display = 'none'; }
 
-    function hideSpinner() {
-      document.getElementById('spinner-overlay').style.display = 'none';
-    }
-
-    // Toggle Eye Visibility for Passwords/PINs
     function togglePasswordVisibility(inputId, iconId) {
-      const input = document.getElementById(inputId);
+      const el = document.getElementById(inputId);
       const icon = document.getElementById(iconId);
-      if (!input || !icon) return;
-
-      if (input.type === 'password') {
-        input.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
-      } else {
-        input.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
-      }
-    }
-
-    function openPicker(inputId) {
-      const input = document.getElementById(inputId);
-      if (!input) return;
-      if (typeof input.showPicker === 'function') {
-        try { input.showPicker(); } catch (e) { input.focus(); }
-      } else {
-        input.focus();
-      }
-    }
-
-    // Map status string to sheet-matched CSS class
-    function getStatusClass(status) {
-      const normalized = (status || '').toLowerCase().trim();
-      switch (normalized) {
-        case 'active': return 'status-active';
-        case 'enrolled': return 'status-enrolled';
-        case 'dropped out': return 'status-dropped-out';
-        case 'hold': return 'status-hold';
-        case 'discharged': return 'status-discharged';
-        case "didn't start":
-        case "didnt start": return 'status-didnt-start';
-        default: return 'status-active';
-      }
-    }
-
-    // Auth Flows
-    function openForgotView() {
-      document.getElementById('login-view').style.display = 'none';
-      document.getElementById('forgot-view').style.display = 'flex';
-    }
-
-    function backToLogin() {
-      document.getElementById('forgot-view').style.display = 'none';
-      document.getElementById('verify-view').style.display = 'none';
-      document.getElementById('login-view').style.display = 'flex';
-      document.getElementById('pinInput').value = '';
+      el.type = el.type === 'password' ? 'text' : 'password';
+      icon.classList.toggle('fa-eye');
+      icon.classList.toggle('fa-eye-slash');
     }
 
     async function submitLogin() {
       const pin = document.getElementById('pinInput').value.trim();
-      if (!pin) return alert("Please enter a PIN.");
-
-      showSpinner("Authenticating credentials...");
+      showSpinner("Verifying Access...");
       try {
         const res = await fetch(`${API_URL}?action=VERIFY_PIN&pin=${encodeURIComponent(pin)}`);
         const json = await res.json();
@@ -549,71 +281,10 @@
           document.getElementById('dashboard-view').style.display = 'block';
           fetchPatients();
         } else {
-          alert(json.message || "Invalid PIN");
+          alert("Access Denied: " + json.message);
         }
       } catch (err) {
-        alert("Authentication failed: " + err.message);
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    async function requestResetCode() {
-      const email = document.getElementById('resetEmailInput').value.trim();
-      if (!email) return alert("Please enter an authorized leadership email.");
-
-      showSpinner("Validating email and sending 6-digit code...");
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'REQUEST_PASSWORD_RESET',
-            leadershipEmail: email
-          })
-        });
-        const json = await res.json();
-        if (json.success) {
-          pendingResetEmail = email;
-          document.getElementById('forgot-view').style.display = 'none';
-          document.getElementById('verify-view').style.display = 'flex';
-          document.getElementById('verifyInstruction').innerText = `Enter the 6-digit verification code sent to ${email}.`;
-        } else {
-          alert(`❌ ${json.message}`);
-        }
-      } catch (err) {
-        alert("Reset request failed: " + err.message);
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    async function verifyAndSetNewPin() {
-      const code = document.getElementById('resetCodeInput').value.trim();
-      const newPin = document.getElementById('newPinInput').value.trim();
-
-      if (!code || code.length !== 6) return alert("Please enter the 6-digit code.");
-      if (!newPin) return alert("Please enter the new PIN.");
-
-      showSpinner("Verifying code & updating PIN...");
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'VERIFY_RESET_PIN',
-            leadershipEmail: pendingResetEmail,
-            code: code,
-            newPin: newPin
-          })
-        });
-        const json = await res.json();
-        if (json.success) {
-          alert(`✅ ${json.message}`);
-          backToLogin();
-        } else {
-          alert(`❌ ${json.message}`);
-        }
-      } catch (err) {
-        alert("Verification failed: " + err.message);
+        alert("Error: " + err.message);
       } finally {
         hideSpinner();
       }
@@ -623,132 +294,47 @@
       document.getElementById('dashboard-view').style.display = 'none';
       document.getElementById('mainNav').style.display = 'none';
       document.getElementById('login-view').style.display = 'flex';
-      document.getElementById('pinInput').value = '';
     }
 
-    // Dashboard Data & Multi-Column Filtering
     async function fetchPatients() {
-      showSpinner("Loading patient roster...");
+      showSpinner("Loading Roster...");
       try {
         const res = await fetch(`${API_URL}?action=GET_PATIENTS`);
         const json = await res.json();
         if (json.success) {
           patientStore = json.data;
-          populateColumnFilterDropdowns(patientStore);
-          applyAllFilters();
-        } else {
-          alert("Failed to load roster: " + json.message);
+          renderPatients(patientStore);
         }
-      } catch (err) {
-        alert("Error fetching roster: " + err.message);
       } finally {
         hideSpinner();
       }
     }
 
-    function populateColumnFilterDropdowns(patients) {
-      const clinicians = new Set();
-      const clinics = new Set();
-      const devices = new Set();
-      const conditions = new Set();
-
-      patients.forEach(p => {
-        if (p.clinician) clinicians.add(p.clinician);
-        if (p.clinic) clinics.add(p.clinic);
-        if (p.deviceType) devices.add(p.deviceType);
-        if (p.condition && p.condition !== '—') conditions.add(p.condition);
-      });
-
-      fillDropdown('filterClinician', Array.from(clinicians).sort(), 'All Clinicians');
-      fillDropdown('filterClinic', Array.from(clinics).sort(), 'All Clinics');
-      fillDropdown('filterDevice', Array.from(devices).sort(), 'All Devices');
-      fillDropdown('filterCondition', Array.from(conditions).sort(), 'All Conditions');
-    }
-
-    function fillDropdown(elementId, items, placeholder) {
-      const select = document.getElementById(elementId);
-      const currentVal = select.value;
-      select.innerHTML = `<option value="">${placeholder}</option>`;
-      items.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item;
-        opt.textContent = item;
-        select.appendChild(opt);
-      });
-      select.value = currentVal;
-    }
-
-    function applyAllFilters() {
-      const searchQ = document.getElementById('searchInput').value.toLowerCase().trim();
-      const clinicianFilter = document.getElementById('filterClinician').value;
-      const clinicFilter = document.getElementById('filterClinic').value;
-      const deviceFilter = document.getElementById('filterDevice').value;
-      const conditionFilter = document.getElementById('filterCondition').value;
-      const statusFilter = document.getElementById('filterStatus').value;
-
-      const filtered = patientStore.filter(p => {
-        const matchesSearch = !searchQ || 
-          (p.patientName && p.patientName.toLowerCase().includes(searchQ)) ||
-          (p.clinician && p.clinician.toLowerCase().includes(searchQ)) ||
-          (p.clinic && p.clinic.toLowerCase().includes(searchQ)) ||
-          (p.condition && p.condition.toLowerCase().includes(searchQ)) ||
-          (p.status && p.status.toLowerCase().includes(searchQ));
-
-        const matchesClinician = !clinicianFilter || p.clinician === clinicianFilter;
-        const matchesClinic = !clinicFilter || p.clinic === clinicFilter;
-        const matchesDevice = !deviceFilter || p.deviceType === deviceFilter;
-        const matchesCondition = !conditionFilter || p.condition === conditionFilter;
-        const matchesStatus = !statusFilter || (p.status || '').toLowerCase() === statusFilter.toLowerCase();
-
-        return matchesSearch && matchesClinician && matchesClinic && matchesDevice && matchesCondition && matchesStatus;
-      });
-
-      renderPatients(filtered);
-    }
-
-    function resetAllColumnFilters() {
-      document.getElementById('filterClinician').value = '';
-      document.getElementById('filterClinic').value = '';
-      document.getElementById('filterDevice').value = '';
-      document.getElementById('filterCondition').value = '';
-      document.getElementById('filterStatus').value = '';
-      document.getElementById('searchInput').value = '';
-      applyAllFilters();
-    }
-
-    function renderPatients(patients) {
+    function renderPatients(list) {
       const tbody = document.getElementById('patientTableBody');
       tbody.innerHTML = '';
 
-      if (!patients || patients.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 28px; color: var(--bc-text-muted);">No matching patients found.</td></tr>';
-        return;
-      }
-
-      const statusOptions = ['Active', 'Enrolled', 'Hold', 'Discharged', 'Dropped Out', "Didn't Start"];
-
-      patients.forEach(p => {
+      list.forEach(p => {
         const tr = document.createElement('tr');
-        const badgeClass = getStatusClass(p.status);
+        const badgeClass = `status-${(p.status || 'Active').toLowerCase().replace(/\s+/g, '-')}`;
         
-        let selectHtml = `<select class="status-select ${badgeClass}" onchange="updateStatus(${p.rowNumber}, this.value, this, event)">`;
-        statusOptions.forEach(opt => {
-          const selected = (p.status || '').toLowerCase() === opt.toLowerCase() ? 'selected' : '';
-          selectHtml += `<option value="${opt}" ${selected}>${opt}</option>`;
-        });
-        selectHtml += `</select>`;
-
         tr.innerHTML = `
-          <td style="font-weight:600;">${escapeHtml(p.patientName)}</td>
-          <td>${escapeHtml(p.clinician)}</td>
-          <td>${escapeHtml(p.clinic)}</td>
-          <td>${escapeHtml(p.deviceType)}</td>
-          <td>${escapeHtml(p.condition)}</td>
-          <td>${escapeHtml(p.startDate)}</td>
-          <td>${selectHtml}</td>
+          <td style="font-weight:700;">${p.patientName}</td>
+          <td>${p.clinician}</td>
+          <td>${p.clinic}</td>
+          <td><span style="color:var(--bc-teal); font-weight:600;">${p.deviceType}</span></td>
+          <td><span style="background:rgba(255,255,255,0.06); padding:4px 8px; border-radius:6px;">${p.condition}</span></td>
+          <td>${p.startDate}</td>
           <td>
-            <button class="btn-pill" style="padding: 6px 14px; font-size: 12px;" onclick="openPatientDrawer(${p.rowNumber})">
-              Timeline <i class="fa-solid fa-chevron-right"></i>
+            <select class="status-select ${badgeClass}" onchange="updateStatus(${p.rowNumber}, this.value, this)">
+              ${['Active','Enrolled','Hold','Discharged','Dropped Out',"Didn't Start"].map(s => 
+                `<option value="${s}" ${p.status === s ? 'selected':''}>${s}</option>`
+              ).join('')}
+            </select>
+          </td>
+          <td>
+            <button class="btn-pill" style="padding:5px 12px; font-size:12px;" onclick="openPatientTimeline(${p.rowNumber})">
+              Sequence <i class="fa-solid fa-chevron-right"></i>
             </button>
           </td>
         `;
@@ -756,62 +342,86 @@
       });
     }
 
-    async function updateStatus(rowNumber, newStatus, selectElement, evt) {
-      if (evt) evt.stopPropagation();
-      showSpinner(`Updating status to ${newStatus}...`);
+    async function updateStatus(rowNumber, status, selectEl) {
+      showSpinner(`Setting status to ${status}...`);
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
-          body: JSON.stringify({
-            action: 'UPDATE_PATIENT_STATUS',
-            rowNumber: rowNumber,
-            newStatus: newStatus
-          })
+          body: JSON.stringify({ action: 'UPDATE_PATIENT_STATUS', rowNumber, newStatus: status })
         });
         const json = await res.json();
-        if (json.success) {
-          const p = patientStore.find(item => item.rowNumber === rowNumber);
-          if (p) p.status = newStatus;
-          selectElement.className = `status-select ${getStatusClass(newStatus)}`;
-          alert(`✅ ${json.message}`);
-        } else {
-          alert(`Update failed: ${json.message}`);
-        }
-      } catch (err) {
-        alert("Network error: " + err.message);
+        selectEl.className = `status-select status-${status.toLowerCase().replace(/\s+/g, '-')}`;
+        alert(json.message);
       } finally {
         hideSpinner();
       }
     }
 
-    async function openPatientDrawer(rowNumber) {
-      const patient = patientStore.find(p => p.rowNumber === rowNumber);
-      if (!patient) return;
-      activePatient = patient;
+    function filterPatients() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      const filtered = patientStore.filter(p => 
+        p.patientName.toLowerCase().includes(q) ||
+        p.condition.toLowerCase().includes(q) ||
+        p.clinic.toLowerCase().includes(q)
+      );
+      renderPatients(filtered);
+    }
 
-      document.getElementById('drawerPatientName').innerText = patient.patientName;
-      document.getElementById('drawerMeta').innerText = `${patient.deviceType || 'Hardware'} • ${patient.email || 'No email on file'}`;
+    // Dynamic Condition Subsection Manager
+    function openConditionModal() { document.getElementById('conditionModal').style.display = 'flex'; }
+    function closeConditionModal() { document.getElementById('conditionModal').style.display = 'none'; }
+
+    async function submitNewCondition() {
+      const branch = document.getElementById('modalBranch').value;
+      const conditionName = document.getElementById('modalConditionName').value.trim();
+      const rawIntervals = document.getElementById('modalIntervals').value.trim();
+
+      if (!conditionName) return alert("Please enter an injury/condition name.");
+      const baseIntervals = rawIntervals.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+
+      showSpinner(`Creating ${conditionName} sub-section...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'ADD_NEW_CONDITION',
+            branch,
+            conditionName,
+            baseIntervals
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        closeConditionModal();
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    // Patient Timeline Drawer
+    async function openPatientTimeline(rowNumber) {
+      activePatient = patientStore.find(p => p.rowNumber === rowNumber);
+      if (!activePatient) return;
+
+      document.getElementById('drawerPatientName').innerText = activePatient.patientName;
+      document.getElementById('drawerMeta').innerText = `${activePatient.deviceType} • Condition: ${activePatient.condition}`;
       
-      const cardsBox = document.getElementById('drawerCards');
-      cardsBox.innerHTML = '<div style="text-align:center; padding: 24px; color: var(--bc-text-muted);">Calculating therapy schedule...</div>';
+      const cards = document.getElementById('drawerCards');
+      cards.innerHTML = '<div style="text-align:center; padding:20px;">Loading condition sequence...</div>';
 
       document.getElementById('drawerOverlay').style.display = 'block';
       document.getElementById('timelineDrawer').classList.add('drawer-open');
 
       try {
-        const res = await fetch(`${API_URL}?action=GET_PATIENT_TIMELINE&rowNumber=${patient.rowNumber}`);
+        const res = await fetch(`${API_URL}?action=GET_PATIENT_TIMELINE&rowNumber=${rowNumber}`);
         const json = await res.json();
-        if (json.success) {
-          renderTimelineCards(json.timeline, json.deviceType);
-        } else {
-          cardsBox.innerHTML = `<div style="color:#ef4444; padding:16px;">Failed to load timeline: ${json.message}</div>`;
-        }
+        renderTimelineCards(json.timeline);
       } catch (err) {
-        cardsBox.innerHTML = `<div style="color:#ef4444; padding:16px;">Network error: ${err.message}</div>`;
+        cards.innerHTML = `<div style="color:red;">Error: ${err.message}</div>`;
       }
     }
 
-    function renderTimelineCards(timeline, deviceType) {
+    function renderTimelineCards(timeline) {
       const container = document.getElementById('drawerCards');
       container.innerHTML = '';
 
@@ -819,55 +429,44 @@
         const card = document.createElement('div');
         card.className = 'milestone-card';
         card.innerHTML = `
-          <div class="card-top">
-            <h4>${escapeHtml(item.title)}</h4>
-            <span style="font-size:12px; color:var(--bc-teal);">Branch: ${escapeHtml(item.branch)}</span>
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <strong style="color:#fff;">${item.title}</strong>
+            <span style="color:var(--bc-teal); font-size:12px;">Condition: ${item.condition}</span>
           </div>
 
+          <!-- Interval Decisions & Date Picker Row -->
           <div class="schedule-control">
             <div class="schedule-row">
-              <div class="picker-box" onclick="openPicker('date_${idx}')">
-                <span class="picker-emoji">📅</span>
-                <span class="picker-label">Date:</span>
-                <input type="date" id="date_${idx}" class="native-input" value="${item.isoDate || ''}" />
+              <span style="font-size:12px; color:var(--bc-text-muted);">Interval Day:</span>
+              <input type="number" id="offset_${idx}" class="interval-input" value="${item.dayOffset}" title="Custom interval days from patient start date" />
+
+              <div class="picker-box" onclick="document.getElementById('date_${idx}').showPicker()">
+                <span>📅</span>
+                <input type="date" id="date_${idx}" class="native-input" value="${item.isoDate}" />
               </div>
 
-              <div class="picker-box" onclick="openPicker('time_${idx}')">
-                <span class="picker-emoji">🕒</span>
-                <span class="picker-label">Time:</span>
+              <div class="picker-box" onclick="document.getElementById('time_${idx}').showPicker()">
+                <span>🕒</span>
                 <input type="time" id="time_${idx}" class="native-input" />
               </div>
 
-              <button 
-                type="button" 
-                class="btn-apply-cal" 
-                title="Erase old appointment and update Google Calendar"
-                onclick="applyCalendarUpdate(${idx}, '${item.id}', '${escapeHtml(item.title)}')">
-                <i class="fa-solid fa-arrows-rotate"></i> Apply to Calendar
+              <button class="btn-apply-cal" onclick="applyCalendar(${idx}, '${item.id}', '${item.title}')">
+                Apply Calendar
               </button>
             </div>
-            
-            <label class="checkbox-container">
-              <input type="checkbox" id="cal_sync_${idx}" checked />
-              <span>Include in Calendar when scheduling outreach below</span>
-            </label>
           </div>
 
-          <label class="input-label">Subject Line</label>
-          <input type="text" id="subj_${idx}" class="card-input" value="${escapeHtml(item.subject)}" />
-          
-          <label class="input-label">Email Message</label>
-          <textarea id="body_${idx}" class="card-textarea">${escapeHtml(item.defaultBody)}</textarea>
-          
-          <div class="card-actions">
-            <button class="btn-action btn-manual" onclick="dispatchManual(${idx}, '${item.id}')">
-              🚀 Send Now
-            </button>
-            <button class="btn-action btn-cal" onclick="scheduleOutreach(${idx}, '${item.id}', '${escapeHtml(item.title)}')">
-              📅 Schedule Outreach
-            </button>
-            <button class="btn-action btn-global" title="Save this subject and body as the default for all future ${item.branch} patients" onclick="saveAsGlobalDefault(${idx}, '${item.branch}', '${item.id}')">
-              💾 Set as Global Default
+          <label style="font-size:11px; color:var(--bc-text-muted);">Email Subject Line</label>
+          <input type="text" id="subj_${idx}" class="card-input" value="${item.subject}" />
+
+          <label style="font-size:11px; color:var(--bc-text-muted);">Dedicated Condition Copy</label>
+          <textarea id="body_${idx}" class="card-textarea">${item.defaultBody}</textarea>
+
+          <div style="display:flex; gap:8px;">
+            <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">🚀 Send Now</button>
+            <button class="btn-pill" style="background:transparent; border:1px dashed var(--bc-teal); color:var(--bc-teal); font-size:12px;" 
+              onclick="saveConditionDefault(${idx}, '${item.branch}', '${item.condition}', '${item.id}')">
+              💾 Save Condition Default
             </button>
           </div>
         `;
@@ -875,44 +474,60 @@
       });
     }
 
-    async function applyCalendarUpdate(idx, milestoneId, milestoneTitle) {
-      if (!activePatient) return;
+    async function applyCalendar(idx, milestoneId, milestoneTitle) {
       const newDate = document.getElementById(`date_${idx}`).value;
-      const timeVal = document.getElementById(`time_${idx}`).value;
+      const timeStr = document.getElementById(`time_${idx}`).value;
 
-      if (!newDate) return alert("Please select a date first.");
-
-      showSpinner(`Replacing previous calendar appointment with ${newDate}...`);
+      showSpinner(`Syncing calendar to ${newDate}...`);
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
           body: JSON.stringify({
             action: 'UPDATE_CALENDAR_EVENT',
-            rowNumber: activePatient.rowNumber,
             patientName: activePatient.patientName,
             recipientEmail: activePatient.email,
-            milestoneId: milestoneId,
-            milestoneTitle: milestoneTitle,
-            newDate: newDate,
-            timeStr: timeVal
+            milestoneTitle,
+            newDate,
+            timeStr
           })
         });
         const json = await res.json();
-        alert(json.success ? `✅ ${json.message}` : `❌ ${json.message}`);
-      } catch (err) {
-        alert("Calendar update failed: " + err.message);
+        alert(json.message);
       } finally {
         hideSpinner();
       }
     }
 
-    async function dispatchManual(idx, milestoneId) {
-      if (!activePatient || !activePatient.email) return alert("Patient is missing an email address.");
-      const subject = document.getElementById(`subj_${idx}`).value.trim();
-      const body = document.getElementById(`body_${idx}`).value.trim();
-      if (!subject || !body) return alert("Subject and body cannot be empty.");
+    async function saveConditionDefault(idx, branch, condition, milestoneId) {
+      const dayOffset = document.getElementById(`offset_${idx}`).value;
+      const subject = document.getElementById(`subj_${idx}`).value;
+      const bodyText = document.getElementById(`body_${idx}`).value;
 
-      showSpinner(`Dispatching ${milestoneId} outreach...`);
+      showSpinner(`Saving template for ${condition}...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'SAVE_CONDITION_TEMPLATE',
+            branch,
+            condition,
+            milestoneId,
+            dayOffset,
+            subject,
+            bodyText
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    async function sendNow(idx) {
+      const subject = document.getElementById(`subj_${idx}`).value;
+      const body = document.getElementById(`body_${idx}`).value;
+      showSpinner("Dispatching sandbox email...");
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
@@ -920,79 +535,12 @@
             action: 'DISPATCH_CUSTOM_EMAIL',
             recipientEmail: activePatient.email,
             patientName: activePatient.patientName,
-            subject: subject,
+            subject,
             htmlBody: body
           })
         });
         const json = await res.json();
-        alert(json.success ? `✅ ${json.message}` : `❌ Error: ${json.message}`);
-      } catch (err) {
-        alert("Request failed: " + err.message);
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    async function scheduleOutreach(idx, milestoneId, milestoneTitle) {
-      if (!activePatient || !activePatient.email) return alert("Patient has no email address.");
-      const chosenDate = document.getElementById(`date_${idx}`).value;
-      const chosenTime = document.getElementById(`time_${idx}`).value;
-      const syncCal = document.getElementById(`cal_sync_${idx}`).checked;
-      const subject = document.getElementById(`subj_${idx}`).value.trim();
-      const body = document.getElementById(`body_${idx}`).value.trim();
-
-      if (!chosenDate) return alert("Please select a target date.");
-      if (!subject || !body) return alert("Subject and body cannot be empty.");
-
-      showSpinner(`Scheduling outreach for ${chosenDate}...`);
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'SCHEDULE_OUTREACH_AND_CALENDAR',
-            rowNumber: activePatient.rowNumber,
-            patientName: activePatient.patientName,
-            recipientEmail: activePatient.email,
-            milestoneId: milestoneId,
-            milestoneTitle: milestoneTitle,
-            sendDate: chosenDate,
-            timeStr: chosenTime,
-            subject: subject,
-            bodyText: body,
-            syncCalendar: syncCal
-          })
-        });
-        const json = await res.json();
-        alert(json.success ? `✅ ${json.message}` : `❌ ${json.message}`);
-      } catch (err) {
-        alert("Scheduling failed: " + err.message);
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    async function saveAsGlobalDefault(idx, branch, milestoneId) {
-      const subject = document.getElementById(`subj_${idx}`).value.trim();
-      const body = document.getElementById(`body_${idx}`).value.trim();
-      if (!subject || !body) return alert("Subject and body cannot be empty.");
-
-      showSpinner(`Saving global blueprint for ${branch} (${milestoneId})...`);
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'SAVE_TEMPLATE',
-            branch: branch,
-            step: milestoneId,
-            offset: 0,
-            subject: subject,
-            htmlBody: body
-          })
-        });
-        const json = await res.json();
-        alert(json.success ? `✅ ${json.message}` : `❌ ${json.message}`);
-      } catch (err) {
-        alert("Save failed: " + err.message);
+        alert(json.message);
       } finally {
         hideSpinner();
       }
@@ -1001,15 +549,6 @@
     function closeDrawer() {
       document.getElementById('drawerOverlay').style.display = 'none';
       document.getElementById('timelineDrawer').classList.remove('drawer-open');
-    }
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
     }
   </script>
 </body>
