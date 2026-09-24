@@ -99,7 +99,7 @@
     }
     .search-input:focus { border-color: var(--bc-purple-primary); }
     .btn-pill {
-      padding: 10px 20px; background: var(--bc-pill-bg); border: 1px solid var(--bc-border);
+      padding: 9px 18px; background: var(--bc-pill-bg); border: 1px solid var(--bc-border);
       border-radius: 30px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
       display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;
     }
@@ -120,16 +120,16 @@
     table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
     th {
       background: rgba(0, 0, 0, 0.35); padding: 14px 16px; color: var(--bc-text-muted);
-      font-weight: 600; border-bottom: 1px solid var(--bc-border); vertical-align: top;
+      font-weight: 600; border-bottom: 1px solid var(--bc-border); vertical-align: middle;
     }
     .th-title {
       display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
-      margin-bottom: 6px; font-weight: 700; color: #e2e8f0;
+      font-weight: 700; color: #e2e8f0;
     }
     .th-filter-select {
       width: 100%; background: #161329; border: 1px solid var(--bc-border);
       color: #94a3b8; font-size: 11px; padding: 5px 6px; border-radius: 6px;
-      outline: none; cursor: pointer;
+      outline: none; cursor: pointer; margin-top: 6px;
     }
     .th-filter-select:focus { border-color: var(--bc-teal); color: #fff; }
 
@@ -144,7 +144,23 @@
     .status-hold { background: rgba(236, 72, 153, 0.12) !important; color: #f472b6 !important; border: 1px solid #ec4899 !important; }
     .status-discharged { background: rgba(59, 130, 246, 0.12) !important; color: #60a5fa !important; border: 1px solid #3b82f6 !important; }
     .status-didnt-start { background: rgba(255, 255, 255, 0.08) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.5) !important; }
-    .status-select option { background: #161329; color: #ffffff; }
+
+    /* Clean Status Badges for Queue */
+    .badge-scheduled {
+      display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
+      background: rgba(245, 158, 11, 0.15); border: 1px solid var(--bc-orange);
+      color: #fbbf24; border-radius: 20px; font-size: 11px; font-weight: 700;
+    }
+    .badge-sent {
+      display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
+      background: rgba(16, 185, 129, 0.15); border: 1px solid var(--bc-green);
+      color: #34d399; border-radius: 20px; font-size: 11px; font-weight: 700;
+    }
+    .badge-canceled {
+      display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
+      background: rgba(239, 68, 68, 0.15); border: 1px solid var(--bc-red);
+      color: #f87171; border-radius: 20px; font-size: 11px; font-weight: 700;
+    }
 
     /* Drawer */
     .drawer-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: none; z-index: 1000; }
@@ -161,17 +177,13 @@
     }
     .drawer-body { padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
 
-    /* Cards & Drag and Drop */
+    /* Cards */
     .milestone-card {
       background: var(--bc-card-inner); border: 1px solid var(--bc-border);
       border-radius: 14px; padding: 20px; position: relative; transition: all 0.2s ease;
     }
-    .milestone-card.dragging {
-      opacity: 0.45; transform: scale(0.98); border: 2px dashed var(--bc-teal);
-    }
-    .milestone-card.drag-over {
-      border-top: 3px solid var(--bc-teal);
-    }
+    .milestone-card.dragging { opacity: 0.45; transform: scale(0.98); border: 2px dashed var(--bc-teal); }
+    .milestone-card.drag-over { border-top: 3px solid var(--bc-teal); }
 
     .drag-grip {
       cursor: grab; display: inline-flex; align-items: center; justify-content: center;
@@ -180,7 +192,7 @@
     }
     .drag-grip:active { cursor: grabbing; }
 
-    /* Colored Icon Picker Boxes */
+    /* Picker Boxes */
     .picker-box {
       display: inline-flex; align-items: center; background: var(--bc-midnight);
       border: 1px solid var(--bc-border); border-radius: 8px; padding: 5px 12px; gap: 8px;
@@ -206,21 +218,6 @@
       border-radius: 8px; color: #fff; padding: 10px; font-size: 13px; margin-bottom: 12px; outline: none;
     }
     .card-textarea { min-height: 105px; resize: vertical; line-height: 1.5; }
-
-    /* Scheduled Indicator Badge */
-    .scheduled-badge {
-      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
-      background: rgba(245, 158, 11, 0.15); border: 1px solid var(--bc-orange);
-      color: #fbbf24; border-radius: 20px; font-size: 12px; font-weight: 700;
-    }
-
-    /* Add Step Box */
-    .add-step-box {
-      background: rgba(22, 19, 41, 0.4); border: 2px dashed var(--bc-border);
-      border-radius: 14px; padding: 22px; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 12px; margin-top: 8px;
-    }
-    .add-step-box:hover { border-color: var(--bc-teal); background: rgba(56, 189, 248, 0.03); }
 
     /* Modals */
     .modal-overlay {
@@ -257,13 +254,11 @@
       </div>
 
       <button class="btn-auth" onclick="submitLogin()">Access Portal</button>
-      <div>
-        <button class="auth-link" onclick="openForgotView()">Forgot / Reset PIN?</button>
-      </div>
+      <div><button class="auth-link" onclick="openForgotView()">Forgot / Reset PIN?</button></div>
     </div>
   </section>
 
-  <!-- Step 1: Forgot Password Email Entry -->
+  <!-- Step 1: Forgot Password -->
   <section id="forgot-view" class="auth-container" style="display: none;">
     <div class="auth-box">
       <div class="auth-logo" style="flex-direction: column; gap: 6px;">
@@ -279,7 +274,7 @@
     </div>
   </section>
 
-  <!-- Step 2: Code Verification & New PIN -->
+  <!-- Step 2: Code Verification -->
   <section id="verify-view" class="auth-container" style="display: none;">
     <div class="auth-box">
       <div class="auth-logo" style="flex-direction: column; gap: 6px;">
@@ -399,7 +394,7 @@
       </div>
     </div>
 
-    <!-- Studio Filter Bar & Condition Management Action -->
+    <!-- Studio Filter Bar -->
     <div style="display: flex; gap: 14px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; background: var(--bc-card); padding: 16px; border-radius: 12px; border: 1px solid var(--bc-border);">
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 13px; color: var(--bc-text-muted);">Branch:</span>
@@ -418,12 +413,11 @@
 
       <div id="deleteConditionWrap" style="margin-left: auto; display: none;">
         <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px;" onclick="deleteActiveSelectedCondition()">
-          <i class="fa-solid fa-trash-can"></i> Delete This Entire Condition
+          <i class="fa-solid fa-trash-can"></i> Delete Condition
         </button>
       </div>
     </div>
 
-    <!-- Studio Step Cards Container -->
     <div id="studioCardsContainer" style="display: flex; flex-direction: column; gap: 16px;"></div>
   </main>
 
@@ -432,7 +426,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-envelope-open-text" style="color: var(--bc-orange);"></i> Queued Outreach Schedule</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Inspect, reschedule, or cancel pending outreach emails across your roster</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Live status tracking: scheduled emails, already sent dispatches, and quick cancellations</span>
       </div>
       <div>
         <button class="btn-pill" onclick="loadQueueDashboard()">
@@ -445,12 +439,12 @@
       <table>
         <thead>
           <tr>
-            <th><span class="th-title">Patient</span></th>
-            <th><span class="th-title">Email</span></th>
-            <th><span class="th-title">Scheduled Send Time</span></th>
-            <th><span class="th-title">Subject Line</span></th>
-            <th><span class="th-title">Status</span></th>
-            <th><span class="th-title">Actions</span></th>
+            <th style="min-width: 140px;"><span class="th-title">Patient</span></th>
+            <th style="min-width: 160px;"><span class="th-title">Email</span></th>
+            <th style="min-width: 160px;"><span class="th-title">Scheduled Date & Time</span></th>
+            <th style="min-width: 220px;"><span class="th-title">Subject Line</span></th>
+            <th style="min-width: 130px;"><span class="th-title">Status</span></th>
+            <th style="min-width: 120px;"><span class="th-title">Actions</span></th>
           </tr>
         </thead>
         <tbody id="queueTableBody"></tbody>
@@ -458,34 +452,7 @@
     </div>
   </main>
 
-  <!-- Add Subsection/Condition Modal -->
-  <div id="conditionModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-folder-plus" style="color: var(--bc-teal);"></i> Add New Injury Condition</h3>
-      <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
-        Creates a dedicated injury sequence under UE or LE with default day intervals.
-      </p>
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Branch:</label>
-      <select id="modalBranch" class="auth-input" style="text-align: left; margin-bottom: 12px; padding: 10px;">
-        <option value="UE">UE (Upper Extremity / Handle)</option>
-        <option value="LE">LE (Lower Extremity / Cuff)</option>
-      </select>
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Condition / Injury Name:</label>
-      <input type="text" id="modalConditionName" class="auth-input" placeholder="e.g. Rotator Cuff Tear (RCR) or ACL" style="margin-bottom: 12px;" />
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Day Intervals (comma-separated):</label>
-      <input type="text" id="modalIntervals" class="auth-input" value="2, 4, 6, 8" style="margin-bottom: 20px;" />
-
-      <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button class="btn-pill" style="background: transparent;" onclick="closeConditionModal()">Cancel</button>
-        <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="submitNewCondition()">Save Condition</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Timeline Drawer (Patient-Specific Sequence & Live Schedule Editing) -->
+  <!-- Timeline Drawer (Patient Sequences) -->
   <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
   <aside id="timelineDrawer" class="drawer-panel">
     <div class="drawer-header">
@@ -498,6 +465,31 @@
     <div class="drawer-body" id="drawerCards"></div>
   </aside>
 
+  <!-- Edit Queue Modal -->
+  <div id="editQueueModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-clock" style="color: var(--bc-orange);"></i> Edit Scheduled Outreach</h3>
+      <input type="hidden" id="editQueueRowIndex" />
+      
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Target Date:</label>
+      <input type="date" id="editQueueDate" class="card-input" style="margin-bottom: 12px;" />
+
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Target Time:</label>
+      <input type="time" id="editQueueTime" class="card-input" style="margin-bottom: 12px;" />
+
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject:</label>
+      <input type="text" id="editQueueSubj" class="card-input" style="margin-bottom: 12px;" />
+
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content:</label>
+      <textarea id="editQueueBody" class="card-textarea" style="margin-bottom: 20px;"></textarea>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn-pill" style="background: transparent;" onclick="closeEditQueueModal()">Cancel</button>
+        <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="submitEditQueueModal()">Save & Update</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbzZhcXbEJAOBNSnXqHur3a-lw2UAH_Oi__vj9QPVuxanZP0G3v5UBCmhml8_CVYuwEe/exec";
 
@@ -509,8 +501,7 @@
     let patientTimelineStore = [];
     let patientQueuedMap = {};
     let patientStartDateObj = new Date();
-    let draggedItemIdx = null;
-    let draggedPatientIdx = null;
+    let currentRawQueue = [];
 
     let conditionMap = {
       UE: new Set(['General']),
@@ -575,21 +566,25 @@
       }
     }
 
-    // ----------------------------------------------------
-    // AUTHENTICATION & PIN RESET
-    // ----------------------------------------------------
-    function openForgotView() {
-      document.getElementById('login-view').style.display = 'none';
-      document.getElementById('forgot-view').style.display = 'flex';
+    // Helper: Clean formatting for Date and Time
+    function formatScheduleDateTime(dateStr, timeStr) {
+      if (!dateStr) return '—';
+      let cleanTime = timeStr || '09:00';
+      // If time string contains 1899 or GMT garbage, strip to readable HH:MM AM/PM
+      if (cleanTime.includes('GMT') || cleanTime.includes('1899')) {
+        try {
+          const d = new Date(cleanTime);
+          cleanTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } catch (e) {
+          cleanTime = '09:00 AM';
+        }
+      }
+      return `${dateStr} • ${cleanTime}`;
     }
 
-    function backToLogin() {
-      document.getElementById('forgot-view').style.display = 'none';
-      document.getElementById('verify-view').style.display = 'none';
-      document.getElementById('login-view').style.display = 'flex';
-      document.getElementById('pinInput').value = '';
-    }
-
+    // ----------------------------------------------------
+    // AUTHENTICATION & LOGIN
+    // ----------------------------------------------------
     async function submitLogin() {
       const pin = document.getElementById('pinInput').value.trim();
       if (!pin) return alert("Please enter a PIN.");
@@ -613,64 +608,6 @@
       }
     }
 
-    async function requestResetCode() {
-      const email = document.getElementById('resetEmailInput').value.trim();
-      if (!email) return alert("Please enter an authorized leadership email.");
-
-      showSpinner("Dispatching 6-digit code...");
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'REQUEST_PASSWORD_RESET', leadershipEmail: email })
-        });
-        const json = await res.json();
-        if (json.success) {
-          pendingResetEmail = email;
-          document.getElementById('forgot-view').style.display = 'none';
-          document.getElementById('verify-view').style.display = 'flex';
-          document.getElementById('verifyInstruction').innerText = `Enter the 6-digit code sent to ${email}.`;
-        } else {
-          alert(`❌ ${json.message}`);
-        }
-      } catch (err) {
-        alert("Reset request failed: " + err.message);
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    async function verifyAndSetNewPin() {
-      const code = document.getElementById('resetCodeInput').value.trim();
-      const newPin = document.getElementById('newPinInput').value.trim();
-
-      if (!code || code.length !== 6) return alert("Please enter the 6-digit code.");
-      if (!newPin) return alert("Please enter the new PIN.");
-
-      showSpinner("Verifying code & updating PIN...");
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'VERIFY_RESET_PIN',
-            leadershipEmail: pendingResetEmail,
-            code: code,
-            newPin: newPin
-          })
-        });
-        const json = await res.json();
-        if (json.success) {
-          alert(`✅ ${json.message}`);
-          backToLogin();
-        } else {
-          alert(`❌ ${json.message}`);
-        }
-      } catch (err) {
-        alert("Verification failed: " + err.message);
-      } finally {
-        hideSpinner();
-      }
-    }
-
     function logout() {
       document.getElementById('dashboard-view').style.display = 'none';
       document.getElementById('studio-view').style.display = 'none';
@@ -681,7 +618,7 @@
     }
 
     // ----------------------------------------------------
-    // DELTA PATIENT ROSTER FETCHING & FILTERING
+    // ROSTER & DELTA FETCHING
     // ----------------------------------------------------
     async function loadPatients(forceFullReload = false) {
       let localRoster = [];
@@ -927,7 +864,7 @@
     }
 
     // ----------------------------------------------------
-    // INJURY STUDIO: DRAG & DROP REORDERING + STEP CREATION
+    // INJURY & TEMPLATE STUDIO
     // ----------------------------------------------------
     async function loadStudioTemplates() {
       showSpinner("Loading injury studio...");
@@ -994,44 +931,11 @@
       currentDisplayedTemplates.forEach((tpl, idx) => {
         const card = document.createElement('div');
         card.className = 'milestone-card';
-        card.setAttribute('draggable', 'true');
-        card.dataset.index = idx;
-
-        card.addEventListener('dragstart', (e) => {
-          draggedItemIdx = idx;
-          card.classList.add('dragging');
-          e.dataTransfer.effectAllowed = 'move';
-        });
-
-        card.addEventListener('dragend', () => {
-          card.classList.remove('dragging');
-          document.querySelectorAll('.milestone-card').forEach(c => c.classList.remove('drag-over'));
-        });
-
-        card.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          card.classList.add('drag-over');
-        });
-
-        card.addEventListener('dragleave', () => {
-          card.classList.remove('drag-over');
-        });
-
-        card.addEventListener('drop', (e) => {
-          e.preventDefault();
-          card.classList.remove('drag-over');
-          const targetIdx = idx;
-          if (draggedItemIdx !== null && draggedItemIdx !== targetIdx) {
-            handleStudioReorder(draggedItemIdx, targetIdx);
-          }
-        });
-
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="drag-grip" title="Drag to reorder sequence step"><i class="fa-solid fa-grip-vertical"></i> ⠿ Move</span>
+            <div>
               <span style="background: var(--bc-purple-primary); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHtml(tpl.branch)}</span>
-              <strong style="font-size: 15px; margin-left: 4px;">${escapeHtml(tpl.condition)}</strong>
+              <strong style="font-size: 15px; margin-left: 6px;">${escapeHtml(tpl.condition)}</strong>
             </div>
             <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); padding: 5px 12px; font-size: 11px;" onclick="deleteTemplateStep('${tpl.milestoneId}')">
               <i class="fa-solid fa-trash"></i> Delete Step
@@ -1039,14 +943,14 @@
           </div>
 
           <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px;">
-            <span style="font-size: 12px; color: var(--bc-text-muted); font-weight: 600;">Interval Day (Offset):</span>
+            <span style="font-size: 12px; color: var(--bc-text-muted); font-weight: 600;">Day Offset:</span>
             <input type="number" id="studio_offset_${idx}" class="interval-input" value="${tpl.dayOffset}" />
           </div>
 
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
           <input type="text" id="studio_subj_${idx}" class="card-input" value="${escapeHtml(tpl.subject)}" />
 
-          <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content (Supports {{first_name}})</label>
+          <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body (Supports {{first_name}})</label>
           <textarea id="studio_body_${idx}" class="card-textarea">${escapeHtml(tpl.bodyText)}</textarea>
 
           <div style="display:flex; justify-content:flex-end;">
@@ -1057,114 +961,6 @@
         `;
         container.appendChild(card);
       });
-
-      const targetCondition = condVal === 'ALL' ? 'General' : condVal;
-      const addStepBox = document.createElement('div');
-      addStepBox.className = 'add-step-box';
-      addStepBox.innerHTML = `
-        <div style="font-size: 14px; font-weight: 700; color: var(--bc-teal);">
-          <i class="fa-solid fa-plus-circle"></i> Append Step to ${escapeHtml(targetCondition)} (${escapeHtml(branchVal)})
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%;">
-          <span style="font-size: 12px; color: var(--bc-text-muted);">Send on Day:</span>
-          <input type="number" id="studioNewStepOffset" class="interval-input" placeholder="e.g. 5" />
-          <input type="text" id="studioNewStepSubj" class="native-input" placeholder="Subject (optional)" style="background: var(--bc-midnight) !important; padding: 8px 14px; border-radius: 6px; min-width: 200px;" />
-          <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px; padding: 7px 16px;" onclick="addStudioDayStep('${branchVal}', '${targetCondition}')">
-            + Append Step
-          </button>
-        </div>
-      `;
-      container.appendChild(addStepBox);
-    }
-
-    async function handleStudioReorder(fromIdx, toIdx) {
-      const movedItem = currentDisplayedTemplates.splice(fromIdx, 1)[0];
-      currentDisplayedTemplates.splice(toIdx, 0, movedItem);
-
-      for (let i = 0; i < currentDisplayedTemplates.length; i++) {
-        if (i > 0 && currentDisplayedTemplates[i].dayOffset <= currentDisplayedTemplates[i - 1].dayOffset) {
-          currentDisplayedTemplates[i].dayOffset = currentDisplayedTemplates[i - 1].dayOffset + 2;
-        }
-      }
-
-      renderStudioCards();
-
-      const updated = currentDisplayedTemplates[toIdx];
-      showSpinner(`Updating sequence order to Day ${updated.dayOffset}...`);
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'SAVE_CONDITION_TEMPLATE',
-            branch: updated.branch,
-            condition: updated.condition,
-            milestoneId: updated.milestoneId,
-            dayOffset: updated.dayOffset,
-            subject: updated.subject,
-            bodyText: updated.bodyText
-          })
-        });
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    async function addStudioDayStep(branch, condition) {
-      const offsetInput = document.getElementById('studioNewStepOffset');
-      const subjInput = document.getElementById('studioNewStepSubj');
-      const offset = parseInt(offsetInput.value.trim());
-
-      if (isNaN(offset) || offset <= 0) {
-        return alert("Please enter a valid day number (e.g. 5, 10, 14).");
-      }
-
-      const customSubj = subjInput ? subjInput.value.trim() : '';
-
-      showSpinner(`Adding Day ${offset} to ${condition}...`);
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'ADD_SEQUENCE_STEP',
-            branch: branch,
-            condition: condition,
-            dayOffset: offset,
-            subject: customSubj || `Day ${offset}: ${condition} Progression`,
-            bodyText: `Hello {{first_name}},\n\nHere is your Day ${offset} check-in for your ${condition} plan.`
-          })
-        });
-        const json = await res.json();
-        alert(json.message);
-        loadStudioTemplates();
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    async function deleteActiveSelectedCondition() {
-      const branch = document.getElementById('studioBranchFilter').value;
-      const cond = document.getElementById('studioConditionFilter').value;
-
-      if (cond === 'ALL' || cond.toLowerCase() === 'general') {
-        return alert("Cannot delete this condition.");
-      }
-
-      if (!confirm(`Are you sure you want to permanently delete "${cond}" and all its steps?`)) {
-        return;
-      }
-
-      showSpinner(`Deleting condition "${cond}"...`);
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'DELETE_CONDITION', branch: branch, conditionName: cond })
-        });
-        const json = await res.json();
-        alert(json.message);
-        loadStudioTemplates();
-      } finally {
-        hideSpinner();
-      }
     }
 
     async function saveStudioTemplate(idx, branch, condition, milestoneId) {
@@ -1211,45 +1007,7 @@
     }
 
     // ----------------------------------------------------
-    // CONDITION CREATION MODAL
-    // ----------------------------------------------------
-    function openConditionModal() { document.getElementById('conditionModal').style.display = 'flex'; }
-    function closeConditionModal() { document.getElementById('conditionModal').style.display = 'none'; }
-
-    async function submitNewCondition() {
-      const branch = document.getElementById('modalBranch').value;
-      const conditionName = document.getElementById('modalConditionName').value.trim();
-      const rawIntervals = document.getElementById('modalIntervals').value.trim();
-
-      if (!conditionName) return alert("Please enter a condition name.");
-      const baseIntervals = rawIntervals.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
-
-      showSpinner(`Creating condition ${conditionName}...`);
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'ADD_NEW_CONDITION',
-            branch: branch,
-            conditionName: conditionName,
-            baseIntervals: baseIntervals
-          })
-        });
-        const json = await res.json();
-        alert(json.message);
-        closeConditionModal();
-        conditionMap[branch].add(conditionName);
-        renderConditionDropdown();
-        if (document.getElementById('studio-view').style.display === 'block') {
-          loadStudioTemplates();
-        }
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    // ----------------------------------------------------
-    // PATIENT TIMELINE DRAWER (EDIT & CANCEL SCHEDULES)
+    // PATIENT TIMELINE DRAWER & FLOW NAVIGATION
     // ----------------------------------------------------
     async function openPatientTimeline(rowNumber) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
@@ -1259,7 +1017,7 @@
       document.getElementById('drawerMeta').innerText = `${activePatient.deviceType} • Condition: ${activePatient.condition}`;
       
       const cards = document.getElementById('drawerCards');
-      cards.innerHTML = '<div style="text-align:center; padding:20px; color:var(--bc-text-muted);">Loading patient sequence & scheduled outreach...</div>';
+      cards.innerHTML = '<div style="text-align:center; padding:20px; color:var(--bc-text-muted);">Loading patient sequence & status...</div>';
 
       document.getElementById('drawerOverlay').style.display = 'block';
       document.getElementById('timelineDrawer').classList.add('drawer-open');
@@ -1290,73 +1048,45 @@
       patientTimelineStore.forEach((item, idx) => {
         const card = document.createElement('div');
         card.className = 'milestone-card';
-        card.setAttribute('draggable', 'true');
-        card.dataset.index = idx;
 
-        const isScheduled = !!patientQueuedMap[item.id];
-        const queueData = patientQueuedMap[item.id] || null;
+        const queueItem = patientQueuedMap[item.id] || null;
+        const isScheduled = queueItem && queueItem.status === 'Scheduled';
+        const isSent = queueItem && queueItem.status === 'Sent';
 
-        const initialDate = queueData ? queueData.scheduledDate : item.isoDate;
-        const initialTime = queueData ? queueData.scheduledTime : '09:00';
-        const initialSubj = queueData ? queueData.subject : item.subject;
-        const initialBody = queueData ? queueData.bodyText : item.defaultBody;
+        const initialDate = queueItem ? queueItem.scheduledDate : item.isoDate;
+        const initialTime = queueItem ? queueItem.scheduledTime : '09:00';
+        const initialSubj = queueItem ? queueItem.subject : item.subject;
+        const initialBody = queueItem ? queueItem.bodyText : item.defaultBody;
 
-        card.addEventListener('dragstart', (e) => {
-          draggedPatientIdx = idx;
-          card.classList.add('dragging');
-          e.dataTransfer.effectAllowed = 'move';
-        });
+        let statusBadge = `<span style="color:var(--bc-teal); font-size:12px;">Condition: ${escapeHtml(item.condition)}</span>`;
+        let actionButtonsHtml = '';
 
-        card.addEventListener('dragend', () => {
-          card.classList.remove('dragging');
-          container.querySelectorAll('.milestone-card').forEach(c => c.classList.remove('drag-over'));
-        });
-
-        card.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          card.classList.add('drag-over');
-        });
-
-        card.addEventListener('dragleave', () => {
-          card.classList.remove('drag-over');
-        });
-
-        card.addEventListener('drop', (e) => {
-          e.preventDefault();
-          card.classList.remove('drag-over');
-          if (draggedPatientIdx !== null && draggedPatientIdx !== idx) {
-            const moved = patientTimelineStore.splice(draggedPatientIdx, 1)[0];
-            patientTimelineStore.splice(idx, 0, moved);
-
-            for (let i = 0; i < patientTimelineStore.length; i++) {
-              if (i > 0 && patientTimelineStore[i].dayOffset <= patientTimelineStore[i - 1].dayOffset) {
-                patientTimelineStore[i].dayOffset = patientTimelineStore[i - 1].dayOffset + 2;
-                const d = new Date(patientStartDateObj);
-                d.setDate(d.getDate() + patientTimelineStore[i].dayOffset);
-                patientTimelineStore[i].isoDate = d.toISOString().split('T')[0];
-              }
-            }
-            renderPatientTimelineCards();
-          }
-        });
-
-        let scheduleHeaderBadge = isScheduled 
-          ? `<span class="scheduled-badge"><i class="fa-solid fa-clock-rotate-left"></i> Scheduled (${escapeHtml(queueData.scheduledDate)} at ${escapeHtml(queueData.scheduledTime)})</span>`
-          : `<span style="color:var(--bc-teal); font-size:12px;">Condition: ${escapeHtml(item.condition)}</span>`;
-
-        let actionButtonsHtml = isScheduled
-          ? `
-            <button class="btn-pill" style="background: #2563eb; color: #ffffff; font-size: 12px;" onclick="scheduleOutreach(${idx}, '${item.id}')">
-              ✏️ Reschedule / Update
-            </button>
-            <button class="btn-pill" style="background: rgba(239, 68, 68, 0.2); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px;" onclick="cancelOutreach('${item.id}')">
-              🗑️ Cancel Schedule
-            </button>
-            <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">
-              🚀 Send Now
-            </button>
-          `
-          : `
+        if (isSent) {
+          statusBadge = `<span class="badge-sent"><i class="fa-solid fa-check-double"></i> Already Sent</span>`;
+          actionButtonsHtml = `
+            <div style="font-size: 12px; color: #34d399; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-circle-check"></i> This email check-in has already been dispatched.
+            </div>
+          `;
+        } else if (isScheduled) {
+          statusBadge = `<span class="badge-scheduled"><i class="fa-solid fa-clock"></i> Scheduled for ${formatScheduleDateTime(queueItem.scheduledDate, queueItem.scheduledTime)}</span>`;
+          actionButtonsHtml = `
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+              <div style="background: rgba(245, 158, 11, 0.1); border: 1px dashed var(--bc-orange); padding: 10px 14px; border-radius: 8px; font-size: 12px; color: #fbbf24; display: flex; justify-content: space-between; align-items: center;">
+                <span><i class="fa-solid fa-info-circle"></i> Email is queued. To edit or cancel, go to <strong>Queued Outreach</strong>.</span>
+                <button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: var(--bc-orange); color: #000;" onclick="closeDrawer(); switchView('queue');">
+                  View in Queue →
+                </button>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">
+                  🚀 Send Right Now Instead
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          actionButtonsHtml = `
             <button class="btn-pill" style="background: #2563eb; color: #ffffff; font-size: 12px;" onclick="scheduleOutreach(${idx}, '${item.id}')">
               <i class="fa-solid fa-clock" style="color: #fff;"></i> Schedule Outreach
             </button>
@@ -1364,73 +1094,50 @@
               🚀 Send Now
             </button>
           `;
+        }
 
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap: wrap; gap: 8px;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span class="drag-grip" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i> ⠿</span>
-              <strong style="color:#fff;">${escapeHtml(item.title)}</strong>
-            </div>
-            ${scheduleHeaderBadge}
+            <strong style="color:#fff; font-size: 15px;">${escapeHtml(item.title)}</strong>
+            ${statusBadge}
           </div>
 
           <div style="background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px; border: 1px solid var(--bc-border); margin-bottom: 14px;">
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
               <span style="font-size:12px; color:var(--bc-text-muted); font-weight:600;">Day:</span>
-              <input type="number" id="offset_${idx}" class="interval-input" value="${item.dayOffset}" onchange="recalculateTargetDate(${idx})" />
+              <input type="number" id="offset_${idx}" class="interval-input" value="${item.dayOffset}" onchange="recalculateTargetDate(${idx})" ${isSent ? 'disabled' : ''} />
 
-              <!-- Cyan Calendar Picker -->
               <div class="picker-box" onclick="triggerPicker('date_${idx}')">
                 <i class="fa-solid fa-calendar-days icon-calendar-color"></i>
-                <input type="date" id="date_${idx}" class="native-input" value="${initialDate}" />
+                <input type="date" id="date_${idx}" class="native-input" value="${initialDate}" ${isSent ? 'disabled' : ''} />
               </div>
 
-              <!-- Amber Clock Picker -->
               <div class="picker-box" onclick="triggerPicker('time_${idx}')">
                 <i class="fa-solid fa-clock icon-clock-color"></i>
-                <input type="time" id="time_${idx}" class="native-input" value="${initialTime}" />
+                <input type="time" id="time_${idx}" class="native-input" value="${initialTime}" ${isSent ? 'disabled' : ''} />
               </div>
             </div>
           </div>
 
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
-          <input type="text" id="subj_${idx}" class="card-input" value="${escapeHtml(initialSubj)}" />
+          <input type="text" id="subj_${idx}" class="card-input" value="${escapeHtml(initialSubj)}" ${isSent ? 'disabled' : ''} />
 
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
-          <textarea id="body_${idx}" class="card-textarea">${escapeHtml(initialBody)}</textarea>
+          <textarea id="body_${idx}" class="card-textarea" ${isSent ? 'disabled' : ''}>${escapeHtml(initialBody)}</textarea>
 
-          <div style="display:flex; gap:8px; flex-wrap: wrap;">
+          <div style="display:flex; gap:8px; flex-wrap: wrap; margin-top: 4px;">
             ${actionButtonsHtml}
           </div>
         `;
         container.appendChild(card);
       });
-
-      const addPatientDayBox = document.createElement('div');
-      addPatientDayBox.className = 'add-step-box';
-      addPatientDayBox.innerHTML = `
-        <div style="font-size: 14px; font-weight: 700; color: var(--bc-teal);">
-          <i class="fa-solid fa-plus-circle"></i> Add Custom Outreach Day for ${escapeHtml(activePatient.patientName)}
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%; margin-top: 4px;">
-          <span style="font-size: 12px; color: var(--bc-text-muted);">Send on Day:</span>
-          <input type="number" id="patientNewDayOffset" class="interval-input" placeholder="e.g. 5" />
-          <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px; padding: 7px 16px;" onclick="addPatientCustomDay()">
-            + Append Day Step
-          </button>
-        </div>
-      `;
-      container.appendChild(addPatientDayBox);
     }
 
     function triggerPicker(id) {
       const el = document.getElementById(id);
-      if (!el) return;
-      if (typeof el.showPicker === 'function') {
-        el.showPicker();
-      } else {
-        el.focus();
-      }
+      if (!el || el.disabled) return;
+      if (typeof el.showPicker === 'function') el.showPicker();
+      else el.focus();
     }
 
     function recalculateTargetDate(idx) {
@@ -1443,38 +1150,6 @@
       patientTimelineStore[idx].isoDate = isoStr;
     }
 
-    async function addPatientCustomDay() {
-      const offsetInput = document.getElementById('patientNewDayOffset');
-      const offset = parseInt(offsetInput.value.trim());
-
-      if (isNaN(offset) || offset <= 0) {
-        return alert("Please enter a valid day number.");
-      }
-
-      const branch = getBranchFromDevice(activePatient.deviceType);
-      const condition = activePatient.condition || 'General';
-
-      showSpinner(`Appending Day ${offset} step...`);
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'ADD_SEQUENCE_STEP',
-            branch: branch,
-            condition: condition,
-            dayOffset: offset,
-            subject: `Day ${offset}: ${condition} Follow-up`,
-            bodyText: `Hello {{first_name}},\n\nHere is your Day ${offset} update for your ${condition} plan.`
-          })
-        });
-        const json = await res.json();
-        alert(json.message);
-        openPatientTimeline(activePatient.rowNumber);
-      } finally {
-        hideSpinner();
-      }
-    }
-
     async function scheduleOutreach(idx, milestoneId) {
       if (!activePatient || !activePatient.email) return alert("Patient does not have a registered email.");
       const chosenDate = document.getElementById(`date_${idx}`).value;
@@ -1483,9 +1158,9 @@
       const body = document.getElementById(`body_${idx}`).value.trim();
 
       if (!chosenDate) return alert("Please select a target send date.");
-      if (!subject || !body) return alert("Subject and email body cannot be empty.");
+      if (!subject || !body) return alert("Subject and body cannot be empty.");
 
-      showSpinner(`Updating outreach schedule for ${chosenDate}...`);
+      showSpinner(`Queueing outreach for ${chosenDate}...`);
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
@@ -1504,28 +1179,6 @@
         const json = await res.json();
         alert(json.success ? `✅ ${json.message}` : `❌ ${json.message}`);
         openPatientTimeline(activePatient.rowNumber);
-      } catch (err) {
-        alert("Scheduling error: " + err.message);
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    async function cancelOutreach(milestoneId) {
-      if (!confirm("Are you sure you want to cancel this scheduled email?")) return;
-      showSpinner("Canceling scheduled email...");
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'DELETE_SCHEDULED_OUTREACH',
-            patientName: activePatient.patientName,
-            milestoneId: milestoneId
-          })
-        });
-        const json = await res.json();
-        alert(json.message);
-        openPatientTimeline(activePatient.rowNumber);
       } finally {
         hideSpinner();
       }
@@ -1534,7 +1187,7 @@
     async function sendNow(idx) {
       const subject = document.getElementById(`subj_${idx}`).value;
       const body = document.getElementById(`body_${idx}`).value;
-      showSpinner("Dispatching email...");
+      showSpinner("Dispatching sandbox email...");
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
@@ -1554,7 +1207,7 @@
     }
 
     // ----------------------------------------------------
-    // DEDICATED QUEUED OUTREACH DASHBOARD (VIEW 3)
+    // QUEUED OUTREACH MANAGEMENT (CLEAN TABLE & EDIT MODAL)
     // ----------------------------------------------------
     async function loadQueueDashboard() {
       showSpinner("Loading queued outreach schedule...");
@@ -1562,7 +1215,8 @@
         const res = await fetch(`${API_URL}?action=GET_ALL_QUEUE`);
         const json = await res.json();
         if (json.success) {
-          renderQueueTable(json.queue);
+          currentRawQueue = json.queue || [];
+          renderQueueTable(currentRawQueue);
         }
       } catch (e) {
         alert("Failed to load queue: " + e.message);
@@ -1576,37 +1230,100 @@
       tbody.innerHTML = '';
 
       if (!queueList || queueList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 28px; color: var(--bc-text-muted);">No queued emails found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 32px; color: var(--bc-text-muted);">No outreach entries found in the queue.</td></tr>';
         return;
       }
 
       queueList.forEach(q => {
         const tr = document.createElement('tr');
         const isScheduled = q.status === 'Scheduled';
+        const isSent = q.status === 'Sent';
 
-        let statusPill = `<span style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; background: rgba(255,255,255,0.08); color: #fff;">${escapeHtml(q.status)}</span>`;
-        if (q.status === 'Scheduled') {
-          statusPill = `<span class="scheduled-badge">Scheduled</span>`;
-        } else if (q.status === 'Sent') {
-          statusPill = `<span style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid #10b981;">Sent</span>`;
+        let statusPill = `<span class="badge-scheduled">Scheduled</span>`;
+        if (isSent) {
+          statusPill = `<span class="badge-sent"><i class="fa-solid fa-check"></i> Already Sent</span>`;
         } else if (q.status.includes('Canceled')) {
-          statusPill = `<span style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid #ef4444;">${escapeHtml(q.status)}</span>`;
+          statusPill = `<span class="badge-canceled"><i class="fa-solid fa-ban"></i> Canceled</span>`;
         }
 
-        let actionButtons = isScheduled
-          ? `<button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">Cancel</button>`
-          : `<span style="color: var(--bc-text-muted); font-size: 12px;">—</span>`;
+        const formattedTimeDisplay = formatScheduleDateTime(q.scheduledDate, q.scheduledTime);
+
+        let actionButtons = '';
+        if (isScheduled) {
+          actionButtons = `
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: #2563eb; color: #fff;" onclick="openEditQueueModal(${q.queueRowIndex})">
+                <i class="fa-solid fa-pen"></i> Edit
+              </button>
+              <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">
+                Cancel
+              </button>
+            </div>
+          `;
+        } else if (isSent) {
+          actionButtons = `<span style="font-size: 11px; color: var(--bc-text-muted);">Delivered</span>`;
+        } else {
+          actionButtons = `<span style="font-size: 11px; color: var(--bc-text-muted);">—</span>`;
+        }
 
         tr.innerHTML = `
           <td style="font-weight: 600;">${escapeHtml(q.patientName)}</td>
-          <td>${escapeHtml(q.email)}</td>
-          <td><span style="color: var(--bc-orange); font-weight: 600;">${escapeHtml(q.scheduledDate)} at ${escapeHtml(q.scheduledTime)}</span></td>
-          <td>${escapeHtml(q.subject)}</td>
+          <td style="color: var(--bc-teal);">${escapeHtml(q.email)}</td>
+          <td><span style="color: var(--bc-orange); font-weight: 600;">${escapeHtml(formattedTimeDisplay)}</span></td>
+          <td style="max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(q.subject)}</td>
           <td>${statusPill}</td>
           <td>${actionButtons}</td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    function openEditQueueModal(rowIndex) {
+      const item = currentRawQueue.find(q => q.queueRowIndex === rowIndex);
+      if (!item) return;
+
+      document.getElementById('editQueueRowIndex').value = rowIndex;
+      document.getElementById('editQueueDate').value = item.scheduledDate;
+      document.getElementById('editQueueTime').value = item.scheduledTime.includes(':') ? item.scheduledTime.replace(/[^\d:]/g, '') : '09:00';
+      document.getElementById('editQueueSubj').value = item.subject;
+      document.getElementById('editQueueBody').value = item.bodyText;
+
+      document.getElementById('editQueueModal').style.display = 'flex';
+    }
+
+    function closeEditQueueModal() {
+      document.getElementById('editQueueModal').style.display = 'none';
+    }
+
+    async function submitEditQueueModal() {
+      const rowIndex = parseInt(document.getElementById('editQueueRowIndex').value);
+      const newDate = document.getElementById('editQueueDate').value;
+      const newTime = document.getElementById('editQueueTime').value;
+      const newSubj = document.getElementById('editQueueSubj').value.trim();
+      const newBody = document.getElementById('editQueueBody').value.trim();
+
+      if (!newDate || !newSubj || !newBody) return alert("Date, subject, and body are required.");
+
+      showSpinner("Updating schedule...");
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'UPDATE_SCHEDULED_OUTREACH',
+            queueRowIndex: rowIndex,
+            sendDate: newDate,
+            timeStr: newTime,
+            subject: newSubj,
+            bodyText: newBody
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        closeEditQueueModal();
+        loadQueueDashboard();
+      } finally {
+        hideSpinner();
+      }
     }
 
     async function cancelQueueRow(rowIndex) {
