@@ -148,7 +148,7 @@
     /* Drawer */
     .drawer-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: none; z-index: 1000; }
     .drawer-panel {
-      position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 620px;
+      position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 640px;
       background: var(--bc-card); border-left: 1px solid var(--bc-border);
       display: flex; flex-direction: column; z-index: 1001;
       transform: translateX(100%); transition: transform 0.25s ease-in-out;
@@ -166,14 +166,22 @@
       font-size: 13px; border-radius: 6px; padding: 6px 10px; outline: none;
     }
     .interval-input {
-      width: 60px; background: var(--bc-midnight); border: 1px solid var(--bc-border);
-      border-radius: 6px; color: var(--bc-teal); font-weight: 700; text-align: center; padding: 6px; font-size: 13px;
+      width: 65px; background: var(--bc-midnight); border: 1px solid var(--bc-border);
+      border-radius: 6px; color: var(--bc-teal); font-weight: 700; text-align: center; padding: 6px; font-size: 13px; outline: none;
     }
     .card-input, .card-textarea {
       width: 100%; background: var(--bc-midnight); border: 1px solid var(--bc-border);
       border-radius: 8px; color: #fff; padding: 10px; font-size: 13px; margin-bottom: 12px; outline: none;
     }
     .card-textarea { min-height: 105px; resize: vertical; line-height: 1.5; }
+
+    /* Add Step Box */
+    .add-step-box {
+      background: rgba(22, 19, 41, 0.4); border: 2px dashed var(--bc-border);
+      border-radius: 14px; padding: 18px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 10px;
+    }
+    .add-step-box:hover { border-color: var(--bc-teal); }
 
     /* Modals */
     .modal-overlay {
@@ -277,7 +285,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;">Patient Management</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Delta sync enabled, live status updating & scheduled email outreach</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Delta sync enabled, live status updating & email outreach scheduling</span>
       </div>
       <div style="display: flex; gap: 12px; align-items: center;">
         <input type="text" id="searchInput" class="search-input" placeholder="🔍 Universal search roster..." oninput="applyAllFilters()" />
@@ -335,12 +343,12 @@
     </div>
   </main>
 
-  <!-- View 2: Dedicated Injury & Template Studio -->
+  <!-- View 2: Injury & Template Studio -->
   <main id="studio-view">
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage all branch sequences, condition check-ins, and email templates</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage injury sub-categories, day intervals, and sequence email templates</span>
       </div>
       <div style="display: flex; gap: 10px;">
         <button class="btn-pill" style="background: var(--bc-teal); color: #000;" onclick="openConditionModal()">
@@ -349,21 +357,31 @@
       </div>
     </div>
 
-    <!-- Filter bar for studio -->
-    <div style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
-      <span style="font-size: 13px; color: var(--bc-text-muted);">Select Branch:</span>
-      <select id="studioBranchFilter" class="native-input" onchange="filterStudioTemplates()">
-        <option value="ALL">All Branches</option>
-        <option value="UE">UE (Upper Extremity / Handle)</option>
-        <option value="LE">LE (Lower Extremity / Cuff)</option>
-      </select>
+    <!-- Studio Filter Bar & Condition Management Action -->
+    <div style="display: flex; gap: 14px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; background: var(--bc-card); padding: 16px; border-radius: 12px; border: 1px solid var(--bc-border);">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Branch:</span>
+        <select id="studioBranchFilter" class="native-input" onchange="onStudioBranchChanged()">
+          <option value="UE">UE (Upper Extremity / Handle)</option>
+          <option value="LE">LE (Lower Extremity / Cuff)</option>
+        </select>
+      </div>
 
-      <span style="font-size: 13px; color: var(--bc-text-muted); margin-left: 10px;">Filter Condition:</span>
-      <select id="studioConditionFilter" class="native-input" onchange="filterStudioTemplates()">
-        <option value="ALL">All Conditions</option>
-      </select>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Condition:</span>
+        <select id="studioConditionFilter" class="native-input" onchange="filterStudioTemplates()">
+          <option value="ALL">All Conditions</option>
+        </select>
+      </div>
+
+      <div id="deleteConditionWrap" style="margin-left: auto; display: none;">
+        <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px;" onclick="deleteActiveSelectedCondition()">
+          <i class="fa-solid fa-trash-can"></i> Delete This Entire Condition
+        </button>
+      </div>
     </div>
 
+    <!-- Studio Step Cards Container -->
     <div id="studioCardsContainer" style="display: flex; flex-direction: column; gap: 16px;"></div>
   </main>
 
@@ -372,7 +390,7 @@
     <div class="modal-box">
       <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-folder-plus" style="color: var(--bc-teal);"></i> Add New Injury Condition</h3>
       <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
-        Creates a dedicated injury sequence under UE or LE with day intervals.
+        Creates a dedicated injury sequence under UE or LE with default day intervals.
       </p>
 
       <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Branch:</label>
@@ -382,7 +400,7 @@
       </select>
 
       <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Condition / Injury Name:</label>
-      <input type="text" id="modalConditionName" class="native-input" placeholder="e.g. Rotator Cuff Tear (RCR)" style="width: 100%; margin-bottom: 12px;" />
+      <input type="text" id="modalConditionName" class="native-input" placeholder="e.g. Rotator Cuff Tear (RCR) or ACL" style="width: 100%; margin-bottom: 12px;" />
 
       <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Day Intervals (comma-separated):</label>
       <input type="text" id="modalIntervals" class="native-input" value="2, 4, 6, 8" style="width: 100%; margin-bottom: 20px;" />
@@ -394,7 +412,7 @@
     </div>
   </div>
 
-  <!-- Timeline Drawer (Patient-Specific Outreach Scheduling) -->
+  <!-- Timeline Drawer (Patient-Specific Sequence & Scheduling) -->
   <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
   <aside id="timelineDrawer" class="drawer-panel">
     <div class="drawer-header">
@@ -414,6 +432,8 @@
     let activePatient = null;
     let pendingResetEmail = '';
     let allStudioTemplates = [];
+    let patientTimelineStore = [];
+    let patientStartDateObj = new Date();
 
     let conditionMap = {
       UE: new Set(['General']),
@@ -821,29 +841,32 @@
     }
 
     // ----------------------------------------------------
-    // INJURY & TEMPLATE STUDIO VIEW
+    // INJURY & TEMPLATE STUDIO: CATEGORY CRUD & DAY OFFSETS
     // ----------------------------------------------------
     async function loadStudioTemplates() {
-      showSpinner("Loading templates and condition sequences...");
+      showSpinner("Loading injury studio...");
       try {
         const res = await fetch(`${API_URL}?action=GET_ALL_TEMPLATES`);
         const json = await res.json();
         if (json.success) {
           allStudioTemplates = json.templates;
-          populateStudioConditionFilter();
-          filterStudioTemplates();
+          onStudioBranchChanged();
         }
       } catch (e) {
-        alert("Failed to load templates: " + e.message);
+        alert("Failed to load studio: " + e.message);
       } finally {
         hideSpinner();
       }
     }
 
-    function populateStudioConditionFilter() {
+    function onStudioBranchChanged() {
+      const branchVal = document.getElementById('studioBranchFilter').value;
       const select = document.getElementById('studioConditionFilter');
       const conditions = new Set();
-      allStudioTemplates.forEach(t => conditions.add(t.condition));
+
+      allStudioTemplates
+        .filter(t => t.branch === branchVal)
+        .forEach(t => conditions.add(t.condition));
 
       select.innerHTML = '<option value="ALL">All Conditions</option>';
       Array.from(conditions).sort().forEach(c => {
@@ -851,31 +874,36 @@
         opt.value = c; opt.textContent = c;
         select.appendChild(opt);
       });
+
+      filterStudioTemplates();
     }
 
     function filterStudioTemplates() {
       const branchVal = document.getElementById('studioBranchFilter').value;
       const condVal = document.getElementById('studioConditionFilter').value;
+      const deleteWrap = document.getElementById('deleteConditionWrap');
+
+      // Toggle delete button if a non-General specific condition is selected
+      if (condVal !== 'ALL' && condVal.toLowerCase() !== 'general') {
+        deleteWrap.style.display = 'block';
+      } else {
+        deleteWrap.style.display = 'none';
+      }
 
       const filtered = allStudioTemplates.filter(t => {
-        const matchBranch = branchVal === 'ALL' || t.branch === branchVal;
+        const matchBranch = t.branch === branchVal;
         const matchCond = condVal === 'ALL' || t.condition === condVal;
         return matchBranch && matchCond;
       });
 
-      renderStudioCards(filtered);
+      renderStudioCards(filtered, branchVal, condVal);
     }
 
-    function renderStudioCards(templates) {
+    function renderStudioCards(templates, activeBranch, activeCond) {
       const container = document.getElementById('studioCardsContainer');
       container.innerHTML = '';
 
-      if (templates.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--bc-text-muted);">No templates found for this selection.</div>';
-        return;
-      }
-
-      templates.forEach((tpl, idx) => {
+      templates.sort((a, b) => a.dayOffset - b.dayOffset).forEach((tpl, idx) => {
         const card = document.createElement('div');
         card.className = 'milestone-card';
         card.innerHTML = `
@@ -890,7 +918,7 @@
           </div>
 
           <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px;">
-            <span style="font-size: 12px; color: var(--bc-text-muted);">Day Offset:</span>
+            <span style="font-size: 12px; color: var(--bc-text-muted); font-weight: 600;">Interval Day (Offset):</span>
             <input type="number" id="studio_offset_${idx}" class="interval-input" value="${tpl.dayOffset}" />
           </div>
 
@@ -908,6 +936,80 @@
         `;
         container.appendChild(card);
       });
+
+      // Show "Add Another Day / Step" card when a specific condition is selected
+      if (activeCond && activeCond !== 'ALL') {
+        const addStepBox = document.createElement('div');
+        addStepBox.className = 'add-step-box';
+        addStepBox.innerHTML = `
+          <div style="font-size: 14px; font-weight: 700; color: var(--bc-teal);">
+            <i class="fa-solid fa-calendar-plus"></i> Add Day to ${escapeHtml(activeCond)} (${escapeHtml(activeBranch)})
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%; margin-top: 4px;">
+            <span style="font-size: 12px; color: var(--bc-text-muted);">Send on Day:</span>
+            <input type="number" id="studioNewStepOffset" class="interval-input" placeholder="e.g. 10" />
+            <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px; padding: 7px 16px;" onclick="addStudioDayStep('${activeBranch}', '${activeCond}')">
+              + Append Step
+            </button>
+          </div>
+        `;
+        container.appendChild(addStepBox);
+      }
+    }
+
+    async function addStudioDayStep(branch, condition) {
+      const offsetInput = document.getElementById('studioNewStepOffset');
+      const offset = parseInt(offsetInput.value.trim());
+
+      if (isNaN(offset) || offset <= 0) {
+        return alert("Please enter a valid day number (e.g. 5, 10, 14).");
+      }
+
+      showSpinner(`Adding Day ${offset} to ${condition}...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'ADD_SEQUENCE_STEP',
+            branch: branch,
+            condition: condition,
+            dayOffset: offset,
+            subject: `Day ${offset}: ${condition} Progression`,
+            bodyText: `Hello {{first_name}},\n\nHere is your Day ${offset} check-in for your ${condition} plan.`
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        loadStudioTemplates();
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    async function deleteActiveSelectedCondition() {
+      const branch = document.getElementById('studioBranchFilter').value;
+      const cond = document.getElementById('studioConditionFilter').value;
+
+      if (cond === 'ALL' || cond.toLowerCase() === 'general') {
+        return alert("Cannot delete this condition.");
+      }
+
+      if (!confirm(`Are you sure you want to permanently delete the entire "${cond}" sub-category and all its milestone templates?`)) {
+        return;
+      }
+
+      showSpinner(`Deleting condition "${cond}"...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'DELETE_CONDITION', branch: branch, conditionName: cond })
+        });
+        const json = await res.json();
+        alert(json.message);
+        loadStudioTemplates();
+      } finally {
+        hideSpinner();
+      }
     }
 
     async function saveStudioTemplate(idx, branch, condition, milestoneId) {
@@ -915,7 +1017,7 @@
       const subject = document.getElementById(`studio_subj_${idx}`).value;
       const bodyText = document.getElementById(`studio_body_${idx}`).value;
 
-      showSpinner(`Saving changes to ${condition}...`);
+      showSpinner(`Saving Day ${dayOffset}...`);
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
@@ -938,7 +1040,7 @@
     }
 
     async function deleteTemplateStep(milestoneId) {
-      if (!confirm("Are you sure you want to delete this sequence step?")) return;
+      if (!confirm("Delete this sequence step?")) return;
       showSpinner("Deleting step...");
       try {
         const res = await fetch(API_URL, {
@@ -992,7 +1094,7 @@
     }
 
     // ----------------------------------------------------
-    // PATIENT TIMELINE DRAWER & EMAIL SCHEDULING
+    // PATIENT TIMELINE DRAWER & DYNAMIC CUSTOM DAYS
     // ----------------------------------------------------
     async function openPatientTimeline(rowNumber) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
@@ -1010,17 +1112,19 @@
       try {
         const res = await fetch(`${API_URL}?action=GET_PATIENT_TIMELINE&rowNumber=${rowNumber}`);
         const json = await res.json();
-        renderTimelineCards(json.timeline);
+        patientTimelineStore = json.timeline || [];
+        patientStartDateObj = json.startDateStr ? new Date(json.startDateStr + 'T00:00:00') : new Date();
+        renderTimelineCards();
       } catch (err) {
         cards.innerHTML = `<div style="color:red; padding:16px;">Error: ${err.message}</div>`;
       }
     }
 
-    function renderTimelineCards(timeline) {
+    function renderTimelineCards() {
       const container = document.getElementById('drawerCards');
       container.innerHTML = '';
 
-      timeline.forEach((item, idx) => {
+      patientTimelineStore.forEach((item, idx) => {
         const card = document.createElement('div');
         card.className = 'milestone-card';
         card.innerHTML = `
@@ -1031,7 +1135,10 @@
 
           <div style="background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px; border: 1px solid var(--bc-border); margin-bottom: 14px;">
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <span style="font-size:12px; color:var(--bc-text-muted);">Target Date:</span>
+              <span style="font-size:12px; color:var(--bc-text-muted); font-weight:600;">Day:</span>
+              <input type="number" id="offset_${idx}" class="interval-input" value="${item.dayOffset}" onchange="recalculateTargetDate(${idx})" />
+
+              <span style="font-size:12px; color:var(--bc-text-muted); margin-left:4px;">Date:</span>
               <input type="date" id="date_${idx}" class="native-input" value="${item.isoDate}" />
               <input type="time" id="time_${idx}" class="native-input" value="09:00" />
             </div>
@@ -1040,7 +1147,7 @@
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
           <input type="text" id="subj_${idx}" class="card-input" value="${escapeHtml(item.subject)}" />
 
-          <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body</label>
+          <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
           <textarea id="body_${idx}" class="card-textarea">${escapeHtml(item.defaultBody)}</textarea>
 
           <div style="display:flex; gap:8px; flex-wrap: wrap;">
@@ -1054,6 +1161,63 @@
         `;
         container.appendChild(card);
       });
+
+      // Add Custom Outreach Day Card for this patient
+      const addPatientDayBox = document.createElement('div');
+      addPatientDayBox.className = 'add-step-box';
+      addPatientDayBox.innerHTML = `
+        <div style="font-size: 14px; font-weight: 700; color: var(--bc-teal);">
+          <i class="fa-solid fa-plus-circle"></i> Add Custom Outreach Day for ${escapeHtml(activePatient.patientName)}
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%; margin-top: 4px;">
+          <span style="font-size: 12px; color: var(--bc-text-muted);">Send on Day:</span>
+          <input type="number" id="patientNewDayOffset" class="interval-input" placeholder="e.g. 5" />
+          <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px; padding: 7px 16px;" onclick="addPatientCustomDay()">
+            + Append Day Step
+          </button>
+        </div>
+      `;
+      container.appendChild(addPatientDayBox);
+    }
+
+    function recalculateTargetDate(idx) {
+      const newOffset = parseInt(document.getElementById(`offset_${idx}`).value) || 0;
+      const targetDate = new Date(patientStartDateObj);
+      targetDate.setDate(targetDate.getDate() + newOffset);
+      const isoStr = targetDate.toISOString().split('T')[0];
+      document.getElementById(`date_${idx}`).value = isoStr;
+    }
+
+    async function addPatientCustomDay() {
+      const offsetInput = document.getElementById('patientNewDayOffset');
+      const offset = parseInt(offsetInput.value.trim());
+
+      if (isNaN(offset) || offset <= 0) {
+        return alert("Please enter a valid day number.");
+      }
+
+      const branch = getBranchFromDevice(activePatient.deviceType);
+      const condition = activePatient.condition || 'General';
+
+      showSpinner(`Appending Day ${offset} step...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'ADD_SEQUENCE_STEP',
+            branch: branch,
+            condition: condition,
+            dayOffset: offset,
+            subject: `Day ${offset}: ${condition} Follow-up`,
+            bodyText: `Hello {{first_name}},\n\nHere is your Day ${offset} update for your ${condition} plan.`
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        openPatientTimeline(activePatient.rowNumber);
+      } finally {
+        hideSpinner();
+      }
     }
 
     async function scheduleOutreach(idx, milestoneId) {
