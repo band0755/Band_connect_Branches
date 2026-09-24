@@ -269,7 +269,7 @@
     </div>
   </section>
 
-  <!-- Forgot PIN Views -->
+  <!-- Step 1: Forgot Password Email Entry -->
   <section id="forgot-view" class="auth-container" style="display: none;">
     <div class="auth-box">
       <div class="auth-logo" style="flex-direction: column; gap: 6px;">
@@ -285,6 +285,7 @@
     </div>
   </section>
 
+  <!-- Step 2: Code Verification -->
   <section id="verify-view" class="auth-container" style="display: none;">
     <div class="auth-box">
       <div class="auth-logo" style="flex-direction: column; gap: 6px;">
@@ -424,7 +425,6 @@
         </select>
       </div>
 
-      <!-- Contextual Delete Button -->
       <div id="deleteConditionWrap" style="margin-left: auto; display: none;">
         <button id="deleteActiveBtn" class="btn-pill" style="background: rgba(239, 68, 68, 0.2); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px;" onclick="deleteActiveSelectedCondition()">
           <i class="fa-solid fa-trash-can"></i> Delete Condition
@@ -648,8 +648,21 @@
     }
 
     // ----------------------------------------------------
-    // AUTHENTICATION & LOGIN
+    // AUTHENTICATION & FORGOT/RESET PIN FLOW
     // ----------------------------------------------------
+    function openForgotView() {
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('forgot-view').style.display = 'flex';
+      document.getElementById('resetEmailInput').focus();
+    }
+
+    function backToLogin() {
+      document.getElementById('forgot-view').style.display = 'none';
+      document.getElementById('verify-view').style.display = 'none';
+      document.getElementById('login-view').style.display = 'flex';
+      document.getElementById('pinInput').value = '';
+    }
+
     async function submitLogin() {
       const pin = document.getElementById('pinInput').value.trim();
       if (!pin) return alert("Please enter a PIN.");
@@ -668,6 +681,64 @@
         }
       } catch (err) {
         alert("Authentication failed: " + err.message);
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    async function requestResetCode() {
+      const email = document.getElementById('resetEmailInput').value.trim();
+      if (!email) return alert("Please enter an authorized leadership email.");
+
+      showSpinner("Dispatching 6-digit code...");
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'REQUEST_PASSWORD_RESET', leadershipEmail: email })
+        });
+        const json = await res.json();
+        if (json.success) {
+          pendingResetEmail = email;
+          document.getElementById('forgot-view').style.display = 'none';
+          document.getElementById('verify-view').style.display = 'flex';
+          document.getElementById('verifyInstruction').innerText = `Enter the 6-digit code sent to ${email}.`;
+        } else {
+          alert(`❌ ${json.message}`);
+        }
+      } catch (err) {
+        alert("Reset request failed: " + err.message);
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    async function verifyAndSetNewPin() {
+      const code = document.getElementById('resetCodeInput').value.trim();
+      const newPin = document.getElementById('newPinInput').value.trim();
+
+      if (!code || code.length !== 6) return alert("Please enter the 6-digit code.");
+      if (!newPin) return alert("Please enter the new PIN.");
+
+      showSpinner("Verifying code & updating PIN...");
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'VERIFY_RESET_PIN',
+            leadershipEmail: pendingResetEmail,
+            code: code,
+            newPin: newPin
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          alert(`✅ ${json.message}`);
+          backToLogin();
+        } else {
+          alert(`❌ ${json.message}`);
+        }
+      } catch (err) {
+        alert("Verification failed: " + err.message);
       } finally {
         hideSpinner();
       }
@@ -1001,7 +1072,6 @@
         card.setAttribute('draggable', 'true');
         card.dataset.index = idx;
 
-        // Attach HTML5 Drag & Drop Listeners
         card.addEventListener('dragstart', (e) => {
           draggedStudioIdx = idx;
           card.classList.add('dragging');
@@ -1062,7 +1132,6 @@
         container.appendChild(card);
       });
 
-      // Append Step Form
       const targetCondition = condVal === 'ALL' ? 'General' : condVal;
       const addStepBox = document.createElement('div');
       addStepBox.className = 'add-step-box';
@@ -1086,7 +1155,6 @@
       const movedItem = currentDisplayedTemplates.splice(fromIdx, 1)[0];
       currentDisplayedTemplates.splice(toIdx, 0, movedItem);
 
-      // Automatically recalculate day spacing so orders match
       for (let i = 0; i < currentDisplayedTemplates.length; i++) {
         if (i > 0 && currentDisplayedTemplates[i].dayOffset <= currentDisplayedTemplates[i - 1].dayOffset) {
           currentDisplayedTemplates[i].dayOffset = currentDisplayedTemplates[i - 1].dayOffset + 2;
@@ -1190,7 +1258,6 @@
       }
     }
 
-    // Modal: Create New Condition
     function openConditionModal() { document.getElementById('conditionModal').style.display = 'flex'; }
     function closeConditionModal() { document.getElementById('conditionModal').style.display = 'none'; }
 
@@ -1224,7 +1291,6 @@
       }
     }
 
-    // Modal: Dedicated Delete Condition Modal
     function openDeleteConditionModal() {
       const currentBranch = document.getElementById('studioBranchFilter').value;
       document.getElementById('modalDeleteBranch').value = currentBranch;
@@ -1302,7 +1368,7 @@
     }
 
     // ----------------------------------------------------
-    // PATIENT TIMELINE DRAWER (WITH REORDERING & SCHEDULING)
+    // PATIENT TIMELINE DRAWER
     // ----------------------------------------------------
     async function openPatientTimeline(rowNumber) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
@@ -1355,7 +1421,6 @@
         const initialSubj = queueItem ? queueItem.subject : item.subject;
         const initialBody = queueItem ? queueItem.bodyText : item.defaultBody;
 
-        // Drag and drop for patient timeline
         card.addEventListener('dragstart', (e) => {
           draggedPatientIdx = idx;
           card.classList.add('dragging');
