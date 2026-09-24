@@ -176,18 +176,22 @@
     }
     .drawer-body { padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
 
-    /* Cards */
+    /* Drag & Drop Cards */
     .milestone-card {
       background: var(--bc-card-inner); border: 1px solid var(--bc-border);
       border-radius: 14px; padding: 20px; position: relative; transition: all 0.2s ease;
     }
-    .milestone-card.dragging { opacity: 0.45; transform: scale(0.98); border: 2px dashed var(--bc-teal); }
-    .milestone-card.drag-over { border-top: 3px solid var(--bc-teal); }
+    .milestone-card.dragging {
+      opacity: 0.45; transform: scale(0.98); border: 2px dashed var(--bc-teal);
+    }
+    .milestone-card.drag-over {
+      border-top: 3px solid var(--bc-teal);
+    }
 
     .drag-grip {
       cursor: grab; display: inline-flex; align-items: center; justify-content: center;
       padding: 4px 10px; background: rgba(22, 19, 41, 0.8); border: 1px solid var(--bc-border);
-      border-radius: 6px; color: var(--bc-teal); font-size: 13px; font-weight: 700; user-select: none;
+      border-radius: 6px; color: var(--bc-teal); font-size: 12px; font-weight: 700; user-select: none;
     }
     .drag-grip:active { cursor: grabbing; }
 
@@ -217,6 +221,14 @@
       border-radius: 8px; color: #fff; padding: 10px; font-size: 13px; margin-bottom: 12px; outline: none;
     }
     .card-textarea { min-height: 105px; resize: vertical; line-height: 1.5; }
+
+    /* Add Step Box */
+    .add-step-box {
+      background: rgba(22, 19, 41, 0.4); border: 2px dashed var(--bc-border);
+      border-radius: 14px; padding: 22px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 12px; margin-top: 8px;
+    }
+    .add-step-box:hover { border-color: var(--bc-teal); background: rgba(56, 189, 248, 0.03); }
 
     /* Modals */
     .modal-overlay {
@@ -555,6 +567,8 @@
     let patientQueuedMap = {};
     let patientStartDateObj = new Date();
     let currentRawQueue = [];
+    let draggedStudioIdx = null;
+    let draggedPatientIdx = null;
 
     let conditionMap = {
       UE: new Set(['General']),
@@ -915,7 +929,7 @@
     }
 
     // ----------------------------------------------------
-    // INJURY & TEMPLATE STUDIO + DELETE CONDITION LOGIC
+    // INJURY & TEMPLATE STUDIO (WITH DRAG-AND-DROP REORDER)
     // ----------------------------------------------------
     async function loadStudioTemplates() {
       showSpinner("Loading injury studio...");
@@ -978,14 +992,50 @@
       const container = document.getElementById('studioCardsContainer');
       container.innerHTML = '';
 
+      const branchVal = document.getElementById('studioBranchFilter').value;
+      const condVal = document.getElementById('studioConditionFilter').value;
+
       currentDisplayedTemplates.forEach((tpl, idx) => {
         const card = document.createElement('div');
         card.className = 'milestone-card';
+        card.setAttribute('draggable', 'true');
+        card.dataset.index = idx;
+
+        // Attach HTML5 Drag & Drop Listeners
+        card.addEventListener('dragstart', (e) => {
+          draggedStudioIdx = idx;
+          card.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          container.querySelectorAll('.milestone-card').forEach(c => c.classList.remove('drag-over'));
+        });
+
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          card.classList.add('drag-over');
+        });
+
+        card.addEventListener('dragleave', () => {
+          card.classList.remove('drag-over');
+        });
+
+        card.addEventListener('drop', (e) => {
+          e.preventDefault();
+          card.classList.remove('drag-over');
+          if (draggedStudioIdx !== null && draggedStudioIdx !== idx) {
+            handleStudioReorder(draggedStudioIdx, idx);
+          }
+        });
+
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="drag-grip" title="Drag up or down to reorder sequence"><i class="fa-solid fa-grip-vertical"></i> ⠿ Move</span>
               <span style="background: var(--bc-purple-primary); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHtml(tpl.branch)}</span>
-              <strong style="font-size: 15px; margin-left: 6px;">${escapeHtml(tpl.condition)}</strong>
+              <strong style="font-size: 15px; margin-left: 4px;">${escapeHtml(tpl.condition)}</strong>
             </div>
             <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); padding: 5px 12px; font-size: 11px;" onclick="deleteTemplateStep('${tpl.milestoneId}')">
               <i class="fa-solid fa-trash"></i> Delete Step
@@ -1011,6 +1061,90 @@
         `;
         container.appendChild(card);
       });
+
+      // Append Step Form
+      const targetCondition = condVal === 'ALL' ? 'General' : condVal;
+      const addStepBox = document.createElement('div');
+      addStepBox.className = 'add-step-box';
+      addStepBox.innerHTML = `
+        <div style="font-size: 14px; font-weight: 700; color: var(--bc-teal);">
+          <i class="fa-solid fa-plus-circle"></i> Append Step to ${escapeHtml(targetCondition)} (${escapeHtml(branchVal)})
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%;">
+          <span style="font-size: 12px; color: var(--bc-text-muted);">Send on Day:</span>
+          <input type="number" id="studioNewStepOffset" class="interval-input" placeholder="e.g. 5" />
+          <input type="text" id="studioNewStepSubj" class="native-input" placeholder="Subject (optional)" style="background: var(--bc-midnight) !important; padding: 8px 14px; border-radius: 6px; min-width: 200px;" />
+          <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px; padding: 7px 16px;" onclick="addStudioDayStep('${branchVal}', '${targetCondition}')">
+            + Append Step
+          </button>
+        </div>
+      `;
+      container.appendChild(addStepBox);
+    }
+
+    async function handleStudioReorder(fromIdx, toIdx) {
+      const movedItem = currentDisplayedTemplates.splice(fromIdx, 1)[0];
+      currentDisplayedTemplates.splice(toIdx, 0, movedItem);
+
+      // Automatically recalculate day spacing so orders match
+      for (let i = 0; i < currentDisplayedTemplates.length; i++) {
+        if (i > 0 && currentDisplayedTemplates[i].dayOffset <= currentDisplayedTemplates[i - 1].dayOffset) {
+          currentDisplayedTemplates[i].dayOffset = currentDisplayedTemplates[i - 1].dayOffset + 2;
+        }
+      }
+
+      renderStudioCards();
+
+      const updated = currentDisplayedTemplates[toIdx];
+      showSpinner(`Reordering template sequence to Day ${updated.dayOffset}...`);
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'SAVE_CONDITION_TEMPLATE',
+            branch: updated.branch,
+            condition: updated.condition,
+            milestoneId: updated.milestoneId,
+            dayOffset: updated.dayOffset,
+            subject: updated.subject,
+            bodyText: updated.bodyText
+          })
+        });
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    async function addStudioDayStep(branch, condition) {
+      const offsetInput = document.getElementById('studioNewStepOffset');
+      const subjInput = document.getElementById('studioNewStepSubj');
+      const offset = parseInt(offsetInput.value.trim());
+
+      if (isNaN(offset) || offset <= 0) {
+        return alert("Please enter a valid day number (e.g. 5, 10, 14).");
+      }
+
+      const customSubj = subjInput ? subjInput.value.trim() : '';
+
+      showSpinner(`Adding Day ${offset} to ${condition}...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'ADD_SEQUENCE_STEP',
+            branch: branch,
+            condition: condition,
+            dayOffset: offset,
+            subject: customSubj || `Day ${offset}: ${condition} Progression`,
+            bodyText: `Hello {{first_name}},\n\nHere is your Day ${offset} check-in for your ${condition} plan.`
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        loadStudioTemplates();
+      } finally {
+        hideSpinner();
+      }
     }
 
     async function saveStudioTemplate(idx, branch, condition, milestoneId) {
@@ -1168,7 +1302,7 @@
     }
 
     // ----------------------------------------------------
-    // PATIENT TIMELINE DRAWER
+    // PATIENT TIMELINE DRAWER (WITH REORDERING & SCHEDULING)
     // ----------------------------------------------------
     async function openPatientTimeline(rowNumber) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
@@ -1209,6 +1343,8 @@
       patientTimelineStore.forEach((item, idx) => {
         const card = document.createElement('div');
         card.className = 'milestone-card';
+        card.setAttribute('draggable', 'true');
+        card.dataset.index = idx;
 
         const queueItem = patientQueuedMap[item.id] || null;
         const isScheduled = queueItem && queueItem.status === 'Scheduled';
@@ -1218,6 +1354,46 @@
         const initialTime = queueItem ? queueItem.scheduledTime : '09:00';
         const initialSubj = queueItem ? queueItem.subject : item.subject;
         const initialBody = queueItem ? queueItem.bodyText : item.defaultBody;
+
+        // Drag and drop for patient timeline
+        card.addEventListener('dragstart', (e) => {
+          draggedPatientIdx = idx;
+          card.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          container.querySelectorAll('.milestone-card').forEach(c => c.classList.remove('drag-over'));
+        });
+
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          card.classList.add('drag-over');
+        });
+
+        card.addEventListener('dragleave', () => {
+          card.classList.remove('drag-over');
+        });
+
+        card.addEventListener('drop', (e) => {
+          e.preventDefault();
+          card.classList.remove('drag-over');
+          if (draggedPatientIdx !== null && draggedPatientIdx !== idx) {
+            const moved = patientTimelineStore.splice(draggedPatientIdx, 1)[0];
+            patientTimelineStore.splice(idx, 0, moved);
+
+            for (let i = 0; i < patientTimelineStore.length; i++) {
+              if (i > 0 && patientTimelineStore[i].dayOffset <= patientTimelineStore[i - 1].dayOffset) {
+                patientTimelineStore[i].dayOffset = patientTimelineStore[i - 1].dayOffset + 2;
+                const d = new Date(patientStartDateObj);
+                d.setDate(d.getDate() + patientTimelineStore[i].dayOffset);
+                patientTimelineStore[i].isoDate = d.toISOString().split('T')[0];
+              }
+            }
+            renderPatientTimelineCards();
+          }
+        });
 
         let statusBadge = `<span style="color:var(--bc-teal); font-size:12px;">Condition: ${escapeHtml(item.condition)}</span>`;
         let actionButtonsHtml = '';
@@ -1259,7 +1435,10 @@
 
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap: wrap; gap: 8px;">
-            <strong style="color:#fff; font-size: 15px;">${escapeHtml(item.title)}</strong>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="drag-grip" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i> ⠿</span>
+              <strong style="color:#fff; font-size: 15px;">${escapeHtml(item.title)}</strong>
+            </div>
             ${statusBadge}
           </div>
 
