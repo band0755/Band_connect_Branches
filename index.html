@@ -20,6 +20,7 @@
       --bc-green: #10b981;
       --bc-red: #ef4444;
       --bc-orange: #f59e0b;
+      --bc-purple-accent: #a855f7;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -149,6 +150,11 @@
       display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
       background: rgba(245, 158, 11, 0.15); border: 1px solid var(--bc-orange);
       color: #fbbf24; border-radius: 20px; font-size: 11px; font-weight: 700;
+    }
+    .badge-frozen {
+      display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
+      background: rgba(168, 85, 247, 0.15); border: 1px solid var(--bc-purple-accent);
+      color: #c084fc; border-radius: 20px; font-size: 11px; font-weight: 700;
     }
     .badge-sent {
       display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
@@ -440,7 +446,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-envelope-open-text" style="color: var(--bc-orange);"></i> Queued Outreach Schedule</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Live status tracking: scheduled emails, already sent dispatches, and quick cancellations</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Live status tracking: scheduled emails, frozen pauses, dispatches, and quick unfreeze/reschedule controls</span>
       </div>
       <div>
         <button class="btn-pill" onclick="loadQueueDashboard()">
@@ -458,7 +464,7 @@
             <th style="min-width: 160px;"><span class="th-title">Scheduled Date & Time</span></th>
             <th style="min-width: 220px;"><span class="th-title">Subject Line</span></th>
             <th style="min-width: 130px;"><span class="th-title">Status</span></th>
-            <th style="min-width: 120px;"><span class="th-title">Actions</span></th>
+            <th style="min-width: 160px;"><span class="th-title">Actions</span></th>
           </tr>
         </thead>
         <tbody id="queueTableBody"></tbody>
@@ -513,6 +519,37 @@
       <div style="display: flex; gap: 10px; justify-content: flex-end;">
         <button class="btn-pill" style="background: transparent;" onclick="closeDeleteConditionModal()">Cancel</button>
         <button class="btn-pill" style="background: var(--bc-red); color: #fff;" onclick="submitDeleteConditionModal()">Permanently Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Unfreeze & Reschedule Modal -->
+  <div id="unfreezeModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-play" style="color: var(--bc-teal);"></i> Unfreeze & Reschedule Outreach</h3>
+      <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
+        This email was frozen while the patient was on hold. Specify the new delivery date to resume its schedule.
+      </p>
+      
+      <input type="hidden" id="unfreezeRowIndex" />
+      
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Resume Send Date:</label>
+      <input type="date" id="unfreezeDate" class="card-input" style="margin-bottom: 12px;" />
+
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Send Time:</label>
+      <input type="time" id="unfreezeTime" class="card-input" style="margin-bottom: 12px;" />
+
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject:</label>
+      <input type="text" id="unfreezeSubj" class="card-input" style="margin-bottom: 12px;" />
+
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content:</label>
+      <textarea id="unfreezeBody" class="card-textarea" style="margin-bottom: 20px;"></textarea>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn-pill" style="background: transparent;" onclick="closeUnfreezeModal()">Cancel</button>
+        <button class="btn-pill" style="background: var(--bc-teal); color: #000;" onclick="submitUnfreezeModal()">
+          <i class="fa-solid fa-play"></i> Unfreeze & Schedule
+        </button>
       </div>
     </div>
   </div>
@@ -1414,6 +1451,7 @@
 
         const queueItem = patientQueuedMap[item.id] || null;
         const isScheduled = queueItem && queueItem.status === 'Scheduled';
+        const isFrozen = queueItem && queueItem.status.includes('Frozen');
         const isSent = queueItem && queueItem.status === 'Sent';
 
         const initialDate = queueItem ? queueItem.scheduledDate : item.isoDate;
@@ -1468,6 +1506,18 @@
           actionButtonsHtml = `
             <div style="font-size: 12px; color: #34d399; display: flex; align-items: center; gap: 8px;">
               <i class="fa-solid fa-circle-check"></i> This email check-in has already been dispatched.
+            </div>
+          `;
+        } else if (isFrozen) {
+          statusBadge = `<span class="badge-frozen"><i class="fa-solid fa-pause"></i> Frozen (${queueItem.status})</span>`;
+          actionButtonsHtml = `
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+              <div style="background: rgba(168, 85, 247, 0.1); border: 1px dashed var(--bc-purple-accent); padding: 10px 14px; border-radius: 8px; font-size: 12px; color: #c084fc; display: flex; justify-content: space-between; align-items: center;">
+                <span><i class="fa-solid fa-pause"></i> This email is frozen. Unfreeze and reschedule it from <strong>Queued Outreach</strong>.</span>
+                <button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="closeDrawer(); switchView('queue');">
+                  Go to Queue →
+                </button>
+              </div>
             </div>
           `;
         } else if (isScheduled) {
@@ -1592,7 +1642,7 @@
     async function sendNow(idx) {
       const subject = document.getElementById(`subj_${idx}`).value;
       const body = document.getElementById(`body_${idx}`).value;
-      showSpinner("Dispatching sandbox email...");
+      showSpinner("Dispatching email...");
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
@@ -1612,7 +1662,7 @@
     }
 
     // ----------------------------------------------------
-    // QUEUED OUTREACH MANAGEMENT (CLEAN TABLE & EDIT MODAL)
+    // QUEUED OUTREACH MANAGEMENT (CLEAN TABLE & EDIT/UNFREEZE MODAL)
     // ----------------------------------------------------
     async function loadQueueDashboard() {
       showSpinner("Loading queued outreach schedule...");
@@ -1642,11 +1692,14 @@
       queueList.forEach(q => {
         const tr = document.createElement('tr');
         const isScheduled = q.status === 'Scheduled';
+        const isFrozen = q.status.includes('Frozen');
         const isSent = q.status === 'Sent';
 
         let statusPill = `<span class="badge-scheduled">Scheduled</span>`;
         if (isSent) {
           statusPill = `<span class="badge-sent"><i class="fa-solid fa-check"></i> Already Sent</span>`;
+        } else if (isFrozen) {
+          statusPill = `<span class="badge-frozen"><i class="fa-solid fa-pause"></i> ${escapeHtml(q.status)}</span>`;
         } else if (q.status.includes('Canceled')) {
           statusPill = `<span class="badge-canceled"><i class="fa-solid fa-ban"></i> Canceled</span>`;
         }
@@ -1654,7 +1707,18 @@
         const formattedTimeDisplay = formatScheduleDateTime(q.scheduledDate, q.scheduledTime);
 
         let actionButtons = '';
-        if (isScheduled) {
+        if (isFrozen) {
+          actionButtons = `
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="openUnfreezeModal(${q.queueRowIndex})">
+                <i class="fa-solid fa-play"></i> Unfreeze & Schedule
+              </button>
+              <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">
+                Cancel
+              </button>
+            </div>
+          `;
+        } else if (isScheduled) {
           actionButtons = `
             <div style="display: flex; gap: 8px;">
               <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: #2563eb; color: #fff;" onclick="openEditQueueModal(${q.queueRowIndex})">
@@ -1681,6 +1745,60 @@
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    // Modal: Unfreeze & Reschedule
+    function openUnfreezeModal(rowIndex) {
+      const item = currentRawQueue.find(q => q.queueRowIndex === rowIndex);
+      if (!item) return;
+
+      document.getElementById('unfreezeRowIndex').value = rowIndex;
+      
+      // Default to tomorrow or today's date if past
+      const todayStr = new Date().toISOString().split('T')[0];
+      const defaultDate = (!item.scheduledDate || item.scheduledDate < todayStr) ? todayStr : item.scheduledDate;
+
+      document.getElementById('unfreezeDate').value = defaultDate;
+      document.getElementById('unfreezeTime').value = item.scheduledTime.includes(':') ? item.scheduledTime.replace(/[^\d:]/g, '') : '09:00';
+      document.getElementById('unfreezeSubj').value = item.subject;
+      document.getElementById('unfreezeBody').value = item.bodyText;
+
+      document.getElementById('unfreezeModal').style.display = 'flex';
+    }
+
+    function closeUnfreezeModal() {
+      document.getElementById('unfreezeModal').style.display = 'none';
+    }
+
+    async function submitUnfreezeModal() {
+      const rowIndex = parseInt(document.getElementById('unfreezeRowIndex').value);
+      const newDate = document.getElementById('unfreezeDate').value;
+      const newTime = document.getElementById('unfreezeTime').value;
+      const newSubj = document.getElementById('unfreezeSubj').value.trim();
+      const newBody = document.getElementById('unfreezeBody').value.trim();
+
+      if (!newDate || !newSubj || !newBody) return alert("Date, subject, and body are required.");
+
+      showSpinner("Unfreezing & scheduling outreach...");
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'UNFREEZE_SCHEDULED_OUTREACH',
+            queueRowIndex: rowIndex,
+            sendDate: newDate,
+            timeStr: newTime,
+            subject: newSubj,
+            bodyText: newBody
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        closeUnfreezeModal();
+        loadQueueDashboard();
+      } finally {
+        hideSpinner();
+      }
     }
 
     function openEditQueueModal(rowIndex) {
