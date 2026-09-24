@@ -159,7 +159,25 @@
       display: flex; justify-content: space-between; align-items: center;
     }
     .drawer-body { padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
-    .milestone-card { background: var(--bc-card-inner); border: 1px solid var(--bc-border); border-radius: 14px; padding: 20px; }
+
+    /* Cards & Drag and Drop */
+    .milestone-card {
+      background: var(--bc-card-inner); border: 1px solid var(--bc-border);
+      border-radius: 14px; padding: 20px; position: relative; transition: all 0.2s ease;
+    }
+    .milestone-card.dragging {
+      opacity: 0.45; transform: scale(0.98); border: 2px dashed var(--bc-teal);
+    }
+    .milestone-card.drag-over {
+      border-top: 3px solid var(--bc-teal);
+    }
+
+    .drag-grip {
+      cursor: grab; display: inline-flex; align-items: center; justify-content: center;
+      padding: 4px 10px; background: rgba(22, 19, 41, 0.8); border: 1px solid var(--bc-border);
+      border-radius: 6px; color: var(--bc-teal); font-size: 13px; font-weight: 700; user-select: none;
+    }
+    .drag-grip:active { cursor: grabbing; }
 
     .native-input {
       background: var(--bc-midnight); border: 1px solid var(--bc-border); color: #ffffff;
@@ -178,10 +196,10 @@
     /* Add Step Box */
     .add-step-box {
       background: rgba(22, 19, 41, 0.4); border: 2px dashed var(--bc-border);
-      border-radius: 14px; padding: 18px; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 10px;
+      border-radius: 14px; padding: 22px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 12px; margin-top: 8px;
     }
-    .add-step-box:hover { border-color: var(--bc-teal); }
+    .add-step-box:hover { border-color: var(--bc-teal); background: rgba(56, 189, 248, 0.03); }
 
     /* Modals */
     .modal-overlay {
@@ -348,7 +366,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage injury sub-categories, day intervals, and sequence email templates</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage injury sub-categories, day intervals, and drag-and-drop sequence order</span>
       </div>
       <div style="display: flex; gap: 10px;">
         <button class="btn-pill" style="background: var(--bc-teal); color: #000;" onclick="openConditionModal()">
@@ -432,8 +450,11 @@
     let activePatient = null;
     let pendingResetEmail = '';
     let allStudioTemplates = [];
+    let currentDisplayedTemplates = [];
     let patientTimelineStore = [];
     let patientStartDateObj = new Date();
+    let draggedItemIdx = null;
+    let draggedPatientIdx = null;
 
     let conditionMap = {
       UE: new Set(['General']),
@@ -841,7 +862,7 @@
     }
 
     // ----------------------------------------------------
-    // INJURY & TEMPLATE STUDIO: CATEGORY CRUD & DAY OFFSETS
+    // INJURY STUDIO: DRAG & DROP REORDERING + STEP CREATION
     // ----------------------------------------------------
     async function loadStudioTemplates() {
       showSpinner("Loading injury studio...");
@@ -883,34 +904,70 @@
       const condVal = document.getElementById('studioConditionFilter').value;
       const deleteWrap = document.getElementById('deleteConditionWrap');
 
-      // Toggle delete button if a non-General specific condition is selected
       if (condVal !== 'ALL' && condVal.toLowerCase() !== 'general') {
         deleteWrap.style.display = 'block';
       } else {
         deleteWrap.style.display = 'none';
       }
 
-      const filtered = allStudioTemplates.filter(t => {
+      currentDisplayedTemplates = allStudioTemplates.filter(t => {
         const matchBranch = t.branch === branchVal;
         const matchCond = condVal === 'ALL' || t.condition === condVal;
         return matchBranch && matchCond;
-      });
+      }).sort((a, b) => a.dayOffset - b.dayOffset);
 
-      renderStudioCards(filtered, branchVal, condVal);
+      renderStudioCards();
     }
 
-    function renderStudioCards(templates, activeBranch, activeCond) {
+    function renderStudioCards() {
       const container = document.getElementById('studioCardsContainer');
       container.innerHTML = '';
 
-      templates.sort((a, b) => a.dayOffset - b.dayOffset).forEach((tpl, idx) => {
+      const branchVal = document.getElementById('studioBranchFilter').value;
+      const condVal = document.getElementById('studioConditionFilter').value;
+
+      currentDisplayedTemplates.forEach((tpl, idx) => {
         const card = document.createElement('div');
         card.className = 'milestone-card';
+        card.setAttribute('draggable', 'true');
+        card.dataset.index = idx;
+
+        // Drag events
+        card.addEventListener('dragstart', (e) => {
+          draggedItemIdx = idx;
+          card.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          document.querySelectorAll('.milestone-card').forEach(c => c.classList.remove('drag-over'));
+        });
+
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          card.classList.add('drag-over');
+        });
+
+        card.addEventListener('dragleave', () => {
+          card.classList.remove('drag-over');
+        });
+
+        card.addEventListener('drop', (e) => {
+          e.preventDefault();
+          card.classList.remove('drag-over');
+          const targetIdx = idx;
+          if (draggedItemIdx !== null && draggedItemIdx !== targetIdx) {
+            handleStudioReorder(draggedItemIdx, targetIdx);
+          }
+        });
+
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="drag-grip" title="Drag to reorder sequence step"><i class="fa-solid fa-grip-vertical"></i> ⠿ Move</span>
               <span style="background: var(--bc-purple-primary); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHtml(tpl.branch)}</span>
-              <strong style="font-size: 15px; margin-left: 8px;">${escapeHtml(tpl.condition)}</strong>
+              <strong style="font-size: 15px; margin-left: 4px;">${escapeHtml(tpl.condition)}</strong>
             </div>
             <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); padding: 5px 12px; font-size: 11px;" onclick="deleteTemplateStep('${tpl.milestoneId}')">
               <i class="fa-solid fa-trash"></i> Delete Step
@@ -937,33 +994,70 @@
         container.appendChild(card);
       });
 
-      // Show "Add Another Day / Step" card when a specific condition is selected
-      if (activeCond && activeCond !== 'ALL') {
-        const addStepBox = document.createElement('div');
-        addStepBox.className = 'add-step-box';
-        addStepBox.innerHTML = `
-          <div style="font-size: 14px; font-weight: 700; color: var(--bc-teal);">
-            <i class="fa-solid fa-calendar-plus"></i> Add Day to ${escapeHtml(activeCond)} (${escapeHtml(activeBranch)})
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%; margin-top: 4px;">
-            <span style="font-size: 12px; color: var(--bc-text-muted);">Send on Day:</span>
-            <input type="number" id="studioNewStepOffset" class="interval-input" placeholder="e.g. 10" />
-            <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px; padding: 7px 16px;" onclick="addStudioDayStep('${activeBranch}', '${activeCond}')">
-              + Append Step
-            </button>
-          </div>
-        `;
-        container.appendChild(addStepBox);
+      // ALWAYS show the Add Step Box at bottom so you can append steps anytime
+      const targetCondition = condVal === 'ALL' ? 'General' : condVal;
+      const addStepBox = document.createElement('div');
+      addStepBox.className = 'add-step-box';
+      addStepBox.innerHTML = `
+        <div style="font-size: 14px; font-weight: 700; color: var(--bc-teal);">
+          <i class="fa-solid fa-plus-circle"></i> Append Step to ${escapeHtml(targetCondition)} (${escapeHtml(branchVal)})
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%;">
+          <span style="font-size: 12px; color: var(--bc-text-muted);">Send on Day:</span>
+          <input type="number" id="studioNewStepOffset" class="interval-input" placeholder="e.g. 5" />
+          <input type="text" id="studioNewStepSubj" class="native-input" placeholder="Subject (optional)" style="min-width: 200px;" />
+          <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px; padding: 7px 16px;" onclick="addStudioDayStep('${branchVal}', '${targetCondition}')">
+            + Append Step
+          </button>
+        </div>
+      `;
+      container.appendChild(addStepBox);
+    }
+
+    async function handleStudioReorder(fromIdx, toIdx) {
+      const movedItem = currentDisplayedTemplates.splice(fromIdx, 1)[0];
+      currentDisplayedTemplates.splice(toIdx, 0, movedItem);
+
+      // Recalculate day offsets to maintain ascending order
+      for (let i = 0; i < currentDisplayedTemplates.length; i++) {
+        if (i > 0 && currentDisplayedTemplates[i].dayOffset <= currentDisplayedTemplates[i - 1].dayOffset) {
+          currentDisplayedTemplates[i].dayOffset = currentDisplayedTemplates[i - 1].dayOffset + 2;
+        }
+      }
+
+      renderStudioCards();
+
+      // Persist the moved step's new day offset to Google Sheets
+      const updated = currentDisplayedTemplates[toIdx];
+      showSpinner(`Updating sequence order to Day ${updated.dayOffset}...`);
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'SAVE_CONDITION_TEMPLATE',
+            branch: updated.branch,
+            condition: updated.condition,
+            milestoneId: updated.milestoneId,
+            dayOffset: updated.dayOffset,
+            subject: updated.subject,
+            bodyText: updated.bodyText
+          })
+        });
+      } finally {
+        hideSpinner();
       }
     }
 
     async function addStudioDayStep(branch, condition) {
       const offsetInput = document.getElementById('studioNewStepOffset');
+      const subjInput = document.getElementById('studioNewStepSubj');
       const offset = parseInt(offsetInput.value.trim());
 
       if (isNaN(offset) || offset <= 0) {
         return alert("Please enter a valid day number (e.g. 5, 10, 14).");
       }
+
+      const customSubj = subjInput ? subjInput.value.trim() : '';
 
       showSpinner(`Adding Day ${offset} to ${condition}...`);
       try {
@@ -974,7 +1068,7 @@
             branch: branch,
             condition: condition,
             dayOffset: offset,
-            subject: `Day ${offset}: ${condition} Progression`,
+            subject: customSubj || `Day ${offset}: ${condition} Progression`,
             bodyText: `Hello {{first_name}},\n\nHere is your Day ${offset} check-in for your ${condition} plan.`
           })
         });
@@ -994,7 +1088,7 @@
         return alert("Cannot delete this condition.");
       }
 
-      if (!confirm(`Are you sure you want to permanently delete the entire "${cond}" sub-category and all its milestone templates?`)) {
+      if (!confirm(`Are you sure you want to permanently delete "${cond}" and all its steps?`)) {
         return;
       }
 
@@ -1094,7 +1188,7 @@
     }
 
     // ----------------------------------------------------
-    // PATIENT TIMELINE DRAWER & DYNAMIC CUSTOM DAYS
+    // PATIENT TIMELINE DRAWER (DRAG & DROP REORDERABLE)
     // ----------------------------------------------------
     async function openPatientTimeline(rowNumber) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
@@ -1114,23 +1208,70 @@
         const json = await res.json();
         patientTimelineStore = json.timeline || [];
         patientStartDateObj = json.startDateStr ? new Date(json.startDateStr + 'T00:00:00') : new Date();
-        renderTimelineCards();
+        renderPatientTimelineCards();
       } catch (err) {
         cards.innerHTML = `<div style="color:red; padding:16px;">Error: ${err.message}</div>`;
       }
     }
 
-    function renderTimelineCards() {
+    function renderPatientTimelineCards() {
       const container = document.getElementById('drawerCards');
       container.innerHTML = '';
 
       patientTimelineStore.forEach((item, idx) => {
         const card = document.createElement('div');
         card.className = 'milestone-card';
+        card.setAttribute('draggable', 'true');
+        card.dataset.index = idx;
+
+        // Drag & Drop for patient sequence
+        card.addEventListener('dragstart', (e) => {
+          draggedPatientIdx = idx;
+          card.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          container.querySelectorAll('.milestone-card').forEach(c => c.classList.remove('drag-over'));
+        });
+
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          card.classList.add('drag-over');
+        });
+
+        card.addEventListener('dragleave', () => {
+          card.classList.remove('drag-over');
+        });
+
+        card.addEventListener('drop', (e) => {
+          e.preventDefault();
+          card.classList.remove('drag-over');
+          if (draggedPatientIdx !== null && draggedPatientIdx !== idx) {
+            const moved = patientTimelineStore.splice(draggedPatientIdx, 1)[0];
+            patientTimelineStore.splice(idx, 0, moved);
+
+            // Re-adjust dates
+            for (let i = 0; i < patientTimelineStore.length; i++) {
+              if (i > 0 && patientTimelineStore[i].dayOffset <= patientTimelineStore[i - 1].dayOffset) {
+                patientTimelineStore[i].dayOffset = patientTimelineStore[i - 1].dayOffset + 2;
+                const d = new Date(patientStartDateObj);
+                d.setDate(d.getDate() + patientTimelineStore[i].dayOffset);
+                patientTimelineStore[i].isoDate = d.toISOString().split('T')[0];
+              }
+            }
+            renderPatientTimelineCards();
+          }
+        });
+
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-            <strong style="color:#fff;">${escapeHtml(item.title)}</strong>
-            <span style="color:var(--bc-teal); font-size:12px;">Condition: ${escapeHtml(item.condition)}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="drag-grip" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i> ⠿</span>
+              <strong style="color:#fff;">${escapeHtml(item.title)}</strong>
+            </div>
+            <span style="color:var(--bc-teal); font-size:12px;">${escapeHtml(item.condition)}</span>
           </div>
 
           <div style="background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px; border: 1px solid var(--bc-border); margin-bottom: 14px;">
@@ -1182,10 +1323,12 @@
 
     function recalculateTargetDate(idx) {
       const newOffset = parseInt(document.getElementById(`offset_${idx}`).value) || 0;
+      patientTimelineStore[idx].dayOffset = newOffset;
       const targetDate = new Date(patientStartDateObj);
       targetDate.setDate(targetDate.getDate() + newOffset);
       const isoStr = targetDate.toISOString().split('T')[0];
       document.getElementById(`date_${idx}`).value = isoStr;
+      patientTimelineStore[idx].isoDate = isoStr;
     }
 
     async function addPatientCustomDay() {
