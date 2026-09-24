@@ -145,7 +145,6 @@
     .status-discharged { background: rgba(59, 130, 246, 0.12) !important; color: #60a5fa !important; border: 1px solid #3b82f6 !important; }
     .status-didnt-start { background: rgba(255, 255, 255, 0.08) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.5) !important; }
 
-    /* Clean Status Badges for Queue */
     .badge-scheduled {
       display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
       background: rgba(245, 158, 11, 0.15); border: 1px solid var(--bc-orange);
@@ -258,7 +257,7 @@
     </div>
   </section>
 
-  <!-- Step 1: Forgot Password -->
+  <!-- Forgot PIN Views -->
   <section id="forgot-view" class="auth-container" style="display: none;">
     <div class="auth-box">
       <div class="auth-logo" style="flex-direction: column; gap: 6px;">
@@ -274,7 +273,6 @@
     </div>
   </section>
 
-  <!-- Step 2: Code Verification -->
   <section id="verify-view" class="auth-container" style="display: none;">
     <div class="auth-box">
       <div class="auth-logo" style="flex-direction: column; gap: 6px;">
@@ -387,9 +385,12 @@
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
         <span style="font-size: 13px; color: var(--bc-text-muted);">Manage injury sub-categories, day intervals, and drag-and-drop sequence order</span>
       </div>
-      <div style="display: flex; gap: 10px;">
+      <div style="display: flex; gap: 10px; align-items: center;">
         <button class="btn-pill" style="background: var(--bc-teal); color: #000;" onclick="openConditionModal()">
           <i class="fa-solid fa-plus-circle"></i> Add New Condition Path
+        </button>
+        <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="openDeleteConditionModal()">
+          <i class="fa-solid fa-trash-can"></i> Delete Condition
         </button>
       </div>
     </div>
@@ -411,8 +412,9 @@
         </select>
       </div>
 
+      <!-- Contextual Delete Button -->
       <div id="deleteConditionWrap" style="margin-left: auto; display: none;">
-        <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px;" onclick="deleteActiveSelectedCondition()">
+        <button id="deleteActiveBtn" class="btn-pill" style="background: rgba(239, 68, 68, 0.2); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px;" onclick="deleteActiveSelectedCondition()">
           <i class="fa-solid fa-trash-can"></i> Delete Condition
         </button>
       </div>
@@ -451,6 +453,57 @@
       </table>
     </div>
   </main>
+
+  <!-- Modal 1: Add New Condition Modal -->
+  <div id="conditionModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-folder-plus" style="color: var(--bc-teal);"></i> Add New Condition Path</h3>
+      <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
+        Creates a dedicated injury sequence under UE or LE with default day intervals.
+      </p>
+
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Branch:</label>
+      <select id="modalBranch" class="auth-input" style="text-align: left; margin-bottom: 12px; padding: 10px;">
+        <option value="UE">UE (Upper Extremity / Handle)</option>
+        <option value="LE">LE (Lower Extremity / Cuff)</option>
+      </select>
+
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Condition / Injury Name:</label>
+      <input type="text" id="modalConditionName" class="auth-input" placeholder="e.g. Rotator Cuff Tear (RCR) or ACL" style="margin-bottom: 12px;" />
+
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Day Intervals (comma-separated):</label>
+      <input type="text" id="modalIntervals" class="auth-input" value="2, 4, 6, 8" style="margin-bottom: 20px;" />
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn-pill" style="background: transparent;" onclick="closeConditionModal()">Cancel</button>
+        <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="submitNewCondition()">Save Condition</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Dedicated Delete Condition Modal -->
+  <div id="deleteConditionModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-trash-can" style="color: var(--bc-red);"></i> Delete Condition Path</h3>
+      <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
+        Permanently remove a condition and all associated milestone email templates.
+      </p>
+
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Select Branch:</label>
+      <select id="modalDeleteBranch" class="auth-input" style="text-align: left; margin-bottom: 12px; padding: 10px;" onchange="populateModalDeleteConditions()">
+        <option value="UE">UE (Upper Extremity / Handle)</option>
+        <option value="LE">LE (Lower Extremity / Cuff)</option>
+      </select>
+
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Select Condition to Delete:</label>
+      <select id="modalDeleteConditionSelect" class="auth-input" style="text-align: left; margin-bottom: 20px; padding: 10px;"></select>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn-pill" style="background: transparent;" onclick="closeDeleteConditionModal()">Cancel</button>
+        <button class="btn-pill" style="background: var(--bc-red); color: #fff;" onclick="submitDeleteConditionModal()">Permanently Delete</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Timeline Drawer (Patient Sequences) -->
   <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
@@ -566,11 +619,9 @@
       }
     }
 
-    // Helper: Clean formatting for Date and Time
     function formatScheduleDateTime(dateStr, timeStr) {
       if (!dateStr) return '—';
       let cleanTime = timeStr || '09:00';
-      // If time string contains 1899 or GMT garbage, strip to readable HH:MM AM/PM
       if (cleanTime.includes('GMT') || cleanTime.includes('1899')) {
         try {
           const d = new Date(cleanTime);
@@ -864,7 +915,7 @@
     }
 
     // ----------------------------------------------------
-    // INJURY & TEMPLATE STUDIO
+    // INJURY & TEMPLATE STUDIO + DELETE CONDITION LOGIC
     // ----------------------------------------------------
     async function loadStudioTemplates() {
       showSpinner("Loading injury studio...");
@@ -905,9 +956,11 @@
       const branchVal = document.getElementById('studioBranchFilter').value;
       const condVal = document.getElementById('studioConditionFilter').value;
       const deleteWrap = document.getElementById('deleteConditionWrap');
+      const deleteBtn = document.getElementById('deleteActiveBtn');
 
       if (condVal !== 'ALL' && condVal.toLowerCase() !== 'general') {
         deleteWrap.style.display = 'block';
+        deleteBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i> Delete "${escapeHtml(condVal)}"`;
       } else {
         deleteWrap.style.display = 'none';
       }
@@ -924,9 +977,6 @@
     function renderStudioCards() {
       const container = document.getElementById('studioCardsContainer');
       container.innerHTML = '';
-
-      const branchVal = document.getElementById('studioBranchFilter').value;
-      const condVal = document.getElementById('studioConditionFilter').value;
 
       currentDisplayedTemplates.forEach((tpl, idx) => {
         const card = document.createElement('div');
@@ -1006,8 +1056,119 @@
       }
     }
 
+    // Modal: Create New Condition
+    function openConditionModal() { document.getElementById('conditionModal').style.display = 'flex'; }
+    function closeConditionModal() { document.getElementById('conditionModal').style.display = 'none'; }
+
+    async function submitNewCondition() {
+      const branch = document.getElementById('modalBranch').value;
+      const conditionName = document.getElementById('modalConditionName').value.trim();
+      const rawIntervals = document.getElementById('modalIntervals').value.trim();
+
+      if (!conditionName) return alert("Please enter a condition name.");
+      const baseIntervals = rawIntervals.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+
+      showSpinner(`Creating condition ${conditionName}...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'ADD_NEW_CONDITION',
+            branch: branch,
+            conditionName: conditionName,
+            baseIntervals: baseIntervals
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        closeConditionModal();
+        conditionMap[branch].add(conditionName);
+        renderConditionDropdown();
+        loadStudioTemplates();
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    // Modal: Dedicated Delete Condition Modal
+    function openDeleteConditionModal() {
+      const currentBranch = document.getElementById('studioBranchFilter').value;
+      document.getElementById('modalDeleteBranch').value = currentBranch;
+      populateModalDeleteConditions();
+      document.getElementById('deleteConditionModal').style.display = 'flex';
+    }
+
+    function closeDeleteConditionModal() {
+      document.getElementById('deleteConditionModal').style.display = 'none';
+    }
+
+    function populateModalDeleteConditions() {
+      const branch = document.getElementById('modalDeleteBranch').value;
+      const select = document.getElementById('modalDeleteConditionSelect');
+      const conditions = new Set();
+
+      allStudioTemplates
+        .filter(t => t.branch === branch && t.condition.toLowerCase() !== 'general')
+        .forEach(t => conditions.add(t.condition));
+
+      select.innerHTML = '';
+      if (conditions.size === 0) {
+        select.innerHTML = '<option value="">No custom conditions available to delete</option>';
+        return;
+      }
+
+      Array.from(conditions).sort().forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        select.appendChild(opt);
+      });
+    }
+
+    async function submitDeleteConditionModal() {
+      const branch = document.getElementById('modalDeleteBranch').value;
+      const cond = document.getElementById('modalDeleteConditionSelect').value;
+
+      if (!cond) return alert("Please select a condition to delete.");
+      if (!confirm(`Are you sure you want to permanently delete "${cond}" under ${branch} and all its template steps?`)) return;
+
+      await executeConditionDeletion(branch, cond);
+      closeDeleteConditionModal();
+    }
+
+    async function deleteActiveSelectedCondition() {
+      const branch = document.getElementById('studioBranchFilter').value;
+      const cond = document.getElementById('studioConditionFilter').value;
+
+      if (cond === 'ALL' || cond.toLowerCase() === 'general') {
+        return alert("Cannot delete this condition.");
+      }
+
+      if (!confirm(`Are you sure you want to permanently delete "${cond}" under ${branch} and all its template steps?`)) return;
+
+      await executeConditionDeletion(branch, cond);
+    }
+
+    async function executeConditionDeletion(branch, cond) {
+      showSpinner(`Deleting condition "${cond}"...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'DELETE_CONDITION', branch: branch, conditionName: cond })
+        });
+        const json = await res.json();
+        alert(json.message);
+
+        conditionMap[branch].delete(cond);
+        renderConditionDropdown();
+        loadStudioTemplates();
+      } finally {
+        hideSpinner();
+      }
+    }
+
     // ----------------------------------------------------
-    // PATIENT TIMELINE DRAWER & FLOW NAVIGATION
+    // PATIENT TIMELINE DRAWER
     // ----------------------------------------------------
     async function openPatientTimeline(rowNumber) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
