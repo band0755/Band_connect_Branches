@@ -19,6 +19,7 @@
       --bc-pill-bg: #4f3b7d;
       --bc-green: #10b981;
       --bc-red: #ef4444;
+      --bc-orange: #f59e0b;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -86,7 +87,7 @@
     .brand-title span { font-weight: 400; font-size: 13px; color: var(--bc-text-muted); margin-left: 6px; }
 
     /* Views */
-    #dashboard-view, #studio-view { display: none; padding: 32px; max-width: 1600px; margin: 0 auto; }
+    #dashboard-view, #studio-view, #queue-view { display: none; padding: 32px; max-width: 1600px; margin: 0 auto; }
     
     .toolbar-bar {
       display: flex; justify-content: space-between; align-items: center;
@@ -100,7 +101,7 @@
     .btn-pill {
       padding: 10px 20px; background: var(--bc-pill-bg); border: 1px solid var(--bc-border);
       border-radius: 30px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 8px;
+      display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;
     }
     .btn-pill:hover { background: var(--bc-purple-primary); }
 
@@ -179,10 +180,23 @@
     }
     .drag-grip:active { cursor: grabbing; }
 
-    .native-input {
-      background: var(--bc-midnight); border: 1px solid var(--bc-border); color: #ffffff;
-      font-size: 13px; border-radius: 6px; padding: 6px 10px; outline: none;
+    /* Colored Icon Picker Boxes */
+    .picker-box {
+      display: inline-flex; align-items: center; background: var(--bc-midnight);
+      border: 1px solid var(--bc-border); border-radius: 8px; padding: 5px 12px; gap: 8px;
+      cursor: pointer; transition: border-color 0.2s ease;
     }
+    .picker-box:hover { border-color: var(--bc-teal); }
+    
+    .icon-calendar-color { color: var(--bc-teal); font-size: 15px; }
+    .icon-clock-color { color: var(--bc-orange); font-size: 15px; }
+
+    .native-input {
+      background: transparent !important; border: none !important; color: #ffffff !important;
+      font-size: 13px !important; outline: none !important; cursor: pointer; padding: 2px 0;
+    }
+    .native-input::-webkit-calendar-picker-indicator { display: none !important; }
+
     .interval-input {
       width: 65px; background: var(--bc-midnight); border: 1px solid var(--bc-border);
       border-radius: 6px; color: var(--bc-teal); font-weight: 700; text-align: center; padding: 6px; font-size: 13px; outline: none;
@@ -192,6 +206,13 @@
       border-radius: 8px; color: #fff; padding: 10px; font-size: 13px; margin-bottom: 12px; outline: none;
     }
     .card-textarea { min-height: 105px; resize: vertical; line-height: 1.5; }
+
+    /* Scheduled Indicator Badge */
+    .scheduled-badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+      background: rgba(245, 158, 11, 0.15); border: 1px solid var(--bc-orange);
+      color: #fbbf24; border-radius: 20px; font-size: 12px; font-weight: 700;
+    }
 
     /* Add Step Box */
     .add-step-box {
@@ -294,6 +315,9 @@
       <button id="navStudioBtn" class="btn-pill" style="background: var(--bc-card-inner); border-color: var(--bc-teal); color: var(--bc-teal);" onclick="switchView('studio')">
         <i class="fa-solid fa-sliders"></i> Injury & Template Studio
       </button>
+      <button id="navQueueBtn" class="btn-pill" style="background: var(--bc-card-inner); border-color: var(--bc-orange); color: var(--bc-orange);" onclick="switchView('queue')">
+        <i class="fa-solid fa-envelope-open-text"></i> Queued Outreach
+      </button>
       <button class="btn-pill" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Exit</button>
     </div>
   </header>
@@ -379,7 +403,7 @@
     <div style="display: flex; gap: 14px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; background: var(--bc-card); padding: 16px; border-radius: 12px; border: 1px solid var(--bc-border);">
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 13px; color: var(--bc-text-muted);">Branch:</span>
-        <select id="studioBranchFilter" class="native-input" onchange="onStudioBranchChanged()">
+        <select id="studioBranchFilter" class="native-input" onchange="onStudioBranchChanged()" style="background: var(--bc-midnight) !important; padding: 6px 12px; border-radius: 6px;">
           <option value="UE">UE (Upper Extremity / Handle)</option>
           <option value="LE">LE (Lower Extremity / Cuff)</option>
         </select>
@@ -387,7 +411,7 @@
 
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 13px; color: var(--bc-text-muted);">Condition:</span>
-        <select id="studioConditionFilter" class="native-input" onchange="filterStudioTemplates()">
+        <select id="studioConditionFilter" class="native-input" onchange="filterStudioTemplates()" style="background: var(--bc-midnight) !important; padding: 6px 12px; border-radius: 6px;">
           <option value="ALL">All Conditions</option>
         </select>
       </div>
@@ -403,6 +427,37 @@
     <div id="studioCardsContainer" style="display: flex; flex-direction: column; gap: 16px;"></div>
   </main>
 
+  <!-- View 3: Dedicated Queued Outreach Management -->
+  <main id="queue-view">
+    <div class="toolbar-bar">
+      <div>
+        <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-envelope-open-text" style="color: var(--bc-orange);"></i> Queued Outreach Schedule</h2>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Inspect, reschedule, or cancel pending outreach emails across your roster</span>
+      </div>
+      <div>
+        <button class="btn-pill" onclick="loadQueueDashboard()">
+          <i class="fa-solid fa-rotate-right"></i> Refresh Queue
+        </button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th><span class="th-title">Patient</span></th>
+            <th><span class="th-title">Email</span></th>
+            <th><span class="th-title">Scheduled Send Time</span></th>
+            <th><span class="th-title">Subject Line</span></th>
+            <th><span class="th-title">Status</span></th>
+            <th><span class="th-title">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody id="queueTableBody"></tbody>
+      </table>
+    </div>
+  </main>
+
   <!-- Add Subsection/Condition Modal -->
   <div id="conditionModal" class="modal-overlay">
     <div class="modal-box">
@@ -412,16 +467,16 @@
       </p>
 
       <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Branch:</label>
-      <select id="modalBranch" class="native-input" style="width: 100%; margin-bottom: 12px;">
+      <select id="modalBranch" class="auth-input" style="text-align: left; margin-bottom: 12px; padding: 10px;">
         <option value="UE">UE (Upper Extremity / Handle)</option>
         <option value="LE">LE (Lower Extremity / Cuff)</option>
       </select>
 
       <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Condition / Injury Name:</label>
-      <input type="text" id="modalConditionName" class="native-input" placeholder="e.g. Rotator Cuff Tear (RCR) or ACL" style="width: 100%; margin-bottom: 12px;" />
+      <input type="text" id="modalConditionName" class="auth-input" placeholder="e.g. Rotator Cuff Tear (RCR) or ACL" style="margin-bottom: 12px;" />
 
       <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Day Intervals (comma-separated):</label>
-      <input type="text" id="modalIntervals" class="native-input" value="2, 4, 6, 8" style="width: 100%; margin-bottom: 20px;" />
+      <input type="text" id="modalIntervals" class="auth-input" value="2, 4, 6, 8" style="margin-bottom: 20px;" />
 
       <div style="display: flex; gap: 10px; justify-content: flex-end;">
         <button class="btn-pill" style="background: transparent;" onclick="closeConditionModal()">Cancel</button>
@@ -430,7 +485,7 @@
     </div>
   </div>
 
-  <!-- Timeline Drawer (Patient-Specific Sequence & Scheduling) -->
+  <!-- Timeline Drawer (Patient-Specific Sequence & Live Schedule Editing) -->
   <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
   <aside id="timelineDrawer" class="drawer-panel">
     <div class="drawer-header">
@@ -452,6 +507,7 @@
     let allStudioTemplates = [];
     let currentDisplayedTemplates = [];
     let patientTimelineStore = [];
+    let patientQueuedMap = {};
     let patientStartDateObj = new Date();
     let draggedItemIdx = null;
     let draggedPatientIdx = null;
@@ -497,17 +553,25 @@
     }
 
     function switchView(viewName) {
+      document.getElementById('dashboard-view').style.display = 'none';
+      document.getElementById('studio-view').style.display = 'none';
+      document.getElementById('queue-view').style.display = 'none';
+      
+      document.getElementById('navRosterBtn').style.background = 'var(--bc-card-inner)';
+      document.getElementById('navStudioBtn').style.background = 'var(--bc-card-inner)';
+      document.getElementById('navQueueBtn').style.background = 'var(--bc-card-inner)';
+
       if (viewName === 'roster') {
         document.getElementById('dashboard-view').style.display = 'block';
-        document.getElementById('studio-view').style.display = 'none';
         document.getElementById('navRosterBtn').style.background = 'var(--bc-purple-primary)';
-        document.getElementById('navStudioBtn').style.background = 'var(--bc-card-inner)';
-      } else {
-        document.getElementById('dashboard-view').style.display = 'none';
+      } else if (viewName === 'studio') {
         document.getElementById('studio-view').style.display = 'block';
-        document.getElementById('navRosterBtn').style.background = 'var(--bc-card-inner)';
         document.getElementById('navStudioBtn').style.background = 'var(--bc-purple-primary)';
         loadStudioTemplates();
+      } else if (viewName === 'queue') {
+        document.getElementById('queue-view').style.display = 'block';
+        document.getElementById('navQueueBtn').style.background = 'var(--bc-purple-primary)';
+        loadQueueDashboard();
       }
     }
 
@@ -610,6 +674,7 @@
     function logout() {
       document.getElementById('dashboard-view').style.display = 'none';
       document.getElementById('studio-view').style.display = 'none';
+      document.getElementById('queue-view').style.display = 'none';
       document.getElementById('mainNav').style.display = 'none';
       document.getElementById('login-view').style.display = 'flex';
       document.getElementById('pinInput').value = '';
@@ -932,7 +997,6 @@
         card.setAttribute('draggable', 'true');
         card.dataset.index = idx;
 
-        // Drag events
         card.addEventListener('dragstart', (e) => {
           draggedItemIdx = idx;
           card.classList.add('dragging');
@@ -994,7 +1058,6 @@
         container.appendChild(card);
       });
 
-      // ALWAYS show the Add Step Box at bottom so you can append steps anytime
       const targetCondition = condVal === 'ALL' ? 'General' : condVal;
       const addStepBox = document.createElement('div');
       addStepBox.className = 'add-step-box';
@@ -1005,7 +1068,7 @@
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%;">
           <span style="font-size: 12px; color: var(--bc-text-muted);">Send on Day:</span>
           <input type="number" id="studioNewStepOffset" class="interval-input" placeholder="e.g. 5" />
-          <input type="text" id="studioNewStepSubj" class="native-input" placeholder="Subject (optional)" style="min-width: 200px;" />
+          <input type="text" id="studioNewStepSubj" class="native-input" placeholder="Subject (optional)" style="background: var(--bc-midnight) !important; padding: 8px 14px; border-radius: 6px; min-width: 200px;" />
           <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px; padding: 7px 16px;" onclick="addStudioDayStep('${branchVal}', '${targetCondition}')">
             + Append Step
           </button>
@@ -1018,7 +1081,6 @@
       const movedItem = currentDisplayedTemplates.splice(fromIdx, 1)[0];
       currentDisplayedTemplates.splice(toIdx, 0, movedItem);
 
-      // Recalculate day offsets to maintain ascending order
       for (let i = 0; i < currentDisplayedTemplates.length; i++) {
         if (i > 0 && currentDisplayedTemplates[i].dayOffset <= currentDisplayedTemplates[i - 1].dayOffset) {
           currentDisplayedTemplates[i].dayOffset = currentDisplayedTemplates[i - 1].dayOffset + 2;
@@ -1027,7 +1089,6 @@
 
       renderStudioCards();
 
-      // Persist the moved step's new day offset to Google Sheets
       const updated = currentDisplayedTemplates[toIdx];
       showSpinner(`Updating sequence order to Day ${updated.dayOffset}...`);
       try {
@@ -1188,7 +1249,7 @@
     }
 
     // ----------------------------------------------------
-    // PATIENT TIMELINE DRAWER (DRAG & DROP REORDERABLE)
+    // PATIENT TIMELINE DRAWER (EDIT & CANCEL SCHEDULES)
     // ----------------------------------------------------
     async function openPatientTimeline(rowNumber) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
@@ -1198,16 +1259,24 @@
       document.getElementById('drawerMeta').innerText = `${activePatient.deviceType} • Condition: ${activePatient.condition}`;
       
       const cards = document.getElementById('drawerCards');
-      cards.innerHTML = '<div style="text-align:center; padding:20px; color:var(--bc-text-muted);">Loading condition sequence...</div>';
+      cards.innerHTML = '<div style="text-align:center; padding:20px; color:var(--bc-text-muted);">Loading patient sequence & scheduled outreach...</div>';
 
       document.getElementById('drawerOverlay').style.display = 'block';
       document.getElementById('timelineDrawer').classList.add('drawer-open');
 
       try {
-        const res = await fetch(`${API_URL}?action=GET_PATIENT_TIMELINE&rowNumber=${rowNumber}`);
-        const json = await res.json();
-        patientTimelineStore = json.timeline || [];
-        patientStartDateObj = json.startDateStr ? new Date(json.startDateStr + 'T00:00:00') : new Date();
+        const [timelineRes, queueRes] = await Promise.all([
+          fetch(`${API_URL}?action=GET_PATIENT_TIMELINE&rowNumber=${rowNumber}`),
+          fetch(`${API_URL}?action=GET_PATIENT_QUEUE&patientName=${encodeURIComponent(activePatient.patientName)}`)
+        ]);
+
+        const timelineJson = await timelineRes.json();
+        const queueJson = await queueRes.json();
+
+        patientTimelineStore = timelineJson.timeline || [];
+        patientQueuedMap = queueJson.queuedItems || {};
+        patientStartDateObj = timelineJson.startDateStr ? new Date(timelineJson.startDateStr + 'T00:00:00') : new Date();
+
         renderPatientTimelineCards();
       } catch (err) {
         cards.innerHTML = `<div style="color:red; padding:16px;">Error: ${err.message}</div>`;
@@ -1224,7 +1293,14 @@
         card.setAttribute('draggable', 'true');
         card.dataset.index = idx;
 
-        // Drag & Drop for patient sequence
+        const isScheduled = !!patientQueuedMap[item.id];
+        const queueData = patientQueuedMap[item.id] || null;
+
+        const initialDate = queueData ? queueData.scheduledDate : item.isoDate;
+        const initialTime = queueData ? queueData.scheduledTime : '09:00';
+        const initialSubj = queueData ? queueData.subject : item.subject;
+        const initialBody = queueData ? queueData.bodyText : item.defaultBody;
+
         card.addEventListener('dragstart', (e) => {
           draggedPatientIdx = idx;
           card.classList.add('dragging');
@@ -1252,7 +1328,6 @@
             const moved = patientTimelineStore.splice(draggedPatientIdx, 1)[0];
             patientTimelineStore.splice(idx, 0, moved);
 
-            // Re-adjust dates
             for (let i = 0; i < patientTimelineStore.length; i++) {
               if (i > 0 && patientTimelineStore[i].dayOffset <= patientTimelineStore[i - 1].dayOffset) {
                 patientTimelineStore[i].dayOffset = patientTimelineStore[i - 1].dayOffset + 2;
@@ -1265,45 +1340,72 @@
           }
         });
 
+        let scheduleHeaderBadge = isScheduled 
+          ? `<span class="scheduled-badge"><i class="fa-solid fa-clock-rotate-left"></i> Scheduled (${escapeHtml(queueData.scheduledDate)} at ${escapeHtml(queueData.scheduledTime)})</span>`
+          : `<span style="color:var(--bc-teal); font-size:12px;">Condition: ${escapeHtml(item.condition)}</span>`;
+
+        let actionButtonsHtml = isScheduled
+          ? `
+            <button class="btn-pill" style="background: #2563eb; color: #ffffff; font-size: 12px;" onclick="scheduleOutreach(${idx}, '${item.id}')">
+              ✏️ Reschedule / Update
+            </button>
+            <button class="btn-pill" style="background: rgba(239, 68, 68, 0.2); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px;" onclick="cancelOutreach('${item.id}')">
+              🗑️ Cancel Schedule
+            </button>
+            <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">
+              🚀 Send Now
+            </button>
+          `
+          : `
+            <button class="btn-pill" style="background: #2563eb; color: #ffffff; font-size: 12px;" onclick="scheduleOutreach(${idx}, '${item.id}')">
+              <i class="fa-solid fa-clock" style="color: #fff;"></i> Schedule Outreach
+            </button>
+            <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">
+              🚀 Send Now
+            </button>
+          `;
+
         card.innerHTML = `
-          <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap: wrap; gap: 8px;">
             <div style="display:flex; align-items:center; gap:6px;">
               <span class="drag-grip" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i> ⠿</span>
               <strong style="color:#fff;">${escapeHtml(item.title)}</strong>
             </div>
-            <span style="color:var(--bc-teal); font-size:12px;">${escapeHtml(item.condition)}</span>
+            ${scheduleHeaderBadge}
           </div>
 
           <div style="background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px; border: 1px solid var(--bc-border); margin-bottom: 14px;">
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
               <span style="font-size:12px; color:var(--bc-text-muted); font-weight:600;">Day:</span>
               <input type="number" id="offset_${idx}" class="interval-input" value="${item.dayOffset}" onchange="recalculateTargetDate(${idx})" />
 
-              <span style="font-size:12px; color:var(--bc-text-muted); margin-left:4px;">Date:</span>
-              <input type="date" id="date_${idx}" class="native-input" value="${item.isoDate}" />
-              <input type="time" id="time_${idx}" class="native-input" value="09:00" />
+              <!-- Cyan Calendar Picker -->
+              <div class="picker-box" onclick="triggerPicker('date_${idx}')">
+                <i class="fa-solid fa-calendar-days icon-calendar-color"></i>
+                <input type="date" id="date_${idx}" class="native-input" value="${initialDate}" />
+              </div>
+
+              <!-- Amber Clock Picker -->
+              <div class="picker-box" onclick="triggerPicker('time_${idx}')">
+                <i class="fa-solid fa-clock icon-clock-color"></i>
+                <input type="time" id="time_${idx}" class="native-input" value="${initialTime}" />
+              </div>
             </div>
           </div>
 
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
-          <input type="text" id="subj_${idx}" class="card-input" value="${escapeHtml(item.subject)}" />
+          <input type="text" id="subj_${idx}" class="card-input" value="${escapeHtml(initialSubj)}" />
 
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
-          <textarea id="body_${idx}" class="card-textarea">${escapeHtml(item.defaultBody)}</textarea>
+          <textarea id="body_${idx}" class="card-textarea">${escapeHtml(initialBody)}</textarea>
 
           <div style="display:flex; gap:8px; flex-wrap: wrap;">
-            <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">
-              🚀 Send Now
-            </button>
-            <button class="btn-pill" style="background: #2563eb; color: #ffffff; font-size: 12px;" onclick="scheduleOutreach(${idx}, '${item.id}')">
-              📅 Schedule Email Outreach
-            </button>
+            ${actionButtonsHtml}
           </div>
         `;
         container.appendChild(card);
       });
 
-      // Add Custom Outreach Day Card for this patient
       const addPatientDayBox = document.createElement('div');
       addPatientDayBox.className = 'add-step-box';
       addPatientDayBox.innerHTML = `
@@ -1319,6 +1421,16 @@
         </div>
       `;
       container.appendChild(addPatientDayBox);
+    }
+
+    function triggerPicker(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (typeof el.showPicker === 'function') {
+        el.showPicker();
+      } else {
+        el.focus();
+      }
     }
 
     function recalculateTargetDate(idx) {
@@ -1373,7 +1485,7 @@
       if (!chosenDate) return alert("Please select a target send date.");
       if (!subject || !body) return alert("Subject and email body cannot be empty.");
 
-      showSpinner(`Queueing outreach for ${chosenDate}...`);
+      showSpinner(`Updating outreach schedule for ${chosenDate}...`);
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
@@ -1391,8 +1503,29 @@
         });
         const json = await res.json();
         alert(json.success ? `✅ ${json.message}` : `❌ ${json.message}`);
+        openPatientTimeline(activePatient.rowNumber);
       } catch (err) {
         alert("Scheduling error: " + err.message);
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    async function cancelOutreach(milestoneId) {
+      if (!confirm("Are you sure you want to cancel this scheduled email?")) return;
+      showSpinner("Canceling scheduled email...");
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'DELETE_SCHEDULED_OUTREACH',
+            patientName: activePatient.patientName,
+            milestoneId: milestoneId
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        openPatientTimeline(activePatient.rowNumber);
       } finally {
         hideSpinner();
       }
@@ -1415,6 +1548,78 @@
         });
         const json = await res.json();
         alert(json.message);
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    // ----------------------------------------------------
+    // DEDICATED QUEUED OUTREACH DASHBOARD (VIEW 3)
+    // ----------------------------------------------------
+    async function loadQueueDashboard() {
+      showSpinner("Loading queued outreach schedule...");
+      try {
+        const res = await fetch(`${API_URL}?action=GET_ALL_QUEUE`);
+        const json = await res.json();
+        if (json.success) {
+          renderQueueTable(json.queue);
+        }
+      } catch (e) {
+        alert("Failed to load queue: " + e.message);
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    function renderQueueTable(queueList) {
+      const tbody = document.getElementById('queueTableBody');
+      tbody.innerHTML = '';
+
+      if (!queueList || queueList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 28px; color: var(--bc-text-muted);">No queued emails found.</td></tr>';
+        return;
+      }
+
+      queueList.forEach(q => {
+        const tr = document.createElement('tr');
+        const isScheduled = q.status === 'Scheduled';
+
+        let statusPill = `<span style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; background: rgba(255,255,255,0.08); color: #fff;">${escapeHtml(q.status)}</span>`;
+        if (q.status === 'Scheduled') {
+          statusPill = `<span class="scheduled-badge">Scheduled</span>`;
+        } else if (q.status === 'Sent') {
+          statusPill = `<span style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid #10b981;">Sent</span>`;
+        } else if (q.status.includes('Canceled')) {
+          statusPill = `<span style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid #ef4444;">${escapeHtml(q.status)}</span>`;
+        }
+
+        let actionButtons = isScheduled
+          ? `<button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">Cancel</button>`
+          : `<span style="color: var(--bc-text-muted); font-size: 12px;">—</span>`;
+
+        tr.innerHTML = `
+          <td style="font-weight: 600;">${escapeHtml(q.patientName)}</td>
+          <td>${escapeHtml(q.email)}</td>
+          <td><span style="color: var(--bc-orange); font-weight: 600;">${escapeHtml(q.scheduledDate)} at ${escapeHtml(q.scheduledTime)}</span></td>
+          <td>${escapeHtml(q.subject)}</td>
+          <td>${statusPill}</td>
+          <td>${actionButtons}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function cancelQueueRow(rowIndex) {
+      if (!confirm("Are you sure you want to cancel this scheduled email?")) return;
+      showSpinner("Canceling queued email...");
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'DELETE_SCHEDULED_OUTREACH', queueRowIndex: rowIndex })
+        });
+        const json = await res.json();
+        alert(json.message);
+        loadQueueDashboard();
       } finally {
         hideSpinner();
       }
