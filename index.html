@@ -427,7 +427,7 @@
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 13px; color: var(--bc-text-muted);">Condition:</span>
         <select id="studioConditionFilter" class="native-input" onchange="filterStudioTemplates()" style="background: var(--bc-midnight) !important; padding: 6px 12px; border-radius: 6px;">
-          <option value="ALL">All Conditions</option>
+          <option value="General">General (Default Baseline)</option>
         </select>
       </div>
 
@@ -477,7 +477,7 @@
     <div class="modal-box">
       <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-folder-plus" style="color: var(--bc-teal);"></i> Add New Condition Path</h3>
       <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
-        Creates a dedicated injury sequence under UE or LE with default day intervals.
+        Creates a new injury path under UE or LE that automatically inherits the full standard protocol sequence.
       </p>
 
       <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Branch:</label>
@@ -487,10 +487,7 @@
       </select>
 
       <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Condition / Injury Name:</label>
-      <input type="text" id="modalConditionName" class="auth-input" placeholder="e.g. Rotator Cuff Tear (RCR) or ACL" style="margin-bottom: 12px;" />
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Day Intervals (comma-separated):</label>
-      <input type="text" id="modalIntervals" class="auth-input" value="2, 4, 6, 8" style="margin-bottom: 20px;" />
+      <input type="text" id="modalConditionName" class="auth-input" placeholder="e.g. Rotator Cuff Tear (RCR) or ACL" style="margin-bottom: 20px;" />
 
       <div style="display: flex; gap: 10px; justify-content: flex-end;">
         <button class="btn-pill" style="background: transparent;" onclick="closeConditionModal()">Cancel</button>
@@ -504,7 +501,7 @@
     <div class="modal-box">
       <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-trash-can" style="color: var(--bc-red);"></i> Delete Condition Path</h3>
       <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
-        Permanently remove a condition and all associated milestone email templates.
+        Permanently remove a custom condition and all its associated templates. (General cannot be deleted).
       </p>
 
       <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Select Branch:</label>
@@ -1064,12 +1061,20 @@
         .filter(t => t.branch === branchVal)
         .forEach(t => conditions.add(t.condition));
 
-      select.innerHTML = '<option value="ALL">All Conditions</option>';
+      select.innerHTML = '';
       Array.from(conditions).sort().forEach(c => {
         const opt = document.createElement('option');
-        opt.value = c; opt.textContent = c;
+        opt.value = c;
+        opt.textContent = c === 'General' ? 'General (Default Baseline)' : c;
         select.appendChild(opt);
       });
+
+      // Default directly to General so the studio loads fast and clean
+      if (conditions.has('General')) {
+        select.value = 'General';
+      } else if (conditions.size > 0) {
+        select.value = Array.from(conditions)[0];
+      }
 
       filterStudioTemplates();
     }
@@ -1080,7 +1085,7 @@
       const deleteWrap = document.getElementById('deleteConditionWrap');
       const deleteBtn = document.getElementById('deleteActiveBtn');
 
-      if (condVal !== 'ALL' && condVal.toLowerCase() !== 'general') {
+      if (condVal && condVal !== 'ALL' && condVal.toLowerCase() !== 'general') {
         deleteWrap.style.display = 'block';
         deleteBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i> Delete "${escapeHtml(condVal)}"`;
       } else {
@@ -1169,7 +1174,7 @@
         container.appendChild(card);
       });
 
-      const targetCondition = condVal === 'ALL' ? 'General' : condVal;
+      const targetCondition = (!condVal || condVal === 'ALL') ? 'General' : condVal;
       const addStepBox = document.createElement('div');
       addStepBox.className = 'add-step-box';
       addStepBox.innerHTML = `
@@ -1225,7 +1230,7 @@
       const subjInput = document.getElementById('studioNewStepSubj');
       const offset = parseInt(offsetInput.value.trim());
 
-      if (isNaN(offset) || offset <= 0) {
+      if (isNaN(offset)) {
         return alert("Please enter a valid day number (e.g. 5, 10, 14).");
       }
 
@@ -1301,10 +1306,8 @@
     async function submitNewCondition() {
       const branch = document.getElementById('modalBranch').value;
       const conditionName = document.getElementById('modalConditionName').value.trim();
-      const rawIntervals = document.getElementById('modalIntervals').value.trim();
 
       if (!conditionName) return alert("Please enter a condition name.");
-      const baseIntervals = rawIntervals.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
 
       showSpinner(`Creating condition ${conditionName}...`);
       try {
@@ -1313,8 +1316,7 @@
           body: JSON.stringify({
             action: 'ADD_NEW_CONDITION',
             branch: branch,
-            conditionName: conditionName,
-            baseIntervals: baseIntervals
+            conditionName: conditionName
           })
         });
         const json = await res.json();
@@ -1377,8 +1379,8 @@
       const branch = document.getElementById('studioBranchFilter').value;
       const cond = document.getElementById('studioConditionFilter').value;
 
-      if (cond === 'ALL' || cond.toLowerCase() === 'general') {
-        return alert("Cannot delete this condition.");
+      if (!cond || cond === 'ALL' || cond.toLowerCase() === 'general') {
+        return alert("Cannot delete this baseline condition.");
       }
 
       if (!confirm(`Are you sure you want to permanently delete "${cond}" under ${branch} and all its template steps?`)) return;
@@ -1754,7 +1756,6 @@
 
       document.getElementById('unfreezeRowIndex').value = rowIndex;
       
-      // Default to tomorrow or today's date if past
       const todayStr = new Date().toISOString().split('T')[0];
       const defaultDate = (!item.scheduledDate || item.scheduledDate < todayStr) ? todayStr : item.scheduledDate;
 
