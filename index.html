@@ -649,7 +649,7 @@
         </label>
         <input type="hidden" id="editQueueAttachmentId" />
         <div id="editQueueAttachmentChip" style="display: none;" class="attachment-chip">
-          <i class="fa-solid fa-file"></i> <span id="editQueueAttachmentName">File</span>
+          <span id="editQueueAttachmentName">File</span>
           <button type="button" onclick="clearQueueAttachment()">&times;</button>
         </div>
       </div>
@@ -1402,10 +1402,10 @@
           <input type="text" id="studio_subj_${idx}" class="card-input" value="${escapeHtml(tpl.subject)}" />
 
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body (Supports HTML & {{first_name}})</label>
-          <textarea id="studio_body_${idx}" class="card-textarea">${escapeHtml(tpl.bodyText)}</textarea>
+          <textarea id="studio_body_${idx}" class="card-textarea" oninput="updateStudioLivePreview(${idx})">${escapeHtml(tpl.bodyText)}</textarea>
 
           <!-- Attachment Clip Control -->
-          <div style="margin-bottom: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 12px; cursor: pointer; padding: 6px 14px;">
               <i class="fa-solid fa-paperclip"></i> Attach PDF / MP4 (up to 50MB)
               <input type="file" style="display: none;" onchange="handleCardAttachmentUpload(this, ${idx}, false)" />
@@ -1418,6 +1418,14 @@
               <button type="button" onclick="clearCardAttachment(${idx}, false)">&times;</button>
             </div>
           </div>
+
+          <!-- Live HTML & Image Preview Accordion in Studio -->
+          <details style="margin-bottom: 14px; cursor: pointer; color: var(--bc-teal); font-size: 12px;" ontoggle="if(this.open) updateStudioLivePreview(${idx})">
+            <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Images</summary>
+            <div id="studio_preview_box_${idx}" style="background: #ffffff; color: #1e293b; padding: 18px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1;">
+              ${tpl.bodyText.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}
+            </div>
+          </details>
 
           <div style="display:flex; justify-content:flex-end;">
             <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px;" onclick="saveStudioTemplate(${idx}, '${tpl.branch}', '${tpl.condition}', '${tpl.milestoneId}')">
@@ -1445,6 +1453,14 @@
         </div>
       `;
       container.appendChild(addStepBox);
+    }
+
+    function updateStudioLivePreview(idx) {
+      const textarea = document.getElementById(`studio_body_${idx}`);
+      const previewBox = document.getElementById(`studio_preview_box_${idx}`);
+      if (textarea && previewBox) {
+        previewBox.innerHTML = textarea.value.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+      }
     }
 
     async function handleStudioReorder(fromIdx, toIdx) {
@@ -1893,7 +1909,7 @@
           <input type="text" id="subj_${idx}" class="card-input" value="${escapeHtml(initialSubj)}" ${isSent ? 'disabled' : ''} />
 
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content (HTML & Diagrams Supported)</label>
-          <textarea id="body_${idx}" class="card-textarea" ${isSent ? 'disabled' : ''}>${escapeHtml(initialBody)}</textarea>
+          <textarea id="body_${idx}" class="card-textarea" oninput="updateDrawerLivePreview(${idx})" ${isSent ? 'disabled' : ''}>${escapeHtml(initialBody)}</textarea>
 
           <!-- Drawer Attachment Upload Field -->
           <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -1910,10 +1926,10 @@
             </div>
           </div>
 
-          <!-- Live HTML Image Preview Accordion -->
-          <details style="margin-bottom: 10px; cursor: pointer; color: var(--bc-teal); font-size: 12px;">
+          <!-- Live HTML Image Preview Accordion in Drawer -->
+          <details style="margin-bottom: 10px; cursor: pointer; color: var(--bc-teal); font-size: 12px;" ontoggle="if(this.open) updateDrawerLivePreview(${idx})">
             <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Images</summary>
-            <div style="background: #ffffff; color: #1e293b; padding: 16px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">
+            <div id="drawer_preview_box_${idx}" style="background: #ffffff; color: #1e293b; padding: 16px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1;">
               ${initialBody.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}
             </div>
           </details>
@@ -1924,6 +1940,14 @@
         `;
         container.appendChild(card);
       });
+    }
+
+    function updateDrawerLivePreview(idx) {
+      const textarea = document.getElementById(`body_${idx}`);
+      const previewBox = document.getElementById(`drawer_preview_box_${idx}`);
+      if (textarea && previewBox) {
+        previewBox.innerHTML = textarea.value.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+      }
     }
 
     function triggerPicker(id) {
