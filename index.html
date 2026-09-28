@@ -26,7 +26,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bc-midnight); color: var(--bc-text); min-height: 100vh; }
 
-    /* Buffer Spinner Overlay */
     .spinner-overlay {
       position: fixed; inset: 0; background: rgba(22, 19, 41, 0.85); backdrop-filter: blur(6px);
       display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 9999;
@@ -38,11 +37,9 @@
     .spinner-text { font-size: 14px; color: var(--bc-text); font-weight: 500; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Brand Logos */
     .bc-brand-icon { width: 28px; height: 28px; object-fit: contain; border-radius: 6px; display: inline-block; vertical-align: middle; }
     .bc-brand-icon-lg { width: 48px; height: 48px; object-fit: contain; border-radius: 10px; margin-bottom: 8px; display: inline-block; }
 
-    /* Auth Screens */
     .auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
     .auth-box {
       background: var(--bc-card); border: 1px solid var(--bc-border); border-radius: 20px;
@@ -79,7 +76,6 @@
       cursor: pointer; text-decoration: underline; background: none; border: none;
     }
 
-    /* Top Nav */
     .top-nav {
       background: var(--bc-card); border-bottom: 1px solid var(--bc-border);
       padding: 16px 32px; display: flex; justify-content: space-between; align-items: center;
@@ -87,7 +83,6 @@
     .brand-title { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
     .brand-title span { font-weight: 400; font-size: 13px; color: var(--bc-text-muted); margin-left: 6px; }
 
-    /* Views */
     #dashboard-view, #studio-view, #queue-view { display: none; padding: 32px; max-width: 1600px; margin: 0 auto; }
     
     .toolbar-bar {
@@ -113,7 +108,6 @@
     }
     .btn-clear-filters:hover { color: #fff; border-color: var(--bc-teal); }
 
-    /* Tables */
     .table-container {
       background: var(--bc-card); border: 1px solid var(--bc-border); border-radius: 16px;
       overflow-x: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
@@ -137,7 +131,6 @@
     td { padding: 14px 16px; border-bottom: 1px solid var(--bc-border); color: var(--bc-text); vertical-align: middle; }
     tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
 
-    /* Status Badges */
     .status-select { font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; outline: none; cursor: pointer; }
     .status-active { background: rgba(16, 185, 129, 0.12) !important; color: #34d399 !important; border: 1px solid #10b981 !important; }
     .status-enrolled { background: rgba(245, 158, 11, 0.12) !important; color: #fbbf24 !important; border: 1px solid #f59e0b !important; }
@@ -167,7 +160,6 @@
       color: #f87171; border-radius: 20px; font-size: 11px; font-weight: 700;
     }
 
-    /* Drawer */
     .drawer-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: none; z-index: 1000; }
     .drawer-panel {
       position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 680px;
@@ -182,19 +174,16 @@
     }
     .drawer-body { padding: 20px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; }
 
-    /* Control Strip inside Patient Drawer */
     .drawer-control-strip {
       background: var(--bc-card-inner); border: 1px solid var(--bc-border);
       border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px;
     }
 
-    /* Cards */
     .milestone-card {
       background: var(--bc-card-inner); border: 1px solid var(--bc-border);
       border-radius: 14px; padding: 18px; position: relative; transition: all 0.2s ease;
     }
 
-    /* Picker Boxes */
     .picker-box {
       display: inline-flex; align-items: center; background: var(--bc-midnight);
       border: 1px solid var(--bc-border); border-radius: 8px; padding: 5px 12px; gap: 8px;
@@ -221,7 +210,6 @@
     }
     .card-textarea { min-height: 95px; resize: vertical; line-height: 1.5; }
 
-    /* Modals */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 2000;
     }
@@ -233,13 +221,11 @@
 </head>
 <body>
 
-  <!-- Spinner Overlay -->
   <div id="spinner-overlay" class="spinner-overlay">
     <div class="spinner"></div>
     <div id="spinnerText" class="spinner-text">Processing request...</div>
   </div>
 
-  <!-- Login Section -->
   <section id="login-view" class="auth-container">
     <div class="auth-box">
       <div class="login-logo auth-logo" style="flex-direction: column; gap: 6px;">
@@ -260,7 +246,6 @@
     </div>
   </section>
 
-  <!-- Step 1: Forgot Password Email Entry -->
   <section id="forgot-view" class="auth-container" style="display: none;">
     <div class="auth-box">
       <div class="auth-logo" style="flex-direction: column; gap: 6px;">
@@ -276,7 +261,6 @@
     </div>
   </section>
 
-  <!-- Step 2: Code Verification -->
   <section id="verify-view" class="auth-container" style="display: none;">
     <div class="auth-box">
       <div class="auth-logo" style="flex-direction: column; gap: 6px;">
@@ -298,7 +282,6 @@
     </div>
   </section>
 
-  <!-- Top Navigation -->
   <header id="mainNav" class="top-nav" style="display: none;">
     <div class="brand-title">
       <img src="band_connect_logo.jpeg" alt="Band Connect" class="bc-brand-icon" />
@@ -319,12 +302,11 @@
     </div>
   </header>
 
-  <!-- View 1: Patient Roster Dashboard -->
   <main id="dashboard-view">
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;">Patient Management</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Delta sync enabled, live status updating & email outreach scheduling</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Live status updating & email outreach scheduling</span>
       </div>
       <div style="display: flex; gap: 12px; align-items: center;">
         <input type="text" id="searchInput" class="search-input" placeholder="🔍 Universal search roster..." oninput="applyAllFilters()" />
@@ -382,24 +364,19 @@
     </div>
   </main>
 
-  <!-- View 2: Injury & Template Studio -->
   <main id="studio-view">
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical media, and two-way Google Docs synchronization</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical diagrams, and two-way Google Docs synchronization</span>
       </div>
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="triggerSyncFromGoogleDocs()">
           <i class="fa-solid fa-file-arrow-down"></i> 🔄 Sync from Google Docs
         </button>
-        <button class="btn-pill" style="background: var(--bc-teal); color: #000;" onclick="openConditionModal()">
-          <i class="fa-solid fa-plus-circle"></i> Add Condition Path
-        </button>
       </div>
     </div>
 
-    <!-- Filter Bar -->
     <div style="display: flex; gap: 14px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; background: var(--bc-card); padding: 16px; border-radius: 12px; border: 1px solid var(--bc-border);">
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 13px; color: var(--bc-text-muted);">Branch:</span>
@@ -420,7 +397,6 @@
     <div id="studioCardsContainer" style="display: flex; flex-direction: column; gap: 16px;"></div>
   </main>
 
-  <!-- View 3: Dedicated Queued Outreach Management -->
   <main id="queue-view">
     <div class="toolbar-bar">
       <div>
@@ -452,7 +428,6 @@
     </div>
   </main>
 
-  <!-- Timeline Drawer (Patient Sequences) -->
   <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
   <aside id="timelineDrawer" class="drawer-panel">
     <div class="drawer-header">
@@ -488,7 +463,6 @@
     <div class="drawer-body" id="drawerCards"></div>
   </aside>
 
-  <!-- Attachment Image Lightbox Preview Modal -->
   <div id="imagePreviewModal" class="modal-overlay" onclick="closeImagePreviewModal()" style="z-index: 3000;">
     <div class="modal-box" onclick="event.stopPropagation();" style="max-width: 600px; text-align: center; position: relative;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
@@ -528,8 +502,16 @@
         <img src="band_connect_logo.jpeg" alt="Band Connect" style="width: 140px; height: auto; display: block;" />
       </div>`;
 
+    function normalizeImageUrls(rawHtml) {
+      if (!rawHtml) return '';
+      return rawHtml
+        .replace(/https:\/\/drive\.google\.com\/uc\?export=view&id=([a-zA-Z0-9_-]+)/g, 'https://lh3.googleusercontent.com/d/$1')
+        .replace(/https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view[^\s"']*/g, 'https://lh3.googleusercontent.com/d/$1');
+    }
+
     function renderEmailPreviewHtml(rawBody) {
-      let html = (rawBody || '').replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+      let cleanBody = normalizeImageUrls(rawBody || '');
+      let html = cleanBody.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
       if (!html.includes('band_connect_logo') && !html.includes('bandCONNECT') && !html.includes('WhatsApp')) {
         html += BAND_CONNECT_SIGNATURE_LOGO;
       }
@@ -608,12 +590,9 @@
       return `${dateStr} • ${cleanTime}`;
     }
 
-    // ----------------------------------------------------
-    // LIGHTBOX PREVIEW
-    // ----------------------------------------------------
     function openAttachmentPreview(fileId, fileName) {
       if (!fileId) return;
-      openAttachmentPreviewDirect(`https://drive.google.com/uc?export=view&id=${fileId}`, fileName);
+      openAttachmentPreviewDirect(`https://lh3.googleusercontent.com/d/${fileId}`, fileName);
     }
 
     function openAttachmentPreviewDirect(url, customTitle = 'Image Preview') {
@@ -628,7 +607,7 @@
       placeholder.innerText = 'Loading image preview...';
       modal.style.display = 'flex';
 
-      img.src = url;
+      img.src = normalizeImageUrls(url);
       img.onload = () => {
         placeholder.style.display = 'none';
         img.style.display = 'block';
@@ -645,9 +624,6 @@
       img.src = '';
     }
 
-    // ----------------------------------------------------
-    // GOOGLE DOCS SYNC TRIGGER
-    // ----------------------------------------------------
     async function triggerSyncFromGoogleDocs() {
       if (!confirm("Pull all latest updates and diagrams from Google Docs into Portal Templates?")) return;
       showSpinner("Synchronizing templates & images from Google Docs...");
@@ -663,9 +639,6 @@
       }
     }
 
-    // ----------------------------------------------------
-    // ASYNCHRONOUS FILE UPLOAD TO GOOGLE DRIVE
-    // ----------------------------------------------------
     async function uploadFileToDrive(fileInput, onComplete) {
       const file = fileInput.files[0];
       if (!file) return;
@@ -703,22 +676,6 @@
       };
 
       reader.readAsDataURL(file);
-    }
-
-    // ----------------------------------------------------
-    // AUTHENTICATION & LOGIN
-    // ----------------------------------------------------
-    function openForgotView() {
-      document.getElementById('login-view').style.display = 'none';
-      document.getElementById('forgot-view').style.display = 'flex';
-      document.getElementById('resetEmailInput').focus();
-    }
-
-    function backToLogin() {
-      document.getElementById('forgot-view').style.display = 'none';
-      document.getElementById('verify-view').style.display = 'none';
-      document.getElementById('login-view').style.display = 'flex';
-      document.getElementById('pinInput').value = '';
     }
 
     async function submitLogin() {
@@ -811,9 +768,6 @@
       document.getElementById('pinInput').value = '';
     }
 
-    // ----------------------------------------------------
-    // ROSTER & DELTA FETCHING
-    // ----------------------------------------------------
     async function loadPatients(forceFullReload = false) {
       let localRoster = [];
       try {
@@ -1058,7 +1012,7 @@
     }
 
     // ----------------------------------------------------
-    // INJURY & TEMPLATE STUDIO WITH INTERACTIVE MEDIA
+    // INJURY & TEMPLATE STUDIO (WITH CDN LH3 EMBEDDING)
     // ----------------------------------------------------
     async function loadStudioTemplates() {
       showSpinner("Loading injury studio...");
@@ -1119,21 +1073,17 @@
       const container = document.getElementById('studioCardsContainer');
       container.innerHTML = '';
 
-      const branchVal = document.getElementById('studioBranchFilter').value;
-      const condVal = document.getElementById('studioConditionFilter').value;
-
       currentDisplayedTemplates.forEach((tpl, idx) => {
         const card = document.createElement('div');
         card.className = 'milestone-card';
         card.dataset.index = idx;
 
-        // Detect current image
         let activeImgSrc = '';
         if (tpl.attachmentId) {
-          activeImgSrc = `https://drive.google.com/uc?export=view&id=${tpl.attachmentId}`;
+          activeImgSrc = `https://lh3.googleusercontent.com/d/${tpl.attachmentId}`;
         } else {
           const match = (tpl.bodyText || '').match(/<img[^>]+src=["']([^"']+)["']/i);
-          if (match) activeImgSrc = match[1];
+          if (match) activeImgSrc = normalizeImageUrls(match[1]);
         }
 
         card.innerHTML = `
@@ -1158,7 +1108,6 @@
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
           <textarea id="studio_body_${idx}" class="card-textarea" oninput="updateStudioLivePreview(${idx})">${escapeHtml(tpl.bodyText)}</textarea>
 
-          <!-- Interactive Media Control Block -->
           <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
@@ -1175,15 +1124,13 @@
               </div>
             </div>
 
-            <!-- Thumbnail Container -->
             <div id="studio_img_wrap_${idx}" style="display: ${activeImgSrc ? 'flex' : 'none'}; align-items: center; gap: 14px; margin-top: 10px; background: rgba(22, 19, 41, 0.7); padding: 8px 12px; border-radius: 8px;">
-              <img id="studio_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" />
+              <img id="studio_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 64px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" />
               <span style="font-size: 12px; color: var(--bc-text-muted);">Click thumbnail to view full image in lightbox.</span>
             </div>
             <input type="hidden" id="studio_att_id_${idx}" value="${tpl.attachmentId || ''}" />
           </div>
 
-          <!-- Live Rendered Email Preview -->
           <details style="margin-bottom: 14px; cursor: pointer; color: var(--bc-teal); font-size: 12px;" ontoggle="if(this.open) updateStudioLivePreview(${idx})">
             <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Images</summary>
             <div id="studio_preview_box_${idx}" style="background: #ffffff; color: #1e293b; padding: 18px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1;">
@@ -1203,7 +1150,7 @@
 
     function handleStudioImageUpload(fileInput, idx) {
       uploadFileToDrive(fileInput, (uploaded) => {
-        const viewUrl = `https://drive.google.com/uc?export=view&id=${uploaded.fileId}`;
+        const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
         document.getElementById(`studio_att_id_${idx}`).value = uploaded.fileId;
 
         const thumb = document.getElementById(`studio_thumb_${idx}`);
@@ -1295,9 +1242,6 @@
       }
     }
 
-    // ----------------------------------------------------
-    // PATIENT TIMELINE DRAWER
-    // ----------------------------------------------------
     async function openPatientTimeline(rowNumber, conditionOverride = null) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
       if (!activePatient) return;
@@ -1468,7 +1412,6 @@
 
           <input type="hidden" id="att_id_${idx}" value="${attachmentId}" />
 
-          <!-- Drawer Live Preview Accordion -->
           <details style="margin-bottom: 10px; cursor: pointer; color: var(--bc-teal); font-size: 12px;" ontoggle="if(this.open) updateDrawerLivePreview(${idx})">
             <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Images</summary>
             <div id="drawer_preview_box_${idx}" style="background: #ffffff; color: #1e293b; padding: 16px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1;">
@@ -1625,9 +1568,6 @@
       }
     }
 
-    // ----------------------------------------------------
-    // QUEUED OUTREACH MANAGEMENT
-    // ----------------------------------------------------
     async function loadQueueDashboard() {
       showSpinner("Loading queued outreach schedule...");
       try {
