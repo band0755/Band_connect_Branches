@@ -188,24 +188,11 @@
       border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px;
     }
 
-    /* Drag & Drop Cards */
+    /* Cards */
     .milestone-card {
       background: var(--bc-card-inner); border: 1px solid var(--bc-border);
       border-radius: 14px; padding: 18px; position: relative; transition: all 0.2s ease;
     }
-    .milestone-card.dragging {
-      opacity: 0.45; transform: scale(0.98); border: 2px dashed var(--bc-teal);
-    }
-    .milestone-card.drag-over {
-      border-top: 3px solid var(--bc-teal);
-    }
-
-    .drag-grip {
-      cursor: grab; display: inline-flex; align-items: center; justify-content: center;
-      padding: 4px 10px; background: rgba(22, 19, 41, 0.8); border: 1px solid var(--bc-border);
-      border-radius: 6px; color: var(--bc-teal); font-size: 12px; font-weight: 700; user-select: none;
-    }
-    .drag-grip:active { cursor: grabbing; }
 
     /* Picker Boxes */
     .picker-box {
@@ -233,16 +220,6 @@
       border-radius: 8px; color: #fff; padding: 10px; font-size: 13px; margin-bottom: 10px; outline: none;
     }
     .card-textarea { min-height: 95px; resize: vertical; line-height: 1.5; }
-
-    /* Attachment Chip */
-    .attachment-chip {
-      display: inline-flex; align-items: center; gap: 8px; background: rgba(56, 189, 248, 0.12);
-      border: 1px solid var(--bc-teal); padding: 5px 12px; border-radius: 20px; font-size: 12px;
-      color: var(--bc-teal); margin-top: 6px;
-    }
-    .attachment-chip button {
-      background: none; border: none; color: #f87171; cursor: pointer; font-size: 13px;
-    }
 
     /* Modals */
     .modal-overlay {
@@ -410,7 +387,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage injury sub-categories, 50MB attachments, and two-way Google Docs synchronization</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical media, and two-way Google Docs synchronization</span>
       </div>
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="triggerSyncFromGoogleDocs()">
@@ -419,13 +396,10 @@
         <button class="btn-pill" style="background: var(--bc-teal); color: #000;" onclick="openConditionModal()">
           <i class="fa-solid fa-plus-circle"></i> Add Condition Path
         </button>
-        <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="openDeleteConditionModal()">
-          <i class="fa-solid fa-trash-can"></i> Delete Condition
-        </button>
       </div>
     </div>
 
-    <!-- Studio Filter Bar -->
+    <!-- Filter Bar -->
     <div style="display: flex; gap: 14px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; background: var(--bc-card); padding: 16px; border-radius: 12px; border: 1px solid var(--bc-border);">
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 13px; color: var(--bc-text-muted);">Branch:</span>
@@ -441,12 +415,6 @@
           <option value="General">General (Default Baseline)</option>
         </select>
       </div>
-
-      <div id="deleteConditionWrap" style="margin-left: auto; display: none;">
-        <button id="deleteActiveBtn" class="btn-pill" style="background: rgba(239, 68, 68, 0.2); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px;" onclick="deleteActiveSelectedCondition()">
-          <i class="fa-solid fa-trash-can"></i> Delete Condition
-        </button>
-      </div>
     </div>
 
     <div id="studioCardsContainer" style="display: flex; flex-direction: column; gap: 16px;"></div>
@@ -457,7 +425,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-envelope-open-text" style="color: var(--bc-orange);"></i> Queued Outreach Schedule</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Live status tracking: scheduled emails, frozen pauses, dispatches, and quick unfreeze/reschedule controls</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Live status tracking: scheduled emails, pauses, and dispatches</span>
       </div>
       <div>
         <button class="btn-pill" onclick="loadQueueDashboard()">
@@ -484,105 +452,6 @@
     </div>
   </main>
 
-  <!-- Modal 1: Add New Condition Modal -->
-  <div id="conditionModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-folder-plus" style="color: var(--bc-teal);"></i> Add New Condition Path</h3>
-      <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
-        Creates a new injury path under UE or LE that automatically inherits the full standard protocol sequence.
-      </p>
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Branch:</label>
-      <select id="modalBranch" class="auth-input" style="text-align: left; margin-bottom: 12px; padding: 10px;">
-        <option value="UE">UE (Upper Extremity / Handle)</option>
-        <option value="LE">LE (Lower Extremity / Cuff)</option>
-      </select>
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Condition / Injury Name:</label>
-      <input type="text" id="modalConditionName" class="auth-input" placeholder="e.g. Rotator Cuff Tear (RCR) or ACL" style="margin-bottom: 20px;" />
-
-      <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button class="btn-pill" style="background: transparent;" onclick="closeConditionModal()">Cancel</button>
-        <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="submitNewCondition()">Save Condition</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal 2: Dedicated Delete Condition Modal -->
-  <div id="deleteConditionModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-trash-can" style="color: var(--bc-red);"></i> Delete Condition Path</h3>
-      <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
-        Permanently remove a custom condition and all its associated templates. (General cannot be deleted).
-      </p>
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Select Branch:</label>
-      <select id="modalDeleteBranch" class="auth-input" style="text-align: left; margin-bottom: 12px; padding: 10px;" onchange="populateModalDeleteConditions()">
-        <option value="UE">UE (Upper Extremity / Handle)</option>
-        <option value="LE">LE (Lower Extremity / Cuff)</option>
-      </select>
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Select Condition to Delete:</label>
-      <select id="modalDeleteConditionSelect" class="auth-input" style="text-align: left; margin-bottom: 20px; padding: 10px;"></select>
-
-      <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button class="btn-pill" style="background: transparent;" onclick="closeDeleteConditionModal()">Cancel</button>
-        <button class="btn-pill" style="background: var(--bc-red); color: #fff;" onclick="submitDeleteConditionModal()">Permanently Delete</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal 3: Single Unfreeze & Reschedule Modal -->
-  <div id="unfreezeModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-play" style="color: var(--bc-teal);"></i> Unfreeze & Reschedule Outreach</h3>
-      <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
-        This email was frozen while the patient was on hold. Specify the new delivery date to resume its schedule.
-      </p>
-      
-      <input type="hidden" id="unfreezeRowIndex" />
-      
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Resume Send Date:</label>
-      <input type="date" id="unfreezeDate" class="card-input" style="margin-bottom: 12px;" />
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Send Time:</label>
-      <input type="time" id="unfreezeTime" class="card-input" style="margin-bottom: 12px;" />
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject:</label>
-      <input type="text" id="unfreezeSubj" class="card-input" style="margin-bottom: 12px;" />
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content:</label>
-      <textarea id="unfreezeBody" class="card-textarea" style="margin-bottom: 20px;"></textarea>
-
-      <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button class="btn-pill" style="background: transparent;" onclick="closeUnfreezeModal()">Cancel</button>
-        <button class="btn-pill" style="background: var(--bc-teal); color: #000;" onclick="submitUnfreezeModal()">
-          <i class="fa-solid fa-play"></i> Unfreeze & Schedule
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal 4: Batch Unfreeze All Modal -->
-  <div id="batchUnfreezeModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-forward-step" style="color: var(--bc-purple-accent);"></i> Unfreeze All Outreach for Patient</h3>
-      <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
-        Resume every frozen check-in for <strong id="batchUnfreezePatientName" style="color:#fff;">Patient</strong> together. Specify the date treatment resumes:
-      </p>
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Resume Treatment Date:</label>
-      <input type="date" id="batchResumeDate" class="card-input" style="margin-bottom: 20px;" />
-
-      <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button class="btn-pill" style="background: transparent;" onclick="closeBatchUnfreezeModal()">Cancel</button>
-        <button class="btn-pill" style="background: var(--bc-purple-accent); color: #fff;" onclick="submitBatchUnfreezeModal()">
-          <i class="fa-solid fa-play"></i> Unfreeze All Sequence
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- Timeline Drawer (Patient Sequences) -->
   <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
   <aside id="timelineDrawer" class="drawer-panel">
@@ -594,7 +463,6 @@
       <button class="btn-pill" style="background: transparent; border: none; font-size: 20px;" onclick="closeDrawer()">&times;</button>
     </div>
 
-    <!-- Drawer Controls Strip -->
     <div style="padding: 16px 24px 0 24px;">
       <div class="drawer-control-strip">
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
@@ -604,15 +472,12 @@
           </div>
 
           <div style="flex: 1; min-width: 220px;">
-            <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 3px;">Template Track (Choose condition to send):</label>
+            <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 3px;">Template Track:</label>
             <select id="drawerConditionOverride" class="native-input" style="background: var(--bc-midnight) !important; padding: 6px 10px; border-radius: 6px; width: 100%;" onchange="onDrawerConditionOverrideChanged()"></select>
           </div>
         </div>
 
         <div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; margin-top: 4px;">
-          <button id="drawerBatchUnfreezeBtn" class="btn-pill" style="display: none; background: var(--bc-purple-accent); color: #fff; font-size: 12px; padding: 7px 14px;" onclick="openBatchUnfreezeModal()">
-            <i class="fa-solid fa-play"></i> Unfreeze All Outreach
-          </button>
           <button class="btn-pill" style="background: #10b981; color: #000; font-size: 12px; padding: 7px 16px;" onclick="scheduleAllSequence()">
             <i class="fa-solid fa-calendar-check"></i> 🚀 Schedule All Check-ins
           </button>
@@ -622,44 +487,6 @@
 
     <div class="drawer-body" id="drawerCards"></div>
   </aside>
-
-  <!-- Edit Queue Modal -->
-  <div id="editQueueModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-clock" style="color: var(--bc-orange);"></i> Edit Scheduled Outreach</h3>
-      <input type="hidden" id="editQueueRowIndex" />
-      
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Target Date:</label>
-      <input type="date" id="editQueueDate" class="card-input" style="margin-bottom: 12px;" />
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Target Time:</label>
-      <input type="time" id="editQueueTime" class="card-input" style="margin-bottom: 12px;" />
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject:</label>
-      <input type="text" id="editQueueSubj" class="card-input" style="margin-bottom: 12px;" />
-
-      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content:</label>
-      <textarea id="editQueueBody" class="card-textarea" style="margin-bottom: 12px;"></textarea>
-
-      <!-- Attachment Control in Edit Queue Modal -->
-      <div style="margin-bottom: 20px;">
-        <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 12px; cursor: pointer;">
-          <i class="fa-solid fa-paperclip"></i> <span>Attach Doc / MP4 (up to 50MB)</span>
-          <input type="file" style="display: none;" onchange="handleQueueAttachmentUpload(this)" />
-        </label>
-        <input type="hidden" id="editQueueAttachmentId" />
-        <div id="editQueueAttachmentChip" style="display: none;" class="attachment-chip">
-          <span id="editQueueAttachmentName">File</span>
-          <button type="button" onclick="clearQueueAttachment()">&times;</button>
-        </div>
-      </div>
-
-      <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button class="btn-pill" style="background: transparent;" onclick="closeEditQueueModal()">Cancel</button>
-        <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="submitEditQueueModal()">Save & Update</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Attachment Image Lightbox Preview Modal -->
   <div id="imagePreviewModal" class="modal-overlay" onclick="closeImagePreviewModal()" style="z-index: 3000;">
@@ -690,15 +517,12 @@
     let patientQueuedMap = {};
     let patientStartDateObj = new Date();
     let currentRawQueue = [];
-    let draggedStudioIdx = null;
-    let draggedPatientIdx = null;
 
     let conditionMap = {
       UE: new Set(['General']),
       LE: new Set(['General'])
     };
 
-    // Official Band Connect Signature Logo Block
     const BAND_CONNECT_SIGNATURE_LOGO = `
       <div style="margin-top: 24px; padding-top: 12px;">
         <img src="band_connect_logo.jpeg" alt="Band Connect" style="width: 140px; height: auto; display: block;" />
@@ -785,29 +609,32 @@
     }
 
     // ----------------------------------------------------
-    // LIGHTBOX PREVIEW MODAL LOGIC
+    // LIGHTBOX PREVIEW
     // ----------------------------------------------------
     function openAttachmentPreview(fileId, fileName) {
       if (!fileId) return;
+      openAttachmentPreviewDirect(`https://drive.google.com/uc?export=view&id=${fileId}`, fileName);
+    }
+
+    function openAttachmentPreviewDirect(url, customTitle = 'Image Preview') {
       const modal = document.getElementById('imagePreviewModal');
       const title = document.getElementById('imagePreviewTitle');
       const img = document.getElementById('imagePreviewImg');
       const placeholder = document.getElementById('imagePreviewPlaceholder');
 
-      title.innerText = fileName ? `Preview: ${fileName}` : 'Attachment Preview';
+      title.innerText = customTitle;
       img.style.display = 'none';
       placeholder.style.display = 'block';
       placeholder.innerText = 'Loading image preview...';
       modal.style.display = 'flex';
 
-      const viewUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
-      img.src = viewUrl;
+      img.src = url;
       img.onload = () => {
         placeholder.style.display = 'none';
         img.style.display = 'block';
       };
       img.onerror = () => {
-        placeholder.innerText = 'Unable to display inline preview. File may be a document/video or still processing.';
+        placeholder.innerText = 'Unable to render inline preview.';
       };
     }
 
@@ -819,7 +646,7 @@
     }
 
     // ----------------------------------------------------
-    // TWO-WAY GOOGLE DOCS TRIGGER ACTION
+    // GOOGLE DOCS SYNC TRIGGER
     // ----------------------------------------------------
     async function triggerSyncFromGoogleDocs() {
       if (!confirm("Pull all latest updates and diagrams from Google Docs into Portal Templates?")) return;
@@ -837,7 +664,7 @@
     }
 
     // ----------------------------------------------------
-    // ASYNCHRONOUS FILE / 50MB VIDEO UPLOAD TO GOOGLE DRIVE
+    // ASYNCHRONOUS FILE UPLOAD TO GOOGLE DRIVE
     // ----------------------------------------------------
     async function uploadFileToDrive(fileInput, onComplete) {
       const file = fileInput.files[0];
@@ -876,63 +703,6 @@
       };
 
       reader.readAsDataURL(file);
-    }
-
-    function handleCardAttachmentUpload(inputEl, idx, isDrawer = false) {
-      uploadFileToDrive(inputEl, (uploaded) => {
-        const idField = document.getElementById(isDrawer ? `att_id_${idx}` : `studio_att_id_${idx}`);
-        const chip = document.getElementById(isDrawer ? `att_chip_${idx}` : `studio_att_chip_${idx}`);
-        const nameEl = document.getElementById(isDrawer ? `att_name_${idx}` : `studio_att_name_${idx}`);
-
-        if (idField) idField.value = uploaded.fileId;
-        if (nameEl) {
-          nameEl.innerHTML = `
-            <span style="cursor:pointer; text-decoration: underline;" onclick="openAttachmentPreview('${uploaded.fileId}', '${escapeHtml(uploaded.fileName)}')">
-              <i class="fa-solid fa-eye"></i> ${escapeHtml(uploaded.fileName)}
-            </span>
-          `;
-        }
-        if (chip) chip.style.display = 'inline-flex';
-
-        if (isDrawer && patientTimelineStore[idx]) {
-          patientTimelineStore[idx].attachmentId = uploaded.fileId;
-        } else if (!isDrawer && currentDisplayedTemplates[idx]) {
-          currentDisplayedTemplates[idx].attachmentId = uploaded.fileId;
-        }
-      });
-    }
-
-    function clearCardAttachment(idx, isDrawer = false) {
-      const idField = document.getElementById(isDrawer ? `att_id_${idx}` : `studio_att_id_${idx}`);
-      const chip = document.getElementById(isDrawer ? `att_chip_${idx}` : `studio_att_chip_${idx}`);
-      const nameEl = document.getElementById(isDrawer ? `att_name_${idx}` : `studio_att_name_${idx}`);
-
-      if (idField) idField.value = '';
-      if (nameEl) nameEl.innerHTML = '';
-      if (chip) chip.style.display = 'none';
-
-      if (isDrawer && patientTimelineStore[idx]) {
-        patientTimelineStore[idx].attachmentId = '';
-      } else if (!isDrawer && currentDisplayedTemplates[idx]) {
-        currentDisplayedTemplates[idx].attachmentId = '';
-      }
-    }
-
-    function handleQueueAttachmentUpload(inputEl) {
-      uploadFileToDrive(inputEl, (uploaded) => {
-        document.getElementById('editQueueAttachmentId').value = uploaded.fileId;
-        document.getElementById('editQueueAttachmentName').innerHTML = `
-          <span style="cursor:pointer; text-decoration: underline;" onclick="openAttachmentPreview('${uploaded.fileId}', '${escapeHtml(uploaded.fileName)}')">
-            <i class="fa-solid fa-eye"></i> ${escapeHtml(uploaded.fileName)}
-          </span>
-        `;
-        document.getElementById('editQueueAttachmentChip').style.display = 'inline-flex';
-      });
-    }
-
-    function clearQueueAttachment() {
-      document.getElementById('editQueueAttachmentId').value = '';
-      document.getElementById('editQueueAttachmentChip').style.display = 'none';
     }
 
     // ----------------------------------------------------
@@ -1288,7 +1058,7 @@
     }
 
     // ----------------------------------------------------
-    // INJURY & TEMPLATE STUDIO
+    // INJURY & TEMPLATE STUDIO WITH INTERACTIVE MEDIA
     // ----------------------------------------------------
     async function loadStudioTemplates() {
       showSpinner("Loading injury studio...");
@@ -1335,15 +1105,6 @@
     function filterStudioTemplates() {
       const branchVal = document.getElementById('studioBranchFilter').value;
       const condVal = document.getElementById('studioConditionFilter').value;
-      const deleteWrap = document.getElementById('deleteConditionWrap');
-      const deleteBtn = document.getElementById('deleteActiveBtn');
-
-      if (condVal && condVal !== 'ALL' && condVal.toLowerCase() !== 'general') {
-        deleteWrap.style.display = 'block';
-        deleteBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i> Delete "${escapeHtml(condVal)}"`;
-      } else {
-        deleteWrap.style.display = 'none';
-      }
 
       currentDisplayedTemplates = allStudioTemplates.filter(t => {
         const matchBranch = t.branch === branchVal;
@@ -1364,41 +1125,20 @@
       currentDisplayedTemplates.forEach((tpl, idx) => {
         const card = document.createElement('div');
         card.className = 'milestone-card';
-        card.setAttribute('draggable', 'true');
         card.dataset.index = idx;
 
-        card.addEventListener('dragstart', (e) => {
-          draggedStudioIdx = idx;
-          card.classList.add('dragging');
-          e.dataTransfer.effectAllowed = 'move';
-        });
-
-        card.addEventListener('dragend', () => {
-          card.classList.remove('dragging');
-          container.querySelectorAll('.milestone-card').forEach(c => c.classList.remove('drag-over'));
-        });
-
-        card.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          card.classList.add('drag-over');
-        });
-
-        card.addEventListener('dragleave', () => {
-          card.classList.remove('drag-over');
-        });
-
-        card.addEventListener('drop', (e) => {
-          e.preventDefault();
-          card.classList.remove('drag-over');
-          if (draggedStudioIdx !== null && draggedStudioIdx !== idx) {
-            handleStudioReorder(draggedStudioIdx, idx);
-          }
-        });
+        // Detect current image
+        let activeImgSrc = '';
+        if (tpl.attachmentId) {
+          activeImgSrc = `https://drive.google.com/uc?export=view&id=${tpl.attachmentId}`;
+        } else {
+          const match = (tpl.bodyText || '').match(/<img[^>]+src=["']([^"']+)["']/i);
+          if (match) activeImgSrc = match[1];
+        }
 
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <div style="display:flex; align-items:center; gap:8px;">
-              <span class="drag-grip" title="Drag up or down to reorder sequence"><i class="fa-solid fa-grip-vertical"></i> ⠿ Move</span>
               <span style="background: var(--bc-purple-primary); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHtml(tpl.branch)}</span>
               <strong style="font-size: 15px; margin-left: 4px;">${escapeHtml(tpl.condition)}</strong>
             </div>
@@ -1415,25 +1155,35 @@
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
           <input type="text" id="studio_subj_${idx}" class="card-input" value="${escapeHtml(tpl.subject)}" />
 
-          <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body (Supports HTML, Diagrams & {{first_name}})</label>
+          <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
           <textarea id="studio_body_${idx}" class="card-textarea" oninput="updateStudioLivePreview(${idx})">${escapeHtml(tpl.bodyText)}</textarea>
 
-          <!-- Attachment Clip Control -->
-          <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 12px; cursor: pointer; padding: 6px 14px;">
-              <i class="fa-solid fa-paperclip"></i> Attach PDF / MP4 (up to 50MB)
-              <input type="file" style="display: none;" onchange="handleCardAttachmentUpload(this, ${idx}, false)" />
-            </label>
-            <input type="hidden" id="studio_att_id_${idx}" value="${tpl.attachmentId || ''}" />
-            <div id="studio_att_chip_${idx}" class="attachment-chip" style="${tpl.attachmentId ? 'display:inline-flex;' : 'display:none;'}">
-              <span id="studio_att_name_${idx}">
-                ${tpl.attachmentId ? `<span style="cursor:pointer; text-decoration: underline;" onclick="openAttachmentPreview('${tpl.attachmentId}', 'Attached Media')"><i class="fa-solid fa-eye"></i> View Attachment</span>` : ''}
+          <!-- Interactive Media Control Block -->
+          <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
+                <i class="fa-solid fa-image"></i> Step Clinical Image / Diagram:
               </span>
-              <button type="button" onclick="clearCardAttachment(${idx}, false)">&times;</button>
+              <div style="display: flex; gap: 8px;">
+                <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 12px; cursor: pointer; padding: 5px 12px;">
+                  <i class="fa-solid fa-upload"></i> ${activeImgSrc ? 'Replace Image' : 'Add New Image'}
+                  <input type="file" accept="image/*" style="display: none;" onchange="handleStudioImageUpload(this, ${idx})" />
+                </label>
+                <button id="studio_remove_img_btn_${idx}" class="btn-pill" style="display: ${activeImgSrc ? 'inline-flex' : 'none'}; background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px; padding: 5px 12px;" onclick="removeStudioImage(${idx})">
+                  <i class="fa-solid fa-trash-can"></i> Remove Image
+                </button>
+              </div>
             </div>
+
+            <!-- Thumbnail Container -->
+            <div id="studio_img_wrap_${idx}" style="display: ${activeImgSrc ? 'flex' : 'none'}; align-items: center; gap: 14px; margin-top: 10px; background: rgba(22, 19, 41, 0.7); padding: 8px 12px; border-radius: 8px;">
+              <img id="studio_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" />
+              <span style="font-size: 12px; color: var(--bc-text-muted);">Click thumbnail to view full image in lightbox.</span>
+            </div>
+            <input type="hidden" id="studio_att_id_${idx}" value="${tpl.attachmentId || ''}" />
           </div>
 
-          <!-- Live HTML & Image Preview Accordion in Studio -->
+          <!-- Live Rendered Email Preview -->
           <details style="margin-bottom: 14px; cursor: pointer; color: var(--bc-teal); font-size: 12px;" ontoggle="if(this.open) updateStudioLivePreview(${idx})">
             <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Images</summary>
             <div id="studio_preview_box_${idx}" style="background: #ffffff; color: #1e293b; padding: 18px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1;">
@@ -1449,24 +1199,47 @@
         `;
         container.appendChild(card);
       });
+    }
 
-      const targetCondition = (!condVal || condVal === 'ALL') ? 'General' : condVal;
-      const addStepBox = document.createElement('div');
-      addStepBox.className = 'add-step-box';
-      addStepBox.innerHTML = `
-        <div style="font-size: 14px; font-weight: 700; color: var(--bc-teal);">
-          <i class="fa-solid fa-plus-circle"></i> Append Step to ${escapeHtml(targetCondition)} (${escapeHtml(branchVal)})
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%;">
-          <span style="font-size: 12px; color: var(--bc-text-muted);">Send on Day:</span>
-          <input type="number" id="studioNewStepOffset" class="interval-input" placeholder="e.g. 5" />
-          <input type="text" id="studioNewStepSubj" class="native-input" placeholder="Subject (optional)" style="background: var(--bc-midnight) !important; padding: 8px 14px; border-radius: 6px; min-width: 200px;" />
-          <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px; padding: 7px 16px;" onclick="addStudioDayStep('${branchVal}', '${targetCondition}')">
-            + Append Step
-          </button>
-        </div>
-      `;
-      container.appendChild(addStepBox);
+    function handleStudioImageUpload(fileInput, idx) {
+      uploadFileToDrive(fileInput, (uploaded) => {
+        const viewUrl = `https://drive.google.com/uc?export=view&id=${uploaded.fileId}`;
+        document.getElementById(`studio_att_id_${idx}`).value = uploaded.fileId;
+
+        const thumb = document.getElementById(`studio_thumb_${idx}`);
+        thumb.src = viewUrl;
+        thumb.onclick = () => openAttachmentPreviewDirect(viewUrl);
+        document.getElementById(`studio_img_wrap_${idx}`).style.display = 'flex';
+        document.getElementById(`studio_remove_img_btn_${idx}`).style.display = 'inline-flex';
+
+        const bodyEl = document.getElementById(`studio_body_${idx}`);
+        if (!bodyEl.value.includes(uploaded.fileId)) {
+          bodyEl.value += `\n\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>`;
+        }
+
+        if (currentDisplayedTemplates[idx]) {
+          currentDisplayedTemplates[idx].attachmentId = uploaded.fileId;
+          currentDisplayedTemplates[idx].bodyText = bodyEl.value;
+        }
+
+        updateStudioLivePreview(idx);
+      });
+    }
+
+    function removeStudioImage(idx) {
+      document.getElementById(`studio_att_id_${idx}`).value = '';
+      document.getElementById(`studio_img_wrap_${idx}`).style.display = 'none';
+      document.getElementById(`studio_remove_img_btn_${idx}`).style.display = 'none';
+
+      const bodyEl = document.getElementById(`studio_body_${idx}`);
+      bodyEl.value = bodyEl.value.replace(/<div style="text-align: center; margin: 16px 0;">\s*<img[^>]+>\s*<\/div>/gi, '').replace(/<img[^>]+>/gi, '').trim();
+
+      if (currentDisplayedTemplates[idx]) {
+        currentDisplayedTemplates[idx].attachmentId = '';
+        currentDisplayedTemplates[idx].bodyText = bodyEl.value;
+      }
+
+      updateStudioLivePreview(idx);
     }
 
     function updateStudioLivePreview(idx) {
@@ -1477,76 +1250,13 @@
       }
     }
 
-    async function handleStudioReorder(fromIdx, toIdx) {
-      const movedItem = currentDisplayedTemplates.splice(fromIdx, 1)[0];
-      currentDisplayedTemplates.splice(toIdx, 0, movedItem);
-
-      for (let i = 0; i < currentDisplayedTemplates.length; i++) {
-        if (i > 0 && currentDisplayedTemplates[i].dayOffset <= currentDisplayedTemplates[i - 1].dayOffset) {
-          currentDisplayedTemplates[i].dayOffset = currentDisplayedTemplates[i - 1].dayOffset + 2;
-        }
-      }
-
-      renderStudioCards();
-
-      const updated = currentDisplayedTemplates[toIdx];
-      showSpinner(`Reordering sequence to Day ${updated.dayOffset}...`);
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'SAVE_CONDITION_TEMPLATE',
-            branch: updated.branch,
-            condition: updated.condition,
-            milestoneId: updated.milestoneId,
-            dayOffset: updated.dayOffset,
-            subject: updated.subject,
-            bodyText: updated.bodyText,
-            attachmentId: updated.attachmentId || ''
-          })
-        });
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    async function addStudioDayStep(branch, condition) {
-      const offsetInput = document.getElementById('studioNewStepOffset');
-      const subjInput = document.getElementById('studioNewStepSubj');
-      const offset = parseInt(offsetInput.value.trim());
-
-      if (isNaN(offset)) return alert("Please enter a valid day number.");
-
-      const customSubj = subjInput ? subjInput.value.trim() : '';
-
-      showSpinner(`Adding Day ${offset} to ${condition}...`);
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'ADD_SEQUENCE_STEP',
-            branch: branch,
-            condition: condition,
-            dayOffset: offset,
-            subject: customSubj || `Day ${offset}: ${condition} Progression`,
-            bodyText: `Hello {{first_name}},\n\nHere is your Day ${offset} check-in for your ${condition} plan.`
-          })
-        });
-        const json = await res.json();
-        alert(json.message);
-        loadStudioTemplates();
-      } finally {
-        hideSpinner();
-      }
-    }
-
     async function saveStudioTemplate(idx, branch, condition, milestoneId) {
       const dayOffset = document.getElementById(`studio_offset_${idx}`).value;
       const subject = document.getElementById(`studio_subj_${idx}`).value;
       const bodyText = document.getElementById(`studio_body_${idx}`).value;
       const attachmentId = document.getElementById(`studio_att_id_${idx}`).value;
 
-      showSpinner(`Saving Day ${dayOffset} & updating Google Docs...`);
+      showSpinner(`Saving Day ${dayOffset} & pushing to Google Docs...`);
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
@@ -1585,114 +1295,8 @@
       }
     }
 
-    function openConditionModal() { document.getElementById('conditionModal').style.display = 'flex'; }
-    function closeConditionModal() { document.getElementById('conditionModal').style.display = 'none'; }
-
-    async function submitNewCondition() {
-      const branch = document.getElementById('modalBranch').value;
-      const conditionName = document.getElementById('modalConditionName').value.trim();
-
-      if (!conditionName) return alert("Please enter a condition name.");
-
-      showSpinner(`Creating condition ${conditionName}...`);
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'ADD_NEW_CONDITION',
-            branch: branch,
-            conditionName: conditionName
-          })
-        });
-        const json = await res.json();
-        alert(json.message);
-        closeConditionModal();
-        conditionMap[branch].add(conditionName);
-        renderConditionDropdown();
-        loadStudioTemplates();
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    function openDeleteConditionModal() {
-      const currentBranch = document.getElementById('studioBranchFilter').value;
-      document.getElementById('modalDeleteBranch').value = currentBranch;
-      populateModalDeleteConditions();
-      document.getElementById('deleteConditionModal').style.display = 'flex';
-    }
-
-    function closeDeleteConditionModal() {
-      document.getElementById('deleteConditionModal').style.display = 'none';
-    }
-
-    function populateModalDeleteConditions() {
-      const branch = document.getElementById('modalDeleteBranch').value;
-      const select = document.getElementById('modalDeleteConditionSelect');
-      const conditions = new Set();
-
-      allStudioTemplates
-        .filter(t => t.branch === branch && t.condition.toLowerCase() !== 'general')
-        .forEach(t => conditions.add(t.condition));
-
-      select.innerHTML = '';
-      if (conditions.size === 0) {
-        select.innerHTML = '<option value="">No custom conditions available to delete</option>';
-        return;
-      }
-
-      Array.from(conditions).sort().forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-        select.appendChild(opt);
-      });
-    }
-
-    async function submitDeleteConditionModal() {
-      const branch = document.getElementById('modalDeleteBranch').value;
-      const cond = document.getElementById('modalDeleteConditionSelect').value;
-
-      if (!cond) return alert("Please select a condition to delete.");
-      if (!confirm(`Are you sure you want to permanently delete "${cond}" under ${branch} and all its template steps?`)) return;
-
-      await executeConditionDeletion(branch, cond);
-      closeDeleteConditionModal();
-    }
-
-    async function deleteActiveSelectedCondition() {
-      const branch = document.getElementById('studioBranchFilter').value;
-      const cond = document.getElementById('studioConditionFilter').value;
-
-      if (!cond || cond === 'ALL' || cond.toLowerCase() === 'general') {
-        return alert("Cannot delete this baseline condition.");
-      }
-
-      if (!confirm(`Are you sure you want to permanently delete "${cond}" under ${branch} and all its template steps?`)) return;
-
-      await executeConditionDeletion(branch, cond);
-    }
-
-    async function executeConditionDeletion(branch, cond) {
-      showSpinner(`Deleting condition "${cond}"...`);
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'DELETE_CONDITION', branch: branch, conditionName: cond })
-        });
-        const json = await res.json();
-        alert(json.message);
-
-        conditionMap[branch].delete(cond);
-        renderConditionDropdown();
-        loadStudioTemplates();
-      } finally {
-        hideSpinner();
-      }
-    }
-
     // ----------------------------------------------------
-    // PATIENT TIMELINE DRAWER & CONTROLS
+    // PATIENT TIMELINE DRAWER
     // ----------------------------------------------------
     async function openPatientTimeline(rowNumber, conditionOverride = null) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
@@ -1731,9 +1335,6 @@
         const isoStart = timelineJson.startDateStr || new Date().toISOString().split('T')[0];
         document.getElementById('drawerStartDate').value = isoStart;
         patientStartDateObj = new Date(isoStart + 'T00:00:00');
-
-        const hasFrozen = Object.values(patientQueuedMap).some(item => (item.status || '').startsWith('Frozen'));
-        document.getElementById('drawerBatchUnfreezeBtn').style.display = hasFrozen ? 'inline-flex' : 'none';
 
         renderPatientTimelineCards();
       } catch (err) {
@@ -1801,8 +1402,6 @@
       patientTimelineStore.forEach((item, idx) => {
         const card = document.createElement('div');
         card.className = 'milestone-card';
-        card.setAttribute('draggable', 'true');
-        card.dataset.index = idx;
 
         const queueItem = patientQueuedMap[item.id] || null;
         const isScheduled = queueItem && queueItem.status === 'Scheduled';
@@ -1815,77 +1414,22 @@
         const initialBody = queueItem ? queueItem.bodyText : item.defaultBody;
         const attachmentId = queueItem ? (queueItem.attachmentId || '') : (item.attachmentId || '');
 
-        card.addEventListener('dragstart', (e) => {
-          draggedPatientIdx = idx;
-          card.classList.add('dragging');
-          e.dataTransfer.effectAllowed = 'move';
-        });
-
-        card.addEventListener('dragend', () => {
-          card.classList.remove('dragging');
-          container.querySelectorAll('.milestone-card').forEach(c => c.classList.remove('drag-over'));
-        });
-
-        card.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          card.classList.add('drag-over');
-        });
-
-        card.addEventListener('dragleave', () => {
-          card.classList.remove('drag-over');
-        });
-
-        card.addEventListener('drop', (e) => {
-          e.preventDefault();
-          card.classList.remove('drag-over');
-          if (draggedPatientIdx !== null && draggedPatientIdx !== idx) {
-            const moved = patientTimelineStore.splice(draggedPatientIdx, 1)[0];
-            patientTimelineStore.splice(idx, 0, moved);
-
-            for (let i = 0; i < patientTimelineStore.length; i++) {
-              if (i > 0 && patientTimelineStore[i].dayOffset <= patientTimelineStore[i - 1].dayOffset) {
-                patientTimelineStore[i].dayOffset = patientTimelineStore[i - 1].dayOffset + 2;
-                const d = new Date(patientStartDateObj);
-                d.setDate(d.getDate() + patientTimelineStore[i].dayOffset);
-                patientTimelineStore[i].isoDate = d.toISOString().split('T')[0];
-              }
-            }
-            renderPatientTimelineCards();
-          }
-        });
-
         let statusBadge = `<span style="color:var(--bc-teal); font-size:12px;">Track: ${escapeHtml(item.condition)}</span>`;
         let actionButtonsHtml = '';
 
         if (isSent) {
           statusBadge = `<span class="badge-sent"><i class="fa-solid fa-check-double"></i> Already Sent</span>`;
-          actionButtonsHtml = `
-            <div style="font-size: 12px; color: #34d399; display: flex; align-items: center; gap: 8px;">
-              <i class="fa-solid fa-circle-check"></i> Dispatched to patient.
-            </div>
-          `;
+          actionButtonsHtml = `<span style="font-size:12px; color:#34d399;"><i class="fa-solid fa-circle-check"></i> Dispatched to patient.</span>`;
         } else if (isFrozen) {
           statusBadge = `<span class="badge-frozen"><i class="fa-solid fa-pause"></i> Frozen (${queueItem.status})</span>`;
-          actionButtonsHtml = `
-            <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
-              <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="openUnfreezeModal(${queueItem.queueRowIndex})">
-                <i class="fa-solid fa-play"></i> Unfreeze This Check-in
-              </button>
-            </div>
-          `;
+          actionButtonsHtml = `<button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="unfreezeDirect(${queueItem.queueRowIndex})"><i class="fa-solid fa-play"></i> Unfreeze</button>`;
         } else if (isScheduled) {
           statusBadge = `<span class="badge-scheduled"><i class="fa-solid fa-clock"></i> Scheduled for ${formatScheduleDateTime(queueItem.scheduledDate, queueItem.scheduledTime)}</span>`;
-          actionButtonsHtml = `
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">
-                🚀 Send Now
-              </button>
-            </div>
-          `;
+          actionButtonsHtml = `<button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">🚀 Send Now</button>`;
         } else {
           actionButtonsHtml = `
             <button class="btn-pill" style="background: #2563eb; color: #ffffff; font-size: 12px;" onclick="scheduleOutreach(${idx}, '${item.id}')">
-              <i class="fa-solid fa-clock" style="color: #fff;"></i> Schedule Outreach
+              <i class="fa-solid fa-clock"></i> Schedule
             </button>
             <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">
               🚀 Send Now
@@ -1894,11 +1438,8 @@
         }
 
         card.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap: wrap; gap: 8px;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span class="drag-grip" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i> ⠿</span>
-              <strong style="color:#fff; font-size: 15px;">${escapeHtml(item.title)}</strong>
-            </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <strong style="color:#fff; font-size: 15px;">${escapeHtml(item.title)}</strong>
             ${statusBadge}
           </div>
 
@@ -1922,25 +1463,12 @@
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
           <input type="text" id="subj_${idx}" class="card-input" value="${escapeHtml(initialSubj)}" ${isSent ? 'disabled' : ''} />
 
-          <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content (HTML & Diagrams Supported)</label>
+          <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
           <textarea id="body_${idx}" class="card-textarea" oninput="updateDrawerLivePreview(${idx})" ${isSent ? 'disabled' : ''}>${escapeHtml(initialBody)}</textarea>
 
-          <!-- Drawer Attachment Upload Field -->
-          <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 11px; cursor: pointer; padding: 5px 12px;">
-              <i class="fa-solid fa-paperclip"></i> Attach File / MP4 Video
-              <input type="file" style="display: none;" onchange="handleCardAttachmentUpload(this, ${idx}, true)" ${isSent ? 'disabled' : ''} />
-            </label>
-            <input type="hidden" id="att_id_${idx}" value="${attachmentId}" />
-            <div id="att_chip_${idx}" class="attachment-chip" style="${attachmentId ? 'display:inline-flex;' : 'display:none;'} font-size: 11px; padding: 3px 10px;">
-              <span id="att_name_${idx}">
-                ${attachmentId ? `<span style="cursor:pointer; text-decoration: underline;" onclick="openAttachmentPreview('${attachmentId}', 'Attached Media')"><i class="fa-solid fa-eye"></i> View Attachment</span>` : ''}
-              </span>
-              <button type="button" onclick="clearCardAttachment(${idx}, true)">&times;</button>
-            </div>
-          </div>
+          <input type="hidden" id="att_id_${idx}" value="${attachmentId}" />
 
-          <!-- Live HTML Image Preview Accordion in Drawer -->
+          <!-- Drawer Live Preview Accordion -->
           <details style="margin-bottom: 10px; cursor: pointer; color: var(--bc-teal); font-size: 12px;" ontoggle="if(this.open) updateDrawerLivePreview(${idx})">
             <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Images</summary>
             <div id="drawer_preview_box_${idx}" style="background: #ffffff; color: #1e293b; padding: 16px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1;">
@@ -1989,7 +1517,7 @@
       const body = document.getElementById(`body_${idx}`).value.trim();
       const attachmentId = document.getElementById(`att_id_${idx}`).value;
 
-      if (!chosenDate) return alert("Please select a target send date.");
+      if (!chosenDate) return alert("Please select a send date.");
       if (!subject || !body) return alert("Subject and body cannot be empty.");
 
       showSpinner(`Queueing outreach for ${chosenDate}...`);
@@ -2019,7 +1547,7 @@
 
     async function scheduleAllSequence() {
       if (!activePatient || !activePatient.email) return alert("Patient does not have a registered email.");
-      if (!confirm(`Schedule all ${patientTimelineStore.length} sequence check-in emails for ${activePatient.patientName}?`)) return;
+      if (!confirm(`Schedule all ${patientTimelineStore.length} check-in emails for ${activePatient.patientName}?`)) return;
 
       const itemsToSchedule = patientTimelineStore.map((item, idx) => ({
         milestoneId: item.id,
@@ -2075,8 +1603,30 @@
       }
     }
 
+    async function unfreezeDirect(rowIndex) {
+      showSpinner("Unfreezing email...");
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'UNFREEZE_SCHEDULED_OUTREACH',
+            queueRowIndex: rowIndex,
+            sendDate: new Date().toISOString().split('T')[0],
+            timeStr: '09:00',
+            subject: '',
+            bodyText: ''
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        openPatientTimeline(activePatient.rowNumber);
+      } finally {
+        hideSpinner();
+      }
+    }
+
     // ----------------------------------------------------
-    // QUEUED OUTREACH MANAGEMENT & BATCH UNFREEZE
+    // QUEUED OUTREACH MANAGEMENT
     // ----------------------------------------------------
     async function loadQueueDashboard() {
       showSpinner("Loading queued outreach schedule...");
@@ -2111,7 +1661,7 @@
 
         let statusPill = `<span class="badge-scheduled">Scheduled</span>`;
         if (isSent) {
-          statusPill = `<span class="badge-sent"><i class="fa-solid fa-check"></i> Already Sent</span>`;
+          statusPill = `<span class="badge-sent"><i class="fa-solid fa-check"></i> Sent</span>`;
         } else if (isFrozen) {
           statusPill = `<span class="badge-frozen"><i class="fa-solid fa-pause"></i> ${escapeHtml(q.status)}</span>`;
         } else if (q.status.includes('Canceled')) {
@@ -2121,38 +1671,6 @@
         const formattedTimeDisplay = formatScheduleDateTime(q.scheduledDate, q.scheduledTime);
         const mediaBadge = q.attachmentId ? `<span style="color:var(--bc-teal); font-size:12px;"><i class="fa-solid fa-paperclip"></i> Yes</span>` : `<span style="color:var(--bc-text-muted); font-size:12px;">None</span>`;
 
-        let actionButtons = '';
-        if (isFrozen) {
-          actionButtons = `
-            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-              <button class="btn-pill" style="padding: 5px 10px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="openUnfreezeModal(${q.queueRowIndex})">
-                <i class="fa-solid fa-play"></i> Unfreeze
-              </button>
-              <button class="btn-pill" style="padding: 5px 10px; font-size: 11px; background: rgba(168,85,247,0.2); border-color: var(--bc-purple-accent); color: #c084fc;" onclick="openBatchUnfreezeModal('${escapeHtml(q.patientName)}')">
-                Unfreeze All
-              </button>
-              <button class="btn-pill" style="padding: 5px 10px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">
-                Cancel
-              </button>
-            </div>
-          `;
-        } else if (isScheduled) {
-          actionButtons = `
-            <div style="display: flex; gap: 6px;">
-              <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: #2563eb; color: #fff;" onclick="openEditQueueModal(${q.queueRowIndex})">
-                <i class="fa-solid fa-pen"></i> Edit
-              </button>
-              <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">
-                Cancel
-              </button>
-            </div>
-          `;
-        } else if (isSent) {
-          actionButtons = `<span style="font-size: 11px; color: var(--bc-text-muted);">Delivered</span>`;
-        } else {
-          actionButtons = `<span style="font-size: 11px; color: var(--bc-text-muted);">—</span>`;
-        }
-
         tr.innerHTML = `
           <td style="font-weight: 600;">${escapeHtml(q.patientName)}</td>
           <td style="color: var(--bc-teal);">${escapeHtml(q.email)}</td>
@@ -2160,164 +1678,14 @@
           <td style="max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(q.subject)}</td>
           <td>${mediaBadge}</td>
           <td>${statusPill}</td>
-          <td>${actionButtons}</td>
+          <td>
+            <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">
+              Cancel
+            </button>
+          </td>
         `;
         tbody.appendChild(tr);
       });
-    }
-
-    function openUnfreezeModal(rowIndex) {
-      const item = currentRawQueue.find(q => q.queueRowIndex === rowIndex);
-      if (!item) return;
-
-      document.getElementById('unfreezeRowIndex').value = rowIndex;
-      
-      const todayStr = new Date().toISOString().split('T')[0];
-      const defaultDate = (!item.scheduledDate || item.scheduledDate < todayStr) ? todayStr : item.scheduledDate;
-
-      document.getElementById('unfreezeDate').value = defaultDate;
-      document.getElementById('unfreezeTime').value = item.scheduledTime.includes(':') ? item.scheduledTime.replace(/[^\d:]/g, '') : '09:00';
-      document.getElementById('unfreezeSubj').value = item.subject;
-      document.getElementById('unfreezeBody').value = item.bodyText;
-
-      document.getElementById('unfreezeModal').style.display = 'flex';
-    }
-
-    function closeUnfreezeModal() {
-      document.getElementById('unfreezeModal').style.display = 'none';
-    }
-
-    async function submitUnfreezeModal() {
-      const rowIndex = parseInt(document.getElementById('unfreezeRowIndex').value);
-      const newDate = document.getElementById('unfreezeDate').value;
-      const newTime = document.getElementById('unfreezeTime').value;
-      const newSubj = document.getElementById('unfreezeSubj').value.trim();
-      const newBody = document.getElementById('unfreezeBody').value.trim();
-
-      if (!newDate || !newSubj || !newBody) return alert("Date, subject, and body are required.");
-
-      showSpinner("Unfreezing & scheduling outreach...");
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'UNFREEZE_SCHEDULED_OUTREACH',
-            queueRowIndex: rowIndex,
-            sendDate: newDate,
-            timeStr: newTime,
-            subject: newSubj,
-            bodyText: newBody
-          })
-        });
-        const json = await res.json();
-        alert(json.message);
-        closeUnfreezeModal();
-        loadQueueDashboard();
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    function openBatchUnfreezeModal(customName = null) {
-      const targetName = customName || (activePatient ? activePatient.patientName : '');
-      if (!targetName) return;
-
-      document.getElementById('batchUnfreezePatientName').innerText = targetName;
-      document.getElementById('batchResumeDate').value = new Date().toISOString().split('T')[0];
-      document.getElementById('batchUnfreezeModal').style.display = 'flex';
-    }
-
-    function closeBatchUnfreezeModal() {
-      document.getElementById('batchUnfreezeModal').style.display = 'none';
-    }
-
-    async function submitBatchUnfreezeModal() {
-      const targetName = document.getElementById('batchUnfreezePatientName').innerText;
-      const resumeDate = document.getElementById('batchResumeDate').value;
-
-      showSpinner(`Unfreezing all emails for ${targetName}...`);
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'UNFREEZE_ALL_PATIENT_OUTREACH',
-            patientName: targetName,
-            resumeStartDateStr: resumeDate
-          })
-        });
-        const json = await res.json();
-        alert(json.message);
-        closeBatchUnfreezeModal();
-
-        if (activePatient && activePatient.patientName === targetName) {
-          openPatientTimeline(activePatient.rowNumber);
-        }
-        loadQueueDashboard();
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    function openEditQueueModal(rowIndex) {
-      const item = currentRawQueue.find(q => q.queueRowIndex === rowIndex);
-      if (!item) return;
-
-      document.getElementById('editQueueRowIndex').value = rowIndex;
-      document.getElementById('editQueueDate').value = item.scheduledDate;
-      document.getElementById('editQueueTime').value = item.scheduledTime.includes(':') ? item.scheduledTime.replace(/[^\d:]/g, '') : '09:00';
-      document.getElementById('editQueueSubj').value = item.subject;
-      document.getElementById('editQueueBody').value = item.bodyText;
-
-      document.getElementById('editQueueAttachmentId').value = item.attachmentId || '';
-      if (item.attachmentId) {
-        document.getElementById('editQueueAttachmentName').innerHTML = `
-          <span style="cursor:pointer; text-decoration: underline;" onclick="openAttachmentPreview('${item.attachmentId}', 'Attached Media')">
-            <i class="fa-solid fa-eye"></i> View Attachment
-          </span>
-        `;
-        document.getElementById('editQueueAttachmentChip').style.display = 'inline-flex';
-      } else {
-        document.getElementById('editQueueAttachmentChip').style.display = 'none';
-      }
-
-      document.getElementById('editQueueModal').style.display = 'flex';
-    }
-
-    function closeEditQueueModal() {
-      document.getElementById('editQueueModal').style.display = 'none';
-    }
-
-    async function submitEditQueueModal() {
-      const rowIndex = parseInt(document.getElementById('editQueueRowIndex').value);
-      const newDate = document.getElementById('editQueueDate').value;
-      const newTime = document.getElementById('editQueueTime').value;
-      const newSubj = document.getElementById('editQueueSubj').value.trim();
-      const newBody = document.getElementById('editQueueBody').value.trim();
-      const attachmentId = document.getElementById('editQueueAttachmentId').value;
-
-      if (!newDate || !newSubj || !newBody) return alert("Date, subject, and body are required.");
-
-      showSpinner("Updating schedule...");
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'UPDATE_SCHEDULED_OUTREACH',
-            queueRowIndex: rowIndex,
-            sendDate: newDate,
-            timeStr: newTime,
-            subject: newSubj,
-            bodyText: newBody,
-            attachmentId: attachmentId
-          })
-        });
-        const json = await res.json();
-        alert(json.message);
-        closeEditQueueModal();
-        loadQueueDashboard();
-      } finally {
-        hideSpinner();
-      }
     }
 
     async function cancelQueueRow(rowIndex) {
