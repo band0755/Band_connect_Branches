@@ -234,13 +234,15 @@
     }
     .card-textarea { min-height: 95px; resize: vertical; line-height: 1.5; }
 
-    /* Add Step Box */
-    .add-step-box {
-      background: rgba(22, 19, 41, 0.4); border: 2px dashed var(--bc-border);
-      border-radius: 14px; padding: 20px; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 12px; margin-top: 8px;
+    /* Attachment Chip */
+    .attachment-chip {
+      display: inline-flex; align-items: center; gap: 8px; background: rgba(56, 189, 248, 0.12);
+      border: 1px solid var(--bc-teal); padding: 5px 12px; border-radius: 20px; font-size: 12px;
+      color: var(--bc-teal); margin-top: 6px;
     }
-    .add-step-box:hover { border-color: var(--bc-teal); background: rgba(56, 189, 248, 0.03); }
+    .attachment-chip button {
+      background: none; border: none; color: #f87171; cursor: pointer; font-size: 13px;
+    }
 
     /* Modals */
     .modal-overlay {
@@ -408,11 +410,15 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage injury sub-categories, day intervals, and drag-and-drop sequence order</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage injury sub-categories, 50MB attachments, and two-way Google Docs synchronization</span>
       </div>
-      <div style="display: flex; gap: 10px; align-items: center;">
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <!-- Two-Way Docs Sync Button -->
+        <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="triggerSyncFromGoogleDocs()">
+          <i class="fa-solid fa-file-arrow-down"></i> 🔄 Sync from Google Docs
+        </button>
         <button class="btn-pill" style="background: var(--bc-teal); color: #000;" onclick="openConditionModal()">
-          <i class="fa-solid fa-plus-circle"></i> Add New Condition Path
+          <i class="fa-solid fa-plus-circle"></i> Add Condition Path
         </button>
         <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="openDeleteConditionModal()">
           <i class="fa-solid fa-trash-can"></i> Delete Condition
@@ -468,8 +474,9 @@
             <th style="min-width: 140px;"><span class="th-title">Patient</span></th>
             <th style="min-width: 160px;"><span class="th-title">Email</span></th>
             <th style="min-width: 160px;"><span class="th-title">Scheduled Date & Time</span></th>
-            <th style="min-width: 220px;"><span class="th-title">Subject Line</span></th>
-            <th style="min-width: 130px;"><span class="th-title">Status</span></th>
+            <th style="min-width: 200px;"><span class="th-title">Subject Line</span></th>
+            <th style="min-width: 100px;"><span class="th-title">Media</span></th>
+            <th style="min-width: 120px;"><span class="th-title">Status</span></th>
             <th style="min-width: 170px;"><span class="th-title">Actions</span></th>
           </tr>
         </thead>
@@ -588,10 +595,9 @@
       <button class="btn-pill" style="background: transparent; border: none; font-size: 20px;" onclick="closeDrawer()">&times;</button>
     </div>
 
-    <!-- Drawer Controls Strip: Schedule All, Start Date Shift, Template Track Override -->
+    <!-- Drawer Controls Strip -->
     <div style="padding: 16px 24px 0 24px;">
       <div class="drawer-control-strip">
-        <!-- Row 1: Start Date & Template Track Override -->
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
           <div style="flex: 1; min-width: 180px;">
             <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 3px;">Start Date (Shifts all check-ins):</label>
@@ -604,7 +610,6 @@
           </div>
         </div>
 
-        <!-- Row 2: Action Buttons (Schedule All & Batch Unfreeze) -->
         <div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; margin-top: 4px;">
           <button id="drawerBatchUnfreezeBtn" class="btn-pill" style="display: none; background: var(--bc-purple-accent); color: #fff; font-size: 12px; padding: 7px 14px;" onclick="openBatchUnfreezeModal()">
             <i class="fa-solid fa-play"></i> Unfreeze All Outreach
@@ -635,7 +640,20 @@
       <input type="text" id="editQueueSubj" class="card-input" style="margin-bottom: 12px;" />
 
       <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content:</label>
-      <textarea id="editQueueBody" class="card-textarea" style="margin-bottom: 20px;"></textarea>
+      <textarea id="editQueueBody" class="card-textarea" style="margin-bottom: 12px;"></textarea>
+
+      <!-- Attachment Control in Edit Queue Modal -->
+      <div style="margin-bottom: 20px;">
+        <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 12px; cursor: pointer;">
+          <i class="fa-solid fa-paperclip"></i> <span>Attach Doc / MP4 (up to 50MB)</span>
+          <input type="file" style="display: none;" onchange="handleQueueAttachmentUpload(this)" />
+        </label>
+        <input type="hidden" id="editQueueAttachmentId" />
+        <div id="editQueueAttachmentChip" style="display: none;" class="attachment-chip">
+          <i class="fa-solid fa-file"></i> <span id="editQueueAttachmentName">File</span>
+          <button type="button" onclick="clearQueueAttachment()">&times;</button>
+        </div>
+      </div>
 
       <div style="display: flex; gap: 10px; justify-content: flex-end;">
         <button class="btn-pill" style="background: transparent;" onclick="closeEditQueueModal()">Cancel</button>
@@ -737,7 +755,112 @@
     }
 
     // ----------------------------------------------------
-    // AUTHENTICATION & FORGOT/RESET PIN FLOW
+    // TWO-WAY GOOGLE DOCS TRIGGER ACTION
+    // ----------------------------------------------------
+    async function triggerSyncFromGoogleDocs() {
+      if (!confirm("Pull all latest updates and headings from Google Docs into Portal Templates?")) return;
+      showSpinner("Synchronizing templates from Google Docs...");
+      try {
+        const res = await fetch(`${API_URL}?action=SYNC_FROM_DOCS`);
+        const json = await res.json();
+        alert(json.message);
+        loadStudioTemplates();
+      } catch (err) {
+        alert("Google Docs sync failed: " + err.message);
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    // ----------------------------------------------------
+    // ASYNCHRONOUS FILE / 50MB VIDEO UPLOAD TO GOOGLE DRIVE
+    // ----------------------------------------------------
+    async function uploadFileToDrive(fileInput, onComplete) {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      if (file.size > 50 * 1024 * 1024) {
+        return alert("File exceeds the 50 MB limit.");
+      }
+
+      showSpinner(`Uploading ${file.name} to Google Drive (${Math.round(file.size / (1024 * 1024))} MB)...`);
+      const reader = new FileReader();
+
+      reader.onload = async function(e) {
+        const base64Data = e.target.result.split(',')[1];
+        try {
+          const res = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'UPLOAD_ATTACHMENT',
+              fileName: file.name,
+              mimeType: file.type,
+              base64Data: base64Data
+            })
+          });
+          const json = await res.json();
+          if (json.success) {
+            onComplete(json);
+          } else {
+            alert(`Upload failed: ${json.message}`);
+          }
+        } catch (err) {
+          alert("Upload network error: " + err.message);
+        } finally {
+          hideSpinner();
+        }
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    function handleCardAttachmentUpload(inputEl, idx, isDrawer = false) {
+      uploadFileToDrive(inputEl, (uploaded) => {
+        const idField = document.getElementById(isDrawer ? `att_id_${idx}` : `studio_att_id_${idx}`);
+        const chip = document.getElementById(isDrawer ? `att_chip_${idx}` : `studio_att_chip_${idx}`);
+        const nameEl = document.getElementById(isDrawer ? `att_name_${idx}` : `studio_att_name_${idx}`);
+
+        if (idField) idField.value = uploaded.fileId;
+        if (nameEl) nameEl.innerText = uploaded.fileName;
+        if (chip) chip.style.display = 'inline-flex';
+
+        if (isDrawer && patientTimelineStore[idx]) {
+          patientTimelineStore[idx].attachmentId = uploaded.fileId;
+        } else if (!isDrawer && currentDisplayedTemplates[idx]) {
+          currentDisplayedTemplates[idx].attachmentId = uploaded.fileId;
+        }
+      });
+    }
+
+    function clearCardAttachment(idx, isDrawer = false) {
+      const idField = document.getElementById(isDrawer ? `att_id_${idx}` : `studio_att_id_${idx}`);
+      const chip = document.getElementById(isDrawer ? `att_chip_${idx}` : `studio_att_chip_${idx}`);
+
+      if (idField) idField.value = '';
+      if (chip) chip.style.display = 'none';
+
+      if (isDrawer && patientTimelineStore[idx]) {
+        patientTimelineStore[idx].attachmentId = '';
+      } else if (!isDrawer && currentDisplayedTemplates[idx]) {
+        currentDisplayedTemplates[idx].attachmentId = '';
+      }
+    }
+
+    function handleQueueAttachmentUpload(inputEl) {
+      uploadFileToDrive(inputEl, (uploaded) => {
+        document.getElementById('editQueueAttachmentId').value = uploaded.fileId;
+        document.getElementById('editQueueAttachmentName').innerText = uploaded.fileName;
+        document.getElementById('editQueueAttachmentChip').style.display = 'inline-flex';
+      });
+    }
+
+    function clearQueueAttachment() {
+      document.getElementById('editQueueAttachmentId').value = '';
+      document.getElementById('editQueueAttachmentChip').style.display = 'none';
+    }
+
+    // ----------------------------------------------------
+    // AUTHENTICATION & LOGIN
     // ----------------------------------------------------
     function openForgotView() {
       document.getElementById('login-view').style.display = 'none';
@@ -1219,9 +1342,22 @@
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body (Supports {{first_name}})</label>
           <textarea id="studio_body_${idx}" class="card-textarea">${escapeHtml(tpl.bodyText)}</textarea>
 
+          <!-- Attachment Clip Control -->
+          <div style="margin-bottom: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 12px; cursor: pointer; padding: 6px 14px;">
+              <i class="fa-solid fa-paperclip"></i> Attach PDF / MP4 (up to 50MB)
+              <input type="file" style="display: none;" onchange="handleCardAttachmentUpload(this, ${idx}, false)" />
+            </label>
+            <input type="hidden" id="studio_att_id_${idx}" value="${tpl.attachmentId || ''}" />
+            <div id="studio_att_chip_${idx}" class="attachment-chip" style="${tpl.attachmentId ? 'display:inline-flex;' : 'display:none;'}">
+              <i class="fa-solid fa-file"></i> <span id="studio_att_name_${idx}">${tpl.attachmentId ? 'Media File Attached' : ''}</span>
+              <button type="button" onclick="clearCardAttachment(${idx}, false)">&times;</button>
+            </div>
+          </div>
+
           <div style="display:flex; justify-content:flex-end;">
             <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px;" onclick="saveStudioTemplate(${idx}, '${tpl.branch}', '${tpl.condition}', '${tpl.milestoneId}')">
-              <i class="fa-solid fa-floppy-disk"></i> Save Changes
+              <i class="fa-solid fa-floppy-disk"></i> Save & Push to Google Docs
             </button>
           </div>
         `;
@@ -1260,7 +1396,7 @@
       renderStudioCards();
 
       const updated = currentDisplayedTemplates[toIdx];
-      showSpinner(`Reordering template sequence to Day ${updated.dayOffset}...`);
+      showSpinner(`Reordering sequence to Day ${updated.dayOffset}...`);
       try {
         await fetch(API_URL, {
           method: 'POST',
@@ -1271,7 +1407,8 @@
             milestoneId: updated.milestoneId,
             dayOffset: updated.dayOffset,
             subject: updated.subject,
-            bodyText: updated.bodyText
+            bodyText: updated.bodyText,
+            attachmentId: updated.attachmentId || ''
           })
         });
       } finally {
@@ -1313,8 +1450,9 @@
       const dayOffset = document.getElementById(`studio_offset_${idx}`).value;
       const subject = document.getElementById(`studio_subj_${idx}`).value;
       const bodyText = document.getElementById(`studio_body_${idx}`).value;
+      const attachmentId = document.getElementById(`studio_att_id_${idx}`).value;
 
-      showSpinner(`Saving Day ${dayOffset}...`);
+      showSpinner(`Saving Day ${dayOffset} & updating Google Docs...`);
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
@@ -1325,7 +1463,8 @@
             milestoneId: milestoneId,
             dayOffset: dayOffset,
             subject: subject,
-            bodyText: bodyText
+            bodyText: bodyText,
+            attachmentId: attachmentId || ''
           })
         });
         const json = await res.json();
@@ -1580,6 +1719,7 @@
         const initialTime = queueItem ? queueItem.scheduledTime : '09:00';
         const initialSubj = queueItem ? queueItem.subject : item.subject;
         const initialBody = queueItem ? queueItem.bodyText : item.defaultBody;
+        const attachmentId = queueItem ? (queueItem.attachmentId || '') : (item.attachmentId || '');
 
         card.addEventListener('dragstart', (e) => {
           draggedPatientIdx = idx;
@@ -1691,6 +1831,19 @@
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
           <textarea id="body_${idx}" class="card-textarea" ${isSent ? 'disabled' : ''}>${escapeHtml(initialBody)}</textarea>
 
+          <!-- Drawer Attachment Upload Field -->
+          <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 11px; cursor: pointer; padding: 5px 12px;">
+              <i class="fa-solid fa-paperclip"></i> Attach File / MP4 Video
+              <input type="file" style="display: none;" onchange="handleCardAttachmentUpload(this, ${idx}, true)" ${isSent ? 'disabled' : ''} />
+            </label>
+            <input type="hidden" id="att_id_${idx}" value="${attachmentId}" />
+            <div id="att_chip_${idx}" class="attachment-chip" style="${attachmentId ? 'display:inline-flex;' : 'display:none;'} font-size: 11px; padding: 3px 10px;">
+              <i class="fa-solid fa-file"></i> <span id="att_name_${idx}">${attachmentId ? 'Attached' : ''}</span>
+              <button type="button" onclick="clearCardAttachment(${idx}, true)">&times;</button>
+            </div>
+          </div>
+
           <div style="display:flex; gap:8px; flex-wrap: wrap; margin-top: 4px;">
             ${actionButtonsHtml}
           </div>
@@ -1722,6 +1875,7 @@
       const chosenTime = document.getElementById(`time_${idx}`).value;
       const subject = document.getElementById(`subj_${idx}`).value.trim();
       const body = document.getElementById(`body_${idx}`).value.trim();
+      const attachmentId = document.getElementById(`att_id_${idx}`).value;
 
       if (!chosenDate) return alert("Please select a target send date.");
       if (!subject || !body) return alert("Subject and body cannot be empty.");
@@ -1739,7 +1893,8 @@
             sendDate: chosenDate,
             timeStr: chosenTime,
             subject: subject,
-            bodyText: body
+            bodyText: body,
+            attachmentId: attachmentId || ''
           })
         });
         const json = await res.json();
@@ -1750,7 +1905,6 @@
       }
     }
 
-    // ONE-CLICK SCHEDULE ALL MILESTONES
     async function scheduleAllSequence() {
       if (!activePatient || !activePatient.email) return alert("Patient does not have a registered email.");
       if (!confirm(`Schedule all ${patientTimelineStore.length} sequence check-in emails for ${activePatient.patientName}?`)) return;
@@ -1760,7 +1914,8 @@
         sendDate: document.getElementById(`date_${idx}`).value || item.isoDate,
         timeStr: document.getElementById(`time_${idx}`).value || '09:00',
         subject: document.getElementById(`subj_${idx}`).value,
-        bodyText: document.getElementById(`body_${idx}`).value
+        bodyText: document.getElementById(`body_${idx}`).value,
+        attachmentId: document.getElementById(`att_id_${idx}`).value || ''
       }));
 
       showSpinner(`Batch-scheduling ${itemsToSchedule.length} check-ins...`);
@@ -1786,6 +1941,8 @@
     async function sendNow(idx) {
       const subject = document.getElementById(`subj_${idx}`).value;
       const body = document.getElementById(`body_${idx}`).value;
+      const attachmentId = document.getElementById(`att_id_${idx}`).value;
+
       showSpinner("Dispatching email...");
       try {
         const res = await fetch(API_URL, {
@@ -1795,7 +1952,8 @@
             recipientEmail: activePatient.email,
             patientName: activePatient.patientName,
             subject: subject,
-            htmlBody: body
+            htmlBody: body,
+            attachmentId: attachmentId || ''
           })
         });
         const json = await res.json();
@@ -1829,7 +1987,7 @@
       tbody.innerHTML = '';
 
       if (!queueList || queueList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 32px; color: var(--bc-text-muted);">No outreach entries found in the queue.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 32px; color: var(--bc-text-muted);">No outreach entries found in the queue.</td></tr>';
         return;
       }
 
@@ -1849,6 +2007,7 @@
         }
 
         const formattedTimeDisplay = formatScheduleDateTime(q.scheduledDate, q.scheduledTime);
+        const mediaBadge = q.attachmentId ? `<span style="color:var(--bc-teal); font-size:12px;"><i class="fa-solid fa-paperclip"></i> Yes</span>` : `<span style="color:var(--bc-text-muted); font-size:12px;">None</span>`;
 
         let actionButtons = '';
         if (isFrozen) {
@@ -1886,7 +2045,8 @@
           <td style="font-weight: 600;">${escapeHtml(q.patientName)}</td>
           <td style="color: var(--bc-teal);">${escapeHtml(q.email)}</td>
           <td><span style="color: var(--bc-orange); font-weight: 600;">${escapeHtml(formattedTimeDisplay)}</span></td>
-          <td style="max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(q.subject)}</td>
+          <td style="max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(q.subject)}</td>
+          <td>${mediaBadge}</td>
           <td>${statusPill}</td>
           <td>${actionButtons}</td>
         `;
@@ -1894,7 +2054,6 @@
       });
     }
 
-    // Modal: Single Unfreeze
     function openUnfreezeModal(rowIndex) {
       const item = currentRawQueue.find(q => q.queueRowIndex === rowIndex);
       if (!item) return;
@@ -1947,7 +2106,6 @@
       }
     }
 
-    // Modal: Batch Unfreeze All for Patient
     function openBatchUnfreezeModal(customName = null) {
       const targetName = customName || (activePatient ? activePatient.patientName : '');
       if (!targetName) return;
@@ -1998,6 +2156,14 @@
       document.getElementById('editQueueSubj').value = item.subject;
       document.getElementById('editQueueBody').value = item.bodyText;
 
+      document.getElementById('editQueueAttachmentId').value = item.attachmentId || '';
+      if (item.attachmentId) {
+        document.getElementById('editQueueAttachmentName').innerText = 'Media File Attached';
+        document.getElementById('editQueueAttachmentChip').style.display = 'inline-flex';
+      } else {
+        document.getElementById('editQueueAttachmentChip').style.display = 'none';
+      }
+
       document.getElementById('editQueueModal').style.display = 'flex';
     }
 
@@ -2011,6 +2177,7 @@
       const newTime = document.getElementById('editQueueTime').value;
       const newSubj = document.getElementById('editQueueSubj').value.trim();
       const newBody = document.getElementById('editQueueBody').value.trim();
+      const attachmentId = document.getElementById('editQueueAttachmentId').value;
 
       if (!newDate || !newSubj || !newBody) return alert("Date, subject, and body are required.");
 
@@ -2024,7 +2191,8 @@
             sendDate: newDate,
             timeStr: newTime,
             subject: newSubj,
-            bodyText: newBody
+            bodyText: newBody,
+            attachmentId: attachmentId
           })
         });
         const json = await res.json();
