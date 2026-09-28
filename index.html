@@ -758,8 +758,8 @@
     // TWO-WAY GOOGLE DOCS TRIGGER ACTION
     // ----------------------------------------------------
     async function triggerSyncFromGoogleDocs() {
-      if (!confirm("Pull all latest updates and headings from Google Docs into Portal Templates?")) return;
-      showSpinner("Synchronizing templates from Google Docs...");
+      if (!confirm("Pull all latest updates and diagrams from Google Docs into Portal Templates?")) return;
+      showSpinner("Synchronizing templates & images from Google Docs...");
       try {
         const res = await fetch(`${API_URL}?action=SYNC_FROM_DOCS`);
         const json = await res.json();
@@ -1339,7 +1339,7 @@
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
           <input type="text" id="studio_subj_${idx}" class="card-input" value="${escapeHtml(tpl.subject)}" />
 
-          <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body (Supports {{first_name}})</label>
+          <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body (Supports HTML & {{first_name}})</label>
           <textarea id="studio_body_${idx}" class="card-textarea">${escapeHtml(tpl.bodyText)}</textarea>
 
           <!-- Attachment Clip Control -->
@@ -1828,7 +1828,7 @@
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
           <input type="text" id="subj_${idx}" class="card-input" value="${escapeHtml(initialSubj)}" ${isSent ? 'disabled' : ''} />
 
-          <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
+          <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content (HTML & Diagrams Supported)</label>
           <textarea id="body_${idx}" class="card-textarea" ${isSent ? 'disabled' : ''}>${escapeHtml(initialBody)}</textarea>
 
           <!-- Drawer Attachment Upload Field -->
@@ -1843,6 +1843,14 @@
               <button type="button" onclick="clearCardAttachment(${idx}, true)">&times;</button>
             </div>
           </div>
+
+          <!-- Live HTML Image Preview Accordion -->
+          <details style="margin-bottom: 10px; cursor: pointer; color: var(--bc-teal); font-size: 12px;">
+            <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Images</summary>
+            <div style="background: #ffffff; color: #1e293b; padding: 16px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">
+              ${initialBody.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}
+            </div>
+          </details>
 
           <div style="display:flex; gap:8px; flex-wrap: wrap; margin-top: 4px;">
             ${actionButtonsHtml}
