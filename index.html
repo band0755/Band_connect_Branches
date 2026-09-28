@@ -698,6 +698,20 @@
       LE: new Set(['General'])
     };
 
+    // Official Band Connect Signature Logo Block
+    const BAND_CONNECT_SIGNATURE_LOGO = `
+      <div style="margin-top: 24px; padding-top: 12px;">
+        <img src="band_connect_logo.jpeg" alt="Band Connect" style="width: 140px; height: auto; display: block;" />
+      </div>`;
+
+    function renderEmailPreviewHtml(rawBody) {
+      let html = (rawBody || '').replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+      if (!html.includes('band_connect_logo') && !html.includes('bandCONNECT') && !html.includes('WhatsApp')) {
+        html += BAND_CONNECT_SIGNATURE_LOGO;
+      }
+      return html;
+    }
+
     function showSpinner(msg = "Processing request...") {
       document.getElementById('spinnerText').innerText = msg;
       document.getElementById('spinner-overlay').style.display = 'flex';
@@ -1401,7 +1415,7 @@
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
           <input type="text" id="studio_subj_${idx}" class="card-input" value="${escapeHtml(tpl.subject)}" />
 
-          <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body (Supports HTML & {{first_name}})</label>
+          <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body (Supports HTML, Diagrams & {{first_name}})</label>
           <textarea id="studio_body_${idx}" class="card-textarea" oninput="updateStudioLivePreview(${idx})">${escapeHtml(tpl.bodyText)}</textarea>
 
           <!-- Attachment Clip Control -->
@@ -1423,7 +1437,7 @@
           <details style="margin-bottom: 14px; cursor: pointer; color: var(--bc-teal); font-size: 12px;" ontoggle="if(this.open) updateStudioLivePreview(${idx})">
             <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Images</summary>
             <div id="studio_preview_box_${idx}" style="background: #ffffff; color: #1e293b; padding: 18px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1;">
-              ${tpl.bodyText.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}
+              ${renderEmailPreviewHtml(tpl.bodyText)}
             </div>
           </details>
 
@@ -1459,7 +1473,7 @@
       const textarea = document.getElementById(`studio_body_${idx}`);
       const previewBox = document.getElementById(`studio_preview_box_${idx}`);
       if (textarea && previewBox) {
-        previewBox.innerHTML = textarea.value.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+        previewBox.innerHTML = renderEmailPreviewHtml(textarea.value);
       }
     }
 
@@ -1930,7 +1944,7 @@
           <details style="margin-bottom: 10px; cursor: pointer; color: var(--bc-teal); font-size: 12px;" ontoggle="if(this.open) updateDrawerLivePreview(${idx})">
             <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Images</summary>
             <div id="drawer_preview_box_${idx}" style="background: #ffffff; color: #1e293b; padding: 16px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1;">
-              ${initialBody.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}
+              ${renderEmailPreviewHtml(initialBody)}
             </div>
           </details>
 
@@ -1946,7 +1960,7 @@
       const textarea = document.getElementById(`body_${idx}`);
       const previewBox = document.getElementById(`drawer_preview_box_${idx}`);
       if (textarea && previewBox) {
-        previewBox.innerHTML = textarea.value.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+        previewBox.innerHTML = renderEmailPreviewHtml(textarea.value);
       }
     }
 
