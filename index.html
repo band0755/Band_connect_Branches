@@ -413,7 +413,6 @@
         <span style="font-size: 13px; color: var(--bc-text-muted);">Manage injury sub-categories, 50MB attachments, and two-way Google Docs synchronization</span>
       </div>
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <!-- Two-Way Docs Sync Button -->
         <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="triggerSyncFromGoogleDocs()">
           <i class="fa-solid fa-file-arrow-down"></i> 🔄 Sync from Google Docs
         </button>
@@ -662,6 +661,23 @@
     </div>
   </div>
 
+  <!-- Attachment Image Lightbox Preview Modal -->
+  <div id="imagePreviewModal" class="modal-overlay" onclick="closeImagePreviewModal()" style="z-index: 3000;">
+    <div class="modal-box" onclick="event.stopPropagation();" style="max-width: 600px; text-align: center; position: relative;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 id="imagePreviewTitle" style="font-size: 16px; font-weight: 700; color: #fff;">Attachment Preview</h3>
+        <button class="btn-pill" style="background: transparent; border: none; font-size: 20px; cursor: pointer;" onclick="closeImagePreviewModal()">&times;</button>
+      </div>
+      <div id="imagePreviewContainer" style="display: flex; align-items: center; justify-content: center; min-height: 250px; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px; overflow: hidden;">
+        <img id="imagePreviewImg" src="" alt="Preview" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 8px; display: none;" />
+        <div id="imagePreviewPlaceholder" style="color: var(--bc-text-muted); font-size: 13px;">Loading preview...</div>
+      </div>
+      <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+        <button class="btn-pill" style="background: var(--bc-card-inner); border-color: var(--bc-border);" onclick="closeImagePreviewModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbzZhcXbEJAOBNSnXqHur3a-lw2UAH_Oi__vj9QPVuxanZP0G3v5UBCmhml8_CVYuwEe/exec";
 
@@ -755,6 +771,40 @@
     }
 
     // ----------------------------------------------------
+    // LIGHTBOX PREVIEW MODAL LOGIC
+    // ----------------------------------------------------
+    function openAttachmentPreview(fileId, fileName) {
+      if (!fileId) return;
+      const modal = document.getElementById('imagePreviewModal');
+      const title = document.getElementById('imagePreviewTitle');
+      const img = document.getElementById('imagePreviewImg');
+      const placeholder = document.getElementById('imagePreviewPlaceholder');
+
+      title.innerText = fileName ? `Preview: ${fileName}` : 'Attachment Preview';
+      img.style.display = 'none';
+      placeholder.style.display = 'block';
+      placeholder.innerText = 'Loading image preview...';
+      modal.style.display = 'flex';
+
+      const viewUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+      img.src = viewUrl;
+      img.onload = () => {
+        placeholder.style.display = 'none';
+        img.style.display = 'block';
+      };
+      img.onerror = () => {
+        placeholder.innerText = 'Unable to display inline preview. File may be a document/video or still processing.';
+      };
+    }
+
+    function closeImagePreviewModal() {
+      const modal = document.getElementById('imagePreviewModal');
+      const img = document.getElementById('imagePreviewImg');
+      modal.style.display = 'none';
+      img.src = '';
+    }
+
+    // ----------------------------------------------------
     // TWO-WAY GOOGLE DOCS TRIGGER ACTION
     // ----------------------------------------------------
     async function triggerSyncFromGoogleDocs() {
@@ -821,7 +871,13 @@
         const nameEl = document.getElementById(isDrawer ? `att_name_${idx}` : `studio_att_name_${idx}`);
 
         if (idField) idField.value = uploaded.fileId;
-        if (nameEl) nameEl.innerText = uploaded.fileName;
+        if (nameEl) {
+          nameEl.innerHTML = `
+            <span style="cursor:pointer; text-decoration: underline;" onclick="openAttachmentPreview('${uploaded.fileId}', '${escapeHtml(uploaded.fileName)}')">
+              <i class="fa-solid fa-eye"></i> ${escapeHtml(uploaded.fileName)}
+            </span>
+          `;
+        }
         if (chip) chip.style.display = 'inline-flex';
 
         if (isDrawer && patientTimelineStore[idx]) {
@@ -835,8 +891,10 @@
     function clearCardAttachment(idx, isDrawer = false) {
       const idField = document.getElementById(isDrawer ? `att_id_${idx}` : `studio_att_id_${idx}`);
       const chip = document.getElementById(isDrawer ? `att_chip_${idx}` : `studio_att_chip_${idx}`);
+      const nameEl = document.getElementById(isDrawer ? `att_name_${idx}` : `studio_att_name_${idx}`);
 
       if (idField) idField.value = '';
+      if (nameEl) nameEl.innerHTML = '';
       if (chip) chip.style.display = 'none';
 
       if (isDrawer && patientTimelineStore[idx]) {
@@ -849,7 +907,11 @@
     function handleQueueAttachmentUpload(inputEl) {
       uploadFileToDrive(inputEl, (uploaded) => {
         document.getElementById('editQueueAttachmentId').value = uploaded.fileId;
-        document.getElementById('editQueueAttachmentName').innerText = uploaded.fileName;
+        document.getElementById('editQueueAttachmentName').innerHTML = `
+          <span style="cursor:pointer; text-decoration: underline;" onclick="openAttachmentPreview('${uploaded.fileId}', '${escapeHtml(uploaded.fileName)}')">
+            <i class="fa-solid fa-eye"></i> ${escapeHtml(uploaded.fileName)}
+          </span>
+        `;
         document.getElementById('editQueueAttachmentChip').style.display = 'inline-flex';
       });
     }
@@ -1350,7 +1412,9 @@
             </label>
             <input type="hidden" id="studio_att_id_${idx}" value="${tpl.attachmentId || ''}" />
             <div id="studio_att_chip_${idx}" class="attachment-chip" style="${tpl.attachmentId ? 'display:inline-flex;' : 'display:none;'}">
-              <i class="fa-solid fa-file"></i> <span id="studio_att_name_${idx}">${tpl.attachmentId ? 'Media File Attached' : ''}</span>
+              <span id="studio_att_name_${idx}">
+                ${tpl.attachmentId ? `<span style="cursor:pointer; text-decoration: underline;" onclick="openAttachmentPreview('${tpl.attachmentId}', 'Attached Media')"><i class="fa-solid fa-eye"></i> View Attachment</span>` : ''}
+              </span>
               <button type="button" onclick="clearCardAttachment(${idx}, false)">&times;</button>
             </div>
           </div>
@@ -1839,7 +1903,9 @@
             </label>
             <input type="hidden" id="att_id_${idx}" value="${attachmentId}" />
             <div id="att_chip_${idx}" class="attachment-chip" style="${attachmentId ? 'display:inline-flex;' : 'display:none;'} font-size: 11px; padding: 3px 10px;">
-              <i class="fa-solid fa-file"></i> <span id="att_name_${idx}">${attachmentId ? 'Attached' : ''}</span>
+              <span id="att_name_${idx}">
+                ${attachmentId ? `<span style="cursor:pointer; text-decoration: underline;" onclick="openAttachmentPreview('${attachmentId}', 'Attached Media')"><i class="fa-solid fa-eye"></i> View Attachment</span>` : ''}
+              </span>
               <button type="button" onclick="clearCardAttachment(${idx}, true)">&times;</button>
             </div>
           </div>
@@ -2166,7 +2232,11 @@
 
       document.getElementById('editQueueAttachmentId').value = item.attachmentId || '';
       if (item.attachmentId) {
-        document.getElementById('editQueueAttachmentName').innerText = 'Media File Attached';
+        document.getElementById('editQueueAttachmentName').innerHTML = `
+          <span style="cursor:pointer; text-decoration: underline;" onclick="openAttachmentPreview('${item.attachmentId}', 'Attached Media')">
+            <i class="fa-solid fa-eye"></i> View Attachment
+          </span>
+        `;
         document.getElementById('editQueueAttachmentChip').style.display = 'inline-flex';
       } else {
         document.getElementById('editQueueAttachmentChip').style.display = 'none';
