@@ -170,22 +170,28 @@
     /* Drawer */
     .drawer-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: none; z-index: 1000; }
     .drawer-panel {
-      position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 640px;
+      position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 680px;
       background: var(--bc-card); border-left: 1px solid var(--bc-border);
       display: flex; flex-direction: column; z-index: 1001;
       transform: translateX(100%); transition: transform 0.25s ease-in-out;
     }
     .drawer-open { transform: translateX(0); }
     .drawer-header {
-      padding: 24px; border-bottom: 1px solid var(--bc-border);
-      display: flex; justify-content: space-between; align-items: center;
+      padding: 22px 24px; border-bottom: 1px solid var(--bc-border);
+      display: flex; justify-content: space-between; align-items: flex-start;
     }
-    .drawer-body { padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+    .drawer-body { padding: 20px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; }
+
+    /* Control Strip inside Patient Drawer */
+    .drawer-control-strip {
+      background: var(--bc-card-inner); border: 1px solid var(--bc-border);
+      border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px;
+    }
 
     /* Drag & Drop Cards */
     .milestone-card {
       background: var(--bc-card-inner); border: 1px solid var(--bc-border);
-      border-radius: 14px; padding: 20px; position: relative; transition: all 0.2s ease;
+      border-radius: 14px; padding: 18px; position: relative; transition: all 0.2s ease;
     }
     .milestone-card.dragging {
       opacity: 0.45; transform: scale(0.98); border: 2px dashed var(--bc-teal);
@@ -224,14 +230,14 @@
     }
     .card-input, .card-textarea {
       width: 100%; background: var(--bc-midnight); border: 1px solid var(--bc-border);
-      border-radius: 8px; color: #fff; padding: 10px; font-size: 13px; margin-bottom: 12px; outline: none;
+      border-radius: 8px; color: #fff; padding: 10px; font-size: 13px; margin-bottom: 10px; outline: none;
     }
-    .card-textarea { min-height: 105px; resize: vertical; line-height: 1.5; }
+    .card-textarea { min-height: 95px; resize: vertical; line-height: 1.5; }
 
     /* Add Step Box */
     .add-step-box {
       background: rgba(22, 19, 41, 0.4); border: 2px dashed var(--bc-border);
-      border-radius: 14px; padding: 22px; display: flex; flex-direction: column;
+      border-radius: 14px; padding: 20px; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 12px; margin-top: 8px;
     }
     .add-step-box:hover { border-color: var(--bc-teal); background: rgba(56, 189, 248, 0.03); }
@@ -464,7 +470,7 @@
             <th style="min-width: 160px;"><span class="th-title">Scheduled Date & Time</span></th>
             <th style="min-width: 220px;"><span class="th-title">Subject Line</span></th>
             <th style="min-width: 130px;"><span class="th-title">Status</span></th>
-            <th style="min-width: 160px;"><span class="th-title">Actions</span></th>
+            <th style="min-width: 170px;"><span class="th-title">Actions</span></th>
           </tr>
         </thead>
         <tbody id="queueTableBody"></tbody>
@@ -520,7 +526,7 @@
     </div>
   </div>
 
-  <!-- Modal 3: Unfreeze & Reschedule Modal -->
+  <!-- Modal 3: Single Unfreeze & Reschedule Modal -->
   <div id="unfreezeModal" class="modal-overlay">
     <div class="modal-box">
       <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-play" style="color: var(--bc-teal);"></i> Unfreeze & Reschedule Outreach</h3>
@@ -551,16 +557,65 @@
     </div>
   </div>
 
+  <!-- Modal 4: Batch Unfreeze All Modal -->
+  <div id="batchUnfreezeModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-forward-step" style="color: var(--bc-purple-accent);"></i> Unfreeze All Outreach for Patient</h3>
+      <p style="font-size: 13px; color: var(--bc-text-muted); margin-bottom: 16px;">
+        Resume every frozen check-in for <strong id="batchUnfreezePatientName" style="color:#fff;">Patient</strong> together. Specify the date treatment resumes:
+      </p>
+
+      <label style="font-size: 12px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Resume Treatment Date:</label>
+      <input type="date" id="batchResumeDate" class="card-input" style="margin-bottom: 20px;" />
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn-pill" style="background: transparent;" onclick="closeBatchUnfreezeModal()">Cancel</button>
+        <button class="btn-pill" style="background: var(--bc-purple-accent); color: #fff;" onclick="submitBatchUnfreezeModal()">
+          <i class="fa-solid fa-play"></i> Unfreeze All Sequence
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Timeline Drawer (Patient Sequences) -->
   <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
   <aside id="timelineDrawer" class="drawer-panel">
     <div class="drawer-header">
       <div>
-        <h3 id="drawerPatientName">Patient Name</h3>
-        <p id="drawerMeta">Device | Condition</p>
+        <h3 id="drawerPatientName" style="font-size: 18px; font-weight: 700;">Patient Name</h3>
+        <p id="drawerMeta" style="font-size: 12px; color: var(--bc-text-muted); margin-top: 2px;">Device | Condition</p>
       </div>
-      <button class="btn-close" onclick="closeDrawer()">&times;</button>
+      <button class="btn-pill" style="background: transparent; border: none; font-size: 20px;" onclick="closeDrawer()">&times;</button>
     </div>
+
+    <!-- Drawer Controls Strip: Schedule All, Start Date Shift, Template Track Override -->
+    <div style="padding: 16px 24px 0 24px;">
+      <div class="drawer-control-strip">
+        <!-- Row 1: Start Date & Template Track Override -->
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 180px;">
+            <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 3px;">Start Date (Shifts all check-ins):</label>
+            <input type="date" id="drawerStartDate" class="native-input" style="background: var(--bc-midnight) !important; padding: 6px 10px; border-radius: 6px; width: 100%;" onchange="onDrawerStartDateChanged()" />
+          </div>
+
+          <div style="flex: 1; min-width: 220px;">
+            <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 3px;">Template Track (Choose condition to send):</label>
+            <select id="drawerConditionOverride" class="native-input" style="background: var(--bc-midnight) !important; padding: 6px 10px; border-radius: 6px; width: 100%;" onchange="onDrawerConditionOverrideChanged()"></select>
+          </div>
+        </div>
+
+        <!-- Row 2: Action Buttons (Schedule All & Batch Unfreeze) -->
+        <div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; margin-top: 4px;">
+          <button id="drawerBatchUnfreezeBtn" class="btn-pill" style="display: none; background: var(--bc-purple-accent); color: #fff; font-size: 12px; padding: 7px 14px;" onclick="openBatchUnfreezeModal()">
+            <i class="fa-solid fa-play"></i> Unfreeze All Outreach
+          </button>
+          <button class="btn-pill" style="background: #10b981; color: #000; font-size: 12px; padding: 7px 16px;" onclick="scheduleAllSequence()">
+            <i class="fa-solid fa-calendar-check"></i> 🚀 Schedule All Check-ins
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="drawer-body" id="drawerCards"></div>
   </aside>
 
@@ -1034,7 +1089,7 @@
     }
 
     // ----------------------------------------------------
-    // INJURY & TEMPLATE STUDIO (WITH DRAG-AND-DROP REORDER)
+    // INJURY & TEMPLATE STUDIO
     // ----------------------------------------------------
     async function loadStudioTemplates() {
       showSpinner("Loading injury studio...");
@@ -1069,7 +1124,6 @@
         select.appendChild(opt);
       });
 
-      // Default directly to General so the studio loads fast and clean
       if (conditions.has('General')) {
         select.value = 'General';
       } else if (conditions.size > 0) {
@@ -1230,9 +1284,7 @@
       const subjInput = document.getElementById('studioNewStepSubj');
       const offset = parseInt(offsetInput.value.trim());
 
-      if (isNaN(offset)) {
-        return alert("Please enter a valid day number (e.g. 5, 10, 14).");
-      }
+      if (isNaN(offset)) return alert("Please enter a valid day number.");
 
       const customSubj = subjInput ? subjInput.value.trim() : '';
 
@@ -1407,14 +1459,14 @@
     }
 
     // ----------------------------------------------------
-    // PATIENT TIMELINE DRAWER
+    // PATIENT TIMELINE DRAWER & CONTROLS
     // ----------------------------------------------------
-    async function openPatientTimeline(rowNumber) {
+    async function openPatientTimeline(rowNumber, conditionOverride = null) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
       if (!activePatient) return;
 
       document.getElementById('drawerPatientName').innerText = activePatient.patientName;
-      document.getElementById('drawerMeta').innerText = `${activePatient.deviceType} • Condition: ${activePatient.condition}`;
+      document.getElementById('drawerMeta').innerText = `${activePatient.deviceType} • Diagnosed: ${activePatient.condition}`;
       
       const cards = document.getElementById('drawerCards');
       cards.innerHTML = '<div style="text-align:center; padding:20px; color:var(--bc-text-muted);">Loading patient sequence & status...</div>';
@@ -1422,9 +1474,18 @@
       document.getElementById('drawerOverlay').style.display = 'block';
       document.getElementById('timelineDrawer').classList.add('drawer-open');
 
+      populateDrawerConditionOverrideDropdown(activePatient);
+
       try {
         const [timelineRes, queueRes] = await Promise.all([
-          fetch(`${API_URL}?action=GET_PATIENT_TIMELINE&rowNumber=${rowNumber}`),
+          fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'GET_PATIENT_TIMELINE',
+              rowNumber: rowNumber,
+              conditionOverride: conditionOverride
+            })
+          }),
           fetch(`${API_URL}?action=GET_PATIENT_QUEUE&patientName=${encodeURIComponent(activePatient.patientName)}`)
         ]);
 
@@ -1433,11 +1494,70 @@
 
         patientTimelineStore = timelineJson.timeline || [];
         patientQueuedMap = queueJson.queuedItems || {};
-        patientStartDateObj = timelineJson.startDateStr ? new Date(timelineJson.startDateStr + 'T00:00:00') : new Date();
+        
+        const isoStart = timelineJson.startDateStr || new Date().toISOString().split('T')[0];
+        document.getElementById('drawerStartDate').value = isoStart;
+        patientStartDateObj = new Date(isoStart + 'T00:00:00');
+
+        const hasFrozen = Object.values(patientQueuedMap).some(item => (item.status || '').startsWith('Frozen'));
+        document.getElementById('drawerBatchUnfreezeBtn').style.display = hasFrozen ? 'inline-flex' : 'none';
 
         renderPatientTimelineCards();
       } catch (err) {
         cards.innerHTML = `<div style="color:red; padding:16px;">Error: ${err.message}</div>`;
+      }
+    }
+
+    function populateDrawerConditionOverrideDropdown(patient) {
+      const select = document.getElementById('drawerConditionOverride');
+      const branch = getBranchFromDevice(patient.deviceType);
+      const available = Array.from(conditionMap[branch] || ['General']).sort();
+
+      select.innerHTML = '';
+      available.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c === 'General' ? 'General (Default Baseline)' : c;
+        select.appendChild(opt);
+      });
+
+      if (available.includes(patient.condition)) {
+        select.value = patient.condition;
+      } else {
+        select.value = 'General';
+      }
+    }
+
+    function onDrawerConditionOverrideChanged() {
+      const chosenTrack = document.getElementById('drawerConditionOverride').value;
+      openPatientTimeline(activePatient.rowNumber, chosenTrack);
+    }
+
+    async function onDrawerStartDateChanged() {
+      const newDateStr = document.getElementById('drawerStartDate').value;
+      if (!newDateStr) return;
+
+      showSpinner(`Updating Start Date to ${newDateStr} & shifting sequence...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'SHIFT_PATIENT_START_DATE',
+            rowNumber: activePatient.rowNumber,
+            patientName: activePatient.patientName,
+            newStartDateStr: newDateStr
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        
+        activePatient.startDate = newDateStr;
+        activePatient.isoStartDate = newDateStr;
+        patientStartDateObj = new Date(newDateStr + 'T00:00:00');
+
+        openPatientTimeline(activePatient.rowNumber);
+      } finally {
+        hideSpinner();
       }
     }
 
@@ -1500,43 +1620,32 @@
           }
         });
 
-        let statusBadge = `<span style="color:var(--bc-teal); font-size:12px;">Condition: ${escapeHtml(item.condition)}</span>`;
+        let statusBadge = `<span style="color:var(--bc-teal); font-size:12px;">Track: ${escapeHtml(item.condition)}</span>`;
         let actionButtonsHtml = '';
 
         if (isSent) {
           statusBadge = `<span class="badge-sent"><i class="fa-solid fa-check-double"></i> Already Sent</span>`;
           actionButtonsHtml = `
             <div style="font-size: 12px; color: #34d399; display: flex; align-items: center; gap: 8px;">
-              <i class="fa-solid fa-circle-check"></i> This email check-in has already been dispatched.
+              <i class="fa-solid fa-circle-check"></i> Dispatched to patient.
             </div>
           `;
         } else if (isFrozen) {
           statusBadge = `<span class="badge-frozen"><i class="fa-solid fa-pause"></i> Frozen (${queueItem.status})</span>`;
           actionButtonsHtml = `
-            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-              <div style="background: rgba(168, 85, 247, 0.1); border: 1px dashed var(--bc-purple-accent); padding: 10px 14px; border-radius: 8px; font-size: 12px; color: #c084fc; display: flex; justify-content: space-between; align-items: center;">
-                <span><i class="fa-solid fa-pause"></i> This email is frozen. Unfreeze and reschedule it from <strong>Queued Outreach</strong>.</span>
-                <button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="closeDrawer(); switchView('queue');">
-                  Go to Queue →
-                </button>
-              </div>
+            <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+              <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="openUnfreezeModal(${queueItem.queueRowIndex})">
+                <i class="fa-solid fa-play"></i> Unfreeze This Check-in
+              </button>
             </div>
           `;
         } else if (isScheduled) {
           statusBadge = `<span class="badge-scheduled"><i class="fa-solid fa-clock"></i> Scheduled for ${formatScheduleDateTime(queueItem.scheduledDate, queueItem.scheduledTime)}</span>`;
           actionButtonsHtml = `
-            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-              <div style="background: rgba(245, 158, 11, 0.1); border: 1px dashed var(--bc-orange); padding: 10px 14px; border-radius: 8px; font-size: 12px; color: #fbbf24; display: flex; justify-content: space-between; align-items: center;">
-                <span><i class="fa-solid fa-info-circle"></i> Email is queued. To edit or cancel, go to <strong>Queued Outreach</strong>.</span>
-                <button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: var(--bc-orange); color: #000;" onclick="closeDrawer(); switchView('queue');">
-                  View in Queue →
-                </button>
-              </div>
-              <div style="display: flex; gap: 8px;">
-                <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">
-                  🚀 Send Right Now Instead
-                </button>
-              </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">
+                🚀 Send Now
+              </button>
             </div>
           `;
         } else {
@@ -1559,7 +1668,7 @@
             ${statusBadge}
           </div>
 
-          <div style="background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px; border: 1px solid var(--bc-border); margin-bottom: 14px;">
+          <div style="background: rgba(22, 19, 41, 0.6); padding: 12px; border-radius: 10px; border: 1px solid var(--bc-border); margin-bottom: 12px;">
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
               <span style="font-size:12px; color:var(--bc-text-muted); font-weight:600;">Day:</span>
               <input type="number" id="offset_${idx}" class="interval-input" value="${item.dayOffset}" onchange="recalculateTargetDate(${idx})" ${isSent ? 'disabled' : ''} />
@@ -1641,6 +1750,39 @@
       }
     }
 
+    // ONE-CLICK SCHEDULE ALL MILESTONES
+    async function scheduleAllSequence() {
+      if (!activePatient || !activePatient.email) return alert("Patient does not have a registered email.");
+      if (!confirm(`Schedule all ${patientTimelineStore.length} sequence check-in emails for ${activePatient.patientName}?`)) return;
+
+      const itemsToSchedule = patientTimelineStore.map((item, idx) => ({
+        milestoneId: item.id,
+        sendDate: document.getElementById(`date_${idx}`).value || item.isoDate,
+        timeStr: document.getElementById(`time_${idx}`).value || '09:00',
+        subject: document.getElementById(`subj_${idx}`).value,
+        bodyText: document.getElementById(`body_${idx}`).value
+      }));
+
+      showSpinner(`Batch-scheduling ${itemsToSchedule.length} check-ins...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'SCHEDULE_ALL_OUTREACH',
+            rowNumber: activePatient.rowNumber,
+            patientName: activePatient.patientName,
+            recipientEmail: activePatient.email,
+            items: itemsToSchedule
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        openPatientTimeline(activePatient.rowNumber);
+      } finally {
+        hideSpinner();
+      }
+    }
+
     async function sendNow(idx) {
       const subject = document.getElementById(`subj_${idx}`).value;
       const body = document.getElementById(`body_${idx}`).value;
@@ -1664,7 +1806,7 @@
     }
 
     // ----------------------------------------------------
-    // QUEUED OUTREACH MANAGEMENT (CLEAN TABLE & EDIT/UNFREEZE MODAL)
+    // QUEUED OUTREACH MANAGEMENT & BATCH UNFREEZE
     // ----------------------------------------------------
     async function loadQueueDashboard() {
       showSpinner("Loading queued outreach schedule...");
@@ -1711,18 +1853,21 @@
         let actionButtons = '';
         if (isFrozen) {
           actionButtons = `
-            <div style="display: flex; gap: 8px;">
-              <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="openUnfreezeModal(${q.queueRowIndex})">
-                <i class="fa-solid fa-play"></i> Unfreeze & Schedule
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="btn-pill" style="padding: 5px 10px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="openUnfreezeModal(${q.queueRowIndex})">
+                <i class="fa-solid fa-play"></i> Unfreeze
               </button>
-              <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">
+              <button class="btn-pill" style="padding: 5px 10px; font-size: 11px; background: rgba(168,85,247,0.2); border-color: var(--bc-purple-accent); color: #c084fc;" onclick="openBatchUnfreezeModal('${escapeHtml(q.patientName)}')">
+                Unfreeze All
+              </button>
+              <button class="btn-pill" style="padding: 5px 10px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">
                 Cancel
               </button>
             </div>
           `;
         } else if (isScheduled) {
           actionButtons = `
-            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; gap: 6px;">
               <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: #2563eb; color: #fff;" onclick="openEditQueueModal(${q.queueRowIndex})">
                 <i class="fa-solid fa-pen"></i> Edit
               </button>
@@ -1749,7 +1894,7 @@
       });
     }
 
-    // Modal: Unfreeze & Reschedule
+    // Modal: Single Unfreeze
     function openUnfreezeModal(rowIndex) {
       const item = currentRawQueue.find(q => q.queueRowIndex === rowIndex);
       if (!item) return;
@@ -1796,6 +1941,47 @@
         const json = await res.json();
         alert(json.message);
         closeUnfreezeModal();
+        loadQueueDashboard();
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    // Modal: Batch Unfreeze All for Patient
+    function openBatchUnfreezeModal(customName = null) {
+      const targetName = customName || (activePatient ? activePatient.patientName : '');
+      if (!targetName) return;
+
+      document.getElementById('batchUnfreezePatientName').innerText = targetName;
+      document.getElementById('batchResumeDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('batchUnfreezeModal').style.display = 'flex';
+    }
+
+    function closeBatchUnfreezeModal() {
+      document.getElementById('batchUnfreezeModal').style.display = 'none';
+    }
+
+    async function submitBatchUnfreezeModal() {
+      const targetName = document.getElementById('batchUnfreezePatientName').innerText;
+      const resumeDate = document.getElementById('batchResumeDate').value;
+
+      showSpinner(`Unfreezing all emails for ${targetName}...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'UNFREEZE_ALL_PATIENT_OUTREACH',
+            patientName: targetName,
+            resumeStartDateStr: resumeDate
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        closeBatchUnfreezeModal();
+
+        if (activePatient && activePatient.patientName === targetName) {
+          openPatientTimeline(activePatient.rowNumber);
+        }
         loadQueueDashboard();
       } finally {
         hideSpinner();
