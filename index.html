@@ -215,7 +215,7 @@
     }
     .modal-box {
       background: var(--bc-card); border: 1px solid var(--bc-border); border-radius: 16px;
-      padding: 28px; width: 100%; max-width: 480px;
+      padding: 28px; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto;
     }
   </style>
 </head>
@@ -402,7 +402,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-envelope-open-text" style="color: var(--bc-orange);"></i> Queued Outreach Schedule</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Grouped patient view: click any patient card to expand and collapse their outreach sequence</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Grouped patient view: click any patient card to expand, contract, edit schedule, or cancel[cite: 9, 10]</span>
       </div>
       <div>
         <button class="btn-pill" onclick="loadQueueDashboard()">
@@ -449,6 +449,78 @@
 
     <div class="drawer-body" id="drawerCards"></div>
   </aside>
+
+  <!-- DEDICATED QUEUE ITEM EDIT MODAL -->
+  <div id="editQueueModal" class="modal-overlay" onclick="closeEditQueueModal()" style="z-index: 2500;">
+    <div class="modal-box" onclick="event.stopPropagation();">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 id="editModalHeader" style="font-size: 17px; font-weight: 700; color: #fff;"><i class="fa-solid fa-pen-to-square" style="color:var(--bc-teal);"></i> Edit Scheduled Outreach</h3>
+        <button class="btn-pill" style="background: transparent; border: none; font-size: 20px; cursor: pointer;" onclick="closeEditQueueModal()">&times;</button>
+      </div>
+
+      <input type="hidden" id="editQueueRowIndex" />
+
+      <div style="background: rgba(22, 19, 41, 0.7); border: 1px solid var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 140px;">
+            <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Scheduled Date</label>
+            <div class="picker-box" style="width: 100%;" onclick="triggerPicker('editSendDate')">
+              <i class="fa-solid fa-calendar-days icon-calendar-color"></i>
+              <input type="date" id="editSendDate" class="native-input" style="width: 100%;" />
+            </div>
+          </div>
+          <div style="flex: 1; min-width: 130px;">
+            <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Time</label>
+            <div class="picker-box" style="width: 100%;" onclick="triggerPicker('editSendTime')">
+              <i class="fa-solid fa-clock icon-clock-color"></i>
+              <input type="time" id="editSendTime" class="native-input" style="width: 100%;" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
+      <input type="text" id="editSubject" class="card-input" />
+
+      <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
+      <textarea id="editBody" class="card-textarea" style="min-height: 120px;" oninput="updateEditModalPreview()"></textarea>
+
+      <!-- Attached Media Controller in Edit Modal -->
+      <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
+            <i class="fa-solid fa-paperclip"></i> Attached Media (Image / PDF / Video):
+          </span>
+          <div style="display: flex; gap: 8px;">
+            <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 11px; cursor: pointer; padding: 5px 12px;">
+              <i class="fa-solid fa-upload"></i> Upload / Replace
+              <input type="file" accept="image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi" style="display: none;" onchange="handleEditModalMediaUpload(this)" />
+            </label>
+            <button id="editModalRemoveMediaBtn" class="btn-pill" style="display: none; background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 11px; padding: 5px 12px;" onclick="removeEditModalMedia()">
+              <i class="fa-solid fa-trash-can"></i> Remove
+            </button>
+          </div>
+        </div>
+        <div id="editModalMediaWrap" style="display: none; align-items: center; gap: 12px; margin-top: 10px; background: rgba(22, 19, 41, 0.7); padding: 8px 12px; border-radius: 8px;">
+          <img id="editModalThumb" src="" alt="Thumbnail" style="width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect(this.src)" />
+          <div id="editModalFileBadge" style="font-size: 12px; color: #fff; font-weight: 600;">Media Attached</div>
+        </div>
+        <input type="hidden" id="editAttachmentId" />
+      </div>
+
+      <details style="margin-bottom: 14px; cursor: pointer; color: var(--bc-teal); font-size: 12px;" ontoggle="if(this.open) updateEditModalPreview()">
+        <summary><i class="fa-solid fa-eye"></i> Preview Email Layout</summary>
+        <div id="editModalPreviewBox" style="background: #ffffff; color: #1e293b; padding: 16px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1;"></div>
+      </details>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+        <button class="btn-pill" style="background: transparent; border: 1px solid var(--bc-border);" onclick="closeEditQueueModal()">Cancel</button>
+        <button class="btn-pill" style="background: var(--bc-teal); color: #000;" onclick="submitEditQueueOutreach()">
+          <i class="fa-solid fa-floppy-disk"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- LIGHTBOX PREVIEW MODAL -->
   <div id="imagePreviewModal" class="modal-overlay" onclick="closeImagePreviewModal()" style="z-index: 3000;">
@@ -602,7 +674,7 @@
         img.style.display = 'block';
       };
       img.onerror = () => {
-        placeholder.innerText = 'Click the link above to view or download document/video directly.';
+        placeholder.innerText = 'Click to open or view attached document.';
       };
     }
 
@@ -1012,7 +1084,7 @@
     }
 
     // ----------------------------------------------------
-    // INJURY & TEMPLATE STUDIO (MULTI-FORMAT MEDIA ENGINE)
+    // INJURY & TEMPLATE STUDIO
     // ----------------------------------------------------
     async function loadStudioTemplates() {
       showSpinner("Loading injury studio...");
@@ -1108,7 +1180,7 @@
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
           <textarea id="studio_body_${idx}" class="card-textarea" oninput="updateStudioLivePreview(${idx})">${escapeHtml(tpl.bodyText)}</textarea>
 
-          <!-- MULTI-FORMAT MEDIA CONTROLS (IMAGES, PDF, MP4/RAW VIDEOS) -->
+          <!-- MULTI-FORMAT MEDIA CONTROLS -->
           <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
@@ -1129,7 +1201,7 @@
               <img id="studio_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" onerror="this.src='https://cdn-icons-png.flaticon.com/512/337/337946.png';" />
               <div>
                 <div id="studio_file_badge_${idx}" style="font-size: 12px; color: #fff; font-weight: 600;">Media Attached</div>
-                <span style="font-size: 11px; color: var(--bc-text-muted);">Saved in dedicated Google Drive folder.</span>
+                <span style="font-size: 11px; color: var(--bc-text-muted);">Saved in designated Drive folder.</span>
               </div>
             </div>
             <input type="hidden" id="studio_att_id_${idx}" value="${tpl.attachmentId || ''}" />
@@ -1272,7 +1344,7 @@
     }
 
     // ----------------------------------------------------
-    // PATIENT TIMELINE DRAWER (MULTI-MEDIA & OVERRIDE CONTROLS)
+    // PATIENT TIMELINE DRAWER
     // ----------------------------------------------------
     async function openPatientTimeline(rowNumber, conditionOverride = null) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
@@ -1412,7 +1484,6 @@
         const initialSubj = queueItem ? queueItem.subject : item.subject;
         const initialBody = queueItem ? queueItem.bodyText : item.defaultBody;
 
-        // Inherit global template default attachment if not overridden
         const attachmentId = queueItem ? (queueItem.attachmentId || item.attachmentId || '') : (item.attachmentId || '');
 
         let activeImgSrc = '';
@@ -1496,7 +1567,7 @@
               <img id="drawer_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" onerror="this.src='https://cdn-icons-png.flaticon.com/512/337/337946.png';" />
               <div>
                 <div id="drawer_file_badge_${idx}" style="font-size: 12px; color: #fff; font-weight: 600;">Media Attached</div>
-                <span style="font-size: 11px; color: var(--bc-text-muted);">Saved in dedicated Drive folder.</span>
+                <span style="font-size: 11px; color: var(--bc-text-muted);">Saved in designated Drive folder.</span>
               </div>
             </div>
             <input type="hidden" id="att_id_${idx}" value="${attachmentId}" />
@@ -1727,7 +1798,7 @@
     }
 
     // ----------------------------------------------------
-    // QUEUED OUTREACH (GROUPED & COLLAPSIBLE ACCORDION CARDS)
+    // QUEUED OUTREACH & DEDICATED EDIT MODAL
     // ----------------------------------------------------
     async function loadQueueDashboard() {
       showSpinner("Loading queued outreach schedule...");
@@ -1797,11 +1868,18 @@
             ? `<span style="color:var(--bc-teal); font-size:12px; cursor:pointer;" onclick="openAttachmentPreview('${q.attachmentId}', 'Media')"><i class="fa-solid fa-paperclip"></i> View</span>` 
             : `<span style="color:var(--bc-text-muted); font-size:12px;">None</span>`;
 
-          let actionBtn = `<span style="color:var(--bc-text-muted); font-size:12px;">—</span>`;
-          if (isScheduled) {
-            actionBtn = `<button class="btn-pill" style="padding: 4px 12px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">Cancel</button>`;
-          } else if (isFrozen) {
-            actionBtn = `<button class="btn-pill" style="padding: 4px 12px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="unfreezeDirect(${q.queueRowIndex})"><i class="fa-solid fa-play"></i> Unfreeze</button>`;
+          let actionButtons = `<span style="color:var(--bc-text-muted); font-size:12px;">—</span>`;
+          if (isScheduled || isFrozen) {
+            actionButtons = `
+              <div style="display:inline-flex; gap:6px; align-items:center;">
+                <button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal);" onclick="openEditQueueModal(${q.queueRowIndex})">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+                <button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">
+                  Cancel
+                </button>
+              </div>
+            `;
           }
 
           childRows += `
@@ -1813,7 +1891,7 @@
               <td style="padding: 12px 16px; font-size: 13px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(q.subject)}</td>
               <td style="padding: 12px 16px;">${mediaBadge}</td>
               <td style="padding: 12px 16px;">${statusPill}</td>
-              <td style="padding: 12px 16px;">${actionBtn}</td>
+              <td style="padding: 12px 16px;">${actionButtons}</td>
             </tr>
           `;
         });
@@ -1878,6 +1956,140 @@
       body.style.display = isHidden ? 'block' : 'none';
       if (chevron) {
         chevron.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+      }
+    }
+
+    // ----------------------------------------------------
+    // EDIT QUEUED OUTREACH MODAL CONTROLLERS
+    // ----------------------------------------------------
+    function openEditQueueModal(queueRowIndex) {
+      const qItem = currentRawQueue.find(i => Number(i.queueRowIndex) === Number(queueRowIndex));
+      if (!qItem) return alert("Item not found in current queue.");
+
+      document.getElementById('editQueueRowIndex').value = queueRowIndex;
+      document.getElementById('editModalHeader').innerText = `Edit: ${qItem.patientName} (${qItem.milestoneId || 'Check-in'})`;
+
+      let cleanDate = qItem.scheduledDate || '';
+      if (cleanDate.includes('T')) cleanDate = cleanDate.split('T')[0];
+      document.getElementById('editSendDate').value = cleanDate;
+
+      let cleanTime = qItem.scheduledTime || '09:00';
+      if (/am|pm/i.test(cleanTime)) {
+        const match = cleanTime.match(/(\d+):(\d+)\s*(am|pm)/i);
+        if (match) {
+          let h = parseInt(match[1], 10);
+          const m = match[2];
+          const isPm = match[3].toLowerCase() === 'pm';
+          if (isPm && h < 12) h += 12;
+          if (!isPm && h === 12) h = 0;
+          cleanTime = `${String(h).padStart(2, '0')}:${m}`;
+        }
+      }
+      document.getElementById('editSendTime').value = cleanTime;
+      document.getElementById('editSubject').value = qItem.subject || '';
+      document.getElementById('editBody').value = qItem.bodyText || '';
+
+      const attId = qItem.attachmentId || '';
+      document.getElementById('editAttachmentId').value = attId;
+
+      const wrap = document.getElementById('editModalMediaWrap');
+      const thumb = document.getElementById('editModalThumb');
+      const removeBtn = document.getElementById('editModalRemoveMediaBtn');
+      const badge = document.getElementById('editModalFileBadge');
+
+      if (attId) {
+        wrap.style.display = 'flex';
+        removeBtn.style.display = 'inline-flex';
+        thumb.src = `https://lh3.googleusercontent.com/d/${attId}`;
+        badge.innerText = `Media ID: ${attId.slice(0, 10)}...`;
+      } else {
+        wrap.style.display = 'none';
+        removeBtn.style.display = 'none';
+      }
+
+      updateEditModalPreview();
+      document.getElementById('editQueueModal').style.display = 'flex';
+    }
+
+    function closeEditQueueModal() {
+      document.getElementById('editQueueModal').style.display = 'none';
+    }
+
+    function updateEditModalPreview() {
+      const body = document.getElementById('editBody').value;
+      const box = document.getElementById('editModalPreviewBox');
+      if (box) box.innerHTML = renderEmailPreviewHtml(body);
+    }
+
+    function handleEditModalMediaUpload(fileInput) {
+      uploadFileToDrive(fileInput, (uploaded) => {
+        document.getElementById('editAttachmentId').value = uploaded.fileId;
+        const wrap = document.getElementById('editModalMediaWrap');
+        const thumb = document.getElementById('editModalThumb');
+        const removeBtn = document.getElementById('editModalRemoveMediaBtn');
+        const badge = document.getElementById('editModalFileBadge');
+
+        wrap.style.display = 'flex';
+        removeBtn.style.display = 'inline-flex';
+        badge.innerText = `${uploaded.fileName} (${uploaded.mediaType.toUpperCase()})`;
+
+        const bodyEl = document.getElementById('editBody');
+        if (uploaded.isImage) {
+          const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
+          thumb.src = viewUrl;
+          if (!bodyEl.value.includes(uploaded.fileId)) {
+            bodyEl.value += `\n\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>`;
+          }
+        } else {
+          thumb.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png";
+        }
+        updateEditModalPreview();
+      });
+    }
+
+    function removeEditModalMedia() {
+      document.getElementById('editAttachmentId').value = '';
+      document.getElementById('editModalMediaWrap').style.display = 'none';
+      document.getElementById('editModalRemoveMediaBtn').style.display = 'none';
+      const bodyEl = document.getElementById('editBody');
+      bodyEl.value = bodyEl.value.replace(/<div style="text-align: center; margin: 16px 0;">\s*<img[^>]+>\s*<\/div>/gi, '').replace(/<img[^>]+>/gi, '').trim();
+      updateEditModalPreview();
+    }
+
+    async function submitEditQueueOutreach() {
+      const queueRowIndex = document.getElementById('editQueueRowIndex').value;
+      const sendDate = document.getElementById('editSendDate').value;
+      const sendTime = document.getElementById('editSendTime').value;
+      const subject = document.getElementById('editSubject').value.trim();
+      const bodyText = document.getElementById('editBody').value.trim();
+      const attachmentId = document.getElementById('editAttachmentId').value;
+
+      if (!sendDate) return alert("Please select a scheduled date.");
+      if (!subject || !bodyText) return alert("Subject and body cannot be empty.");
+
+      showSpinner("Updating scheduled outreach...");
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'UPDATE_SCHEDULED_OUTREACH',
+            queueRowIndex: Number(queueRowIndex),
+            sendDate: sendDate,
+            timeStr: sendTime || '09:00',
+            subject: subject,
+            bodyText: bodyText,
+            attachmentId: attachmentId || ''
+          })
+        });
+        const json = await res.json();
+        alert(json.success ? `✅ ${json.message}` : `❌ ${json.message}`);
+        closeEditQueueModal();
+        loadQueueDashboard();
+      } catch (err) {
+        alert("Update failed: " + err.message);
+      } finally {
+        hideSpinner();
       }
     }
 
