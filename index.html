@@ -368,7 +368,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical diagrams, PDFs, videos, and two-way Google Docs synchronization[cite: 7]</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical diagrams, PDFs, videos, and two-way Google Docs synchronization</span>
       </div>
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="triggerSyncFromGoogleDocs()">
@@ -1706,9 +1706,23 @@
             attachmentId: attachmentId || ''
           })
         });
-        const json = await res.json();
-        alert(json.success ? `✅ ${json.message}` : `❌ ${json.message}`);
-        openPatientTimeline(activePatient.rowNumber, currentSelectedTrackOverride);
+
+        const text = await res.text();
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch (pe) {
+          throw new Error("Server returned non-JSON response.");
+        }
+
+        if (json.success) {
+          alert(`✅ ${json.message}`);
+          await openPatientTimeline(activePatient.rowNumber, currentSelectedTrackOverride);
+        } else {
+          alert(`❌ ${json.message}`);
+        }
+      } catch (err) {
+        alert("Schedule error: " + err.message);
       } finally {
         hideSpinner();
       }
@@ -1740,9 +1754,22 @@
             items: itemsToSchedule
           })
         });
-        const json = await res.json();
-        alert(json.message);
-        openPatientTimeline(activePatient.rowNumber, currentSelectedTrackOverride);
+        const text = await res.text();
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch (pe) {
+          throw new Error("Server returned non-JSON response.");
+        }
+
+        if (json.success) {
+          alert(`✅ ${json.message}`);
+          await openPatientTimeline(activePatient.rowNumber, currentSelectedTrackOverride);
+        } else {
+          alert(`❌ ${json.message}`);
+        }
+      } catch (err) {
+        alert("Batch schedule error: " + err.message);
       } finally {
         hideSpinner();
       }
