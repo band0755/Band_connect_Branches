@@ -368,7 +368,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical diagrams, PDFs, videos, and two-way Google Docs synchronization[cite: 7]</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical diagrams, PDFs, videos, and two-way Google Docs synchronization</span>
       </div>
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="triggerSyncFromGoogleDocs()">
@@ -402,7 +402,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-envelope-open-text" style="color: var(--bc-orange);"></i> Queued Outreach Schedule</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Grouped patient view: click any patient card to expand, contract, edit schedule, or cancel</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Grouped patient view: click any patient card to expand, contract, unfreeze, edit schedule, or cancel</span>
       </div>
       <div>
         <button class="btn-pill" onclick="loadQueueDashboard()">
@@ -850,7 +850,6 @@
 
       let lastSync = localStorage.getItem('BC_LAST_SYNC_TIME') || '0';
 
-      // Render instantly from local storage (0ms render time)
       if (localRoster.length > 0 && !forceFullReload) {
         patientStore = localRoster;
         populateColumnFilterDropdowns(patientStore);
@@ -1403,7 +1402,7 @@
 
         renderPatientTimelineCards();
       } catch (err) {
-        cards.innerHTML = `<div style="color:var(--bc-red); padding:16px;">${err.message}</div>`;
+        cards.innerHTML = `<div style="color:var(--bc-red); padding:16px;">Error: ${err.message}</div>`;
       }
     }
 
@@ -1552,7 +1551,6 @@
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
           <textarea id="body_${idx}" class="card-textarea" oninput="updateDrawerLivePreview(${idx})" ${isSent ? 'disabled' : ''}>${escapeHtml(initialBody)}</textarea>
 
-          <!-- DEDICATED MULTI-MEDIA CONTROLS IN PATIENT DRAWER -->
           <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
@@ -1573,7 +1571,7 @@
               <img id="drawer_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" onerror="this.src='https://cdn-icons-png.flaticon.com/512/337/337946.png';" />
               <div>
                 <div id="drawer_file_badge_${idx}" style="font-size: 12px; color: #fff; font-weight: 600;">Media Attached</div>
-                <span style="font-size: 11px; color: var(--bc-text-muted);">Saved in dedicated Drive folder.</span>
+                <span style="font-size: 11px; color: var(--bc-text-muted);">Saved in designated Drive folder.</span>
               </div>
             </div>
             <input type="hidden" id="att_id_${idx}" value="${attachmentId}" />
@@ -1815,11 +1813,27 @@
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'UNFREEZE_SCHEDULED_OUTREACH',
-            queueRowIndex: rowIndex,
-            sendDate: new Date().toISOString().split('T')[0],
-            timeStr: '09:00',
-            subject: '',
-            bodyText: ''
+            queueRowIndex: rowIndex
+          })
+        });
+        const json = await res.json();
+        alert(json.message);
+        loadQueueDashboard();
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    async function unfreezeAllPatient(patientName) {
+      if (!confirm(`Unfreeze all frozen check-ins for ${patientName}?`)) return;
+      showSpinner(`Unfreezing all emails for ${patientName}...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'UNFREEZE_ALL_PATIENT_OUTREACH',
+            patientName: patientName
           })
         });
         const json = await res.json();
@@ -1902,11 +1916,25 @@
             : `<span style="color:var(--bc-text-muted); font-size:12px;">None</span>`;
 
           let actionButtons = `<span style="color:var(--bc-text-muted); font-size:12px;">—</span>`;
-          if (isScheduled || isFrozen) {
+          if (isScheduled) {
             actionButtons = `
               <div style="display:inline-flex; gap:6px; align-items:center;">
                 <button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal);" onclick="openEditQueueModal(${q.queueRowIndex})">
                   <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+                <button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">
+                  Cancel
+                </button>
+              </div>
+            `;
+          } else if (isFrozen) {
+            actionButtons = `
+              <div style="display:inline-flex; gap:6px; align-items:center;">
+                <button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="unfreezeDirect(${q.queueRowIndex})">
+                  <i class="fa-solid fa-play"></i> Unfreeze
+                </button>
+                <button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal);" onclick="openEditQueueModal(${q.queueRowIndex})">
+                  Edit
                 </button>
                 <button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">
                   Cancel
@@ -1928,6 +1956,16 @@
             </tr>
           `;
         });
+
+        // Unfreeze All button if patient has frozen items
+        let unfreezeAllBtn = '';
+        if (frozen > 0) {
+          unfreezeAllBtn = `
+            <button class="btn-pill" style="padding: 4px 12px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="event.stopPropagation(); unfreezeAllPatient('${escapeHtml(name)}')">
+              <i class="fa-solid fa-play"></i> Unfreeze All (${frozen})
+            </button>
+          `;
+        }
 
         const card = document.createElement('div');
         card.style.cssText = 'background: var(--bc-card); border: 1px solid var(--bc-border); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3);';
@@ -1951,6 +1989,7 @@
                 ${frozen > 0 ? `<span class="badge-frozen">${frozen} Frozen</span>` : ''}
                 ${canceled > 0 ? `<span class="badge-canceled">${canceled} Canceled</span>` : ''}
               </div>
+              ${unfreezeAllBtn}
               <span style="font-size: 12px; color: var(--bc-teal); font-weight: 600; padding: 6px 12px; background: rgba(56, 189, 248, 0.1); border-radius: 20px;">
                 ${total} Total Emails <i class="fa-solid fa-chevron-down" style="margin-left: 4px; font-size: 10px;"></i>
               </span>
