@@ -482,18 +482,18 @@
       <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
       <input type="text" id="editSubject" class="card-input" />
 
-      <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
+      <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content (Graphic inserts at cursor blinker)</label>
       <textarea id="editBody" class="card-textarea" style="min-height: 120px;" oninput="updateEditModalPreview()"></textarea>
 
       <!-- Attached Media Controller in Edit Modal -->
       <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
-            <i class="fa-solid fa-paperclip"></i> Attached Media (Image / PDF / Video):
+            <i class="fa-solid fa-paperclip"></i> Attached Media (Inserts at cursor blinker):
           </span>
           <div style="display: flex; gap: 8px;">
             <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 11px; cursor: pointer; padding: 5px 12px;">
-              <i class="fa-solid fa-upload"></i> Upload / Replace
+              <i class="fa-solid fa-upload"></i> Upload / Insert
               <input type="file" accept="image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi" style="display: none;" onchange="handleEditModalMediaUpload(this)" />
             </label>
             <button id="editModalRemoveMediaBtn" class="btn-pill" style="display: none; background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 11px; padding: 5px 12px;" onclick="removeEditModalMedia()">
@@ -839,9 +839,6 @@
       document.getElementById('pinInput').value = '';
     }
 
-    // ----------------------------------------------------
-    // HIGH-SPEED INSTANT LOAD & BACKGROUND DELTA SYNC
-    // ----------------------------------------------------
     async function loadPatients(forceFullReload = false) {
       let localRoster = [];
       try {
@@ -1183,17 +1180,17 @@
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
           <input type="text" id="studio_subj_${idx}" class="card-input" value="${escapeHtml(tpl.subject)}" />
 
-          <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
+          <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content (Graphic inserts at cursor blinker)</label>
           <textarea id="studio_body_${idx}" class="card-textarea" oninput="updateStudioLivePreview(${idx})">${escapeHtml(tpl.bodyText)}</textarea>
 
           <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
-                <i class="fa-solid fa-photo-film"></i> Clinical Media (Image, PDF, or MP4/Raw Video):
+                <i class="fa-solid fa-photo-film"></i> Clinical Media (Inserts at cursor blinker):
               </span>
               <div style="display: flex; gap: 8px;">
                 <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 12px; cursor: pointer; padding: 5px 12px;">
-                  <i class="fa-solid fa-upload"></i> ${tpl.attachmentId ? 'Replace Media' : 'Upload Media (Image / PDF / MP4)'}
+                  <i class="fa-solid fa-upload"></i> ${tpl.attachmentId ? 'Replace Media' : 'Upload Media'}
                   <input type="file" accept="image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi" style="display: none;" onchange="handleStudioMediaUpload(this, ${idx})" />
                 </label>
                 <button id="studio_remove_img_btn_${idx}" class="btn-pill" style="display: ${tpl.attachmentId ? 'inline-flex' : 'none'}; background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px; padding: 5px 12px;" onclick="removeStudioMedia(${idx})">
@@ -1243,25 +1240,26 @@
         badge.innerText = `${uploaded.fileName} (${uploaded.mediaType.toUpperCase()})`;
 
         const bodyEl = document.getElementById(`studio_body_${idx}`);
+        let snippet = '';
 
         if (uploaded.isImage) {
           const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
           thumb.src = viewUrl;
           thumb.onclick = () => openAttachmentPreviewDirect(viewUrl);
-          if (!bodyEl.value.includes(uploaded.fileId)) {
-            bodyEl.value += `\n\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>`;
-          }
+          snippet = `\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>\n`;
         } else if (uploaded.isVideo) {
           thumb.src = "https://cdn-icons-png.flaticon.com/512/1179/1179069.png";
           thumb.onclick = () => window.open(uploaded.viewUrl, '_blank');
-          const videoBlock = `\n\n<div style="margin: 20px 0; text-align: center;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-block; background: #201a38; border: 1px solid #382e5c; border-radius: 12px; padding: 24px; color: #fff;"><div style="font-size: 15px; font-weight: bold; color: #38bdf8;">▶ Watch Clinical Exercise Video</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${uploaded.fileName}</div></a></div>`;
-          if (!bodyEl.value.includes(uploaded.fileId)) bodyEl.value += videoBlock;
+          snippet = `\n<div style="margin: 20px 0; text-align: center;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-block; background: #201a38; border: 1px solid #382e5c; border-radius: 12px; padding: 24px; color: #fff;"><div style="font-size: 15px; font-weight: bold; color: #38bdf8;">▶ Watch Clinical Exercise Video</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${uploaded.fileName}</div></a></div>\n`;
         } else if (uploaded.isPdf) {
           thumb.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png";
           thumb.onclick = () => window.open(uploaded.viewUrl, '_blank');
-          const pdfBlock = `\n\n<div style="margin: 16px 0;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:10px; background: #201a38; border: 1px solid #382e5c; border-radius: 8px; padding: 12px 18px; color: #fff;"><span style="font-size: 20px;">📄</span><span style="font-weight: 600; color: #38bdf8;">View Attached Document (${uploaded.fileName})</span></a></div>`;
-          if (!bodyEl.value.includes(uploaded.fileId)) bodyEl.value += pdfBlock;
+          snippet = `\n<div style="margin: 16px 0;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:10px; background: #201a38; border: 1px solid #382e5c; border-radius: 8px; padding: 12px 18px; color: #fff;"><span style="font-size: 20px;">📄</span><span style="font-weight: 600; color: #38bdf8;">View Attached Document (${uploaded.fileName})</span></a></div>\n`;
         }
+
+        const startPos = bodyEl.selectionStart;
+        const endPos = bodyEl.selectionEnd;
+        bodyEl.value = bodyEl.value.substring(0, startPos) + snippet + bodyEl.value.substring(endPos);
 
         if (currentDisplayedTemplates[idx]) {
           currentDisplayedTemplates[idx].attachmentId = uploaded.fileId;
@@ -1548,13 +1546,13 @@
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
           <input type="text" id="subj_${idx}" class="card-input" value="${escapeHtml(initialSubj)}" ${isSent ? 'disabled' : ''} />
 
-          <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
+          <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content (Graphic inserts at cursor blinker)</label>
           <textarea id="body_${idx}" class="card-textarea" oninput="updateDrawerLivePreview(${idx})" ${isSent ? 'disabled' : ''}>${escapeHtml(initialBody)}</textarea>
 
           <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
-                <i class="fa-solid fa-photo-film"></i> Patient Dedicated Media (Image / PDF / Video):
+                <i class="fa-solid fa-photo-film"></i> Patient Dedicated Media (Inserts at cursor blinker):
               </span>
               <div style="display: flex; gap: 8px;">
                 <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 11px; cursor: pointer; padding: 5px 12px;">
@@ -1606,25 +1604,26 @@
         badge.innerText = `${uploaded.fileName} (${uploaded.mediaType.toUpperCase()})`;
 
         const bodyEl = document.getElementById(`body_${idx}`);
+        let snippet = '';
 
         if (uploaded.isImage) {
           const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
           thumb.src = viewUrl;
           thumb.onclick = () => openAttachmentPreviewDirect(viewUrl);
-          if (!bodyEl.value.includes(uploaded.fileId)) {
-            bodyEl.value += `\n\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>`;
-          }
+          snippet = `\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>\n`;
         } else if (uploaded.isVideo) {
           thumb.src = "https://cdn-icons-png.flaticon.com/512/1179/1179069.png";
           thumb.onclick = () => window.open(uploaded.viewUrl, '_blank');
-          const videoBlock = `\n\n<div style="margin: 20px 0; text-align: center;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-block; background: #201a38; border: 1px solid #382e5c; border-radius: 12px; padding: 24px; color: #fff;"><div style="font-size: 15px; font-weight: bold; color: #38bdf8;">▶ Watch Clinical Exercise Video</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${uploaded.fileName}</div></a></div>`;
-          if (!bodyEl.value.includes(uploaded.fileId)) bodyEl.value += videoBlock;
+          snippet = `\n<div style="margin: 20px 0; text-align: center;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-block; background: #201a38; border: 1px solid #382e5c; border-radius: 12px; padding: 24px; color: #fff;"><div style="font-size: 15px; font-weight: bold; color: #38bdf8;">▶ Watch Clinical Exercise Video</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${uploaded.fileName}</div></a></div>\n`;
         } else if (uploaded.isPdf) {
           thumb.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png";
           thumb.onclick = () => window.open(uploaded.viewUrl, '_blank');
-          const pdfBlock = `\n\n<div style="margin: 16px 0;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:10px; background: #201a38; border: 1px solid #382e5c; border-radius: 8px; padding: 12px 18px; color: #fff;"><span style="font-size: 20px;">📄</span><span style="font-weight: 600; color: #38bdf8;">View Attached Document (${uploaded.fileName})</span></a></div>`;
-          if (!bodyEl.value.includes(uploaded.fileId)) bodyEl.value += pdfBlock;
+          snippet = `\n<div style="margin: 16px 0;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:10px; background: #201a38; border: 1px solid #382e5c; border-radius: 8px; padding: 12px 18px; color: #fff;"><span style="font-size: 20px;">📄</span><span style="font-weight: 600; color: #38bdf8;">View Attached Document (${uploaded.fileName})</span></a></div>\n`;
         }
+
+        const startPos = bodyEl.selectionStart;
+        const endPos = bodyEl.selectionEnd;
+        bodyEl.value = bodyEl.value.substring(0, startPos) + snippet + bodyEl.value.substring(endPos);
 
         if (patientTimelineStore[idx]) {
           patientTimelineStore[idx].attachmentId = uploaded.fileId;
@@ -1957,7 +1956,6 @@
           `;
         });
 
-        // Unfreeze All button if patient has frozen items
         let unfreezeAllBtn = '';
         if (frozen > 0) {
           unfreezeAllBtn = `
@@ -2106,15 +2104,24 @@
         badge.innerText = `${uploaded.fileName} (${uploaded.mediaType.toUpperCase()})`;
 
         const bodyEl = document.getElementById('editBody');
+        let snippet = '';
+
         if (uploaded.isImage) {
           const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
           thumb.src = viewUrl;
-          if (!bodyEl.value.includes(uploaded.fileId)) {
-            bodyEl.value += `\n\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>`;
-          }
-        } else {
+          snippet = `\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>\n`;
+        } else if (uploaded.isVideo) {
+          thumb.src = "https://cdn-icons-png.flaticon.com/512/1179/1179069.png";
+          snippet = `\n<div style="margin: 20px 0; text-align: center;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-block; background: #201a38; border: 1px solid #382e5c; border-radius: 12px; padding: 24px; color: #fff;"><div style="font-size: 15px; font-weight: bold; color: #38bdf8;">▶ Watch Clinical Exercise Video</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${uploaded.fileName}</div></a></div>\n`;
+        } else if (uploaded.isPdf) {
           thumb.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png";
+          snippet = `\n<div style="margin: 16px 0;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:10px; background: #201a38; border: 1px solid #382e5c; border-radius: 8px; padding: 12px 18px; color: #fff;"><span style="font-size: 20px;">📄</span><span style="font-weight: 600; color: #38bdf8;">View Attached Document (${uploaded.fileName})</span></a></div>\n`;
         }
+
+        const startPos = bodyEl.selectionStart;
+        const endPos = bodyEl.selectionEnd;
+        bodyEl.value = bodyEl.value.substring(0, startPos) + snippet + bodyEl.value.substring(endPos);
+
         updateEditModalPreview();
       });
     }
