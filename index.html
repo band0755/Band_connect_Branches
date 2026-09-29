@@ -687,7 +687,7 @@
 
     async function triggerSyncFromGoogleDocs() {
       if (!confirm("Pull all latest updates and diagrams from Google Docs into Portal Templates?")) return;
-      showSpinner("Synchronizing templates & images from Google Docs...");
+      showSpinner("Synchronizing templates & inline charts from Google Docs...");
       try {
         const res = await fetch(`${API_URL}?action=SYNC_FROM_DOCS`);
         const json = await res.json();
