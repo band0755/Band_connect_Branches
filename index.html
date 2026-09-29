@@ -368,7 +368,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical diagrams, and two-way Google Docs synchronization[cite: 7]</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical diagrams, PDFs, videos, and two-way Google Docs synchronization[cite: 7]</span>
       </div>
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="triggerSyncFromGoogleDocs()">
@@ -584,7 +584,7 @@
       openAttachmentPreviewDirect(`https://lh3.googleusercontent.com/d/${fileId}`, fileName);
     }
 
-    function openAttachmentPreviewDirect(url, customTitle = 'Image Preview') {
+    function openAttachmentPreviewDirect(url, customTitle = 'Media Preview') {
       const modal = document.getElementById('imagePreviewModal');
       const title = document.getElementById('imagePreviewTitle');
       const img = document.getElementById('imagePreviewImg');
@@ -593,7 +593,7 @@
       title.innerText = customTitle;
       img.style.display = 'none';
       placeholder.style.display = 'block';
-      placeholder.innerText = 'Loading image preview...';
+      placeholder.innerText = 'Loading preview...';
       modal.style.display = 'flex';
 
       img.src = normalizeImageUrls(url);
@@ -602,7 +602,7 @@
         img.style.display = 'block';
       };
       img.onerror = () => {
-        placeholder.innerText = 'Unable to render inline preview.';
+        placeholder.innerText = 'Click the link above to view or download document/video directly.';
       };
     }
 
@@ -636,7 +636,7 @@
         return alert("File exceeds the 50 MB limit.");
       }
 
-      showSpinner(`Uploading ${file.name} to Google Drive (${Math.round(file.size / (1024 * 1024))} MB)...`);
+      showSpinner(`Uploading ${file.name} (${Math.round(file.size / (1024 * 1024))} MB)...`);
       const reader = new FileReader();
 
       reader.onload = async function(e) {
@@ -644,6 +644,7 @@
         try {
           const res = await fetch(API_URL, {
             method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({
               action: 'UPLOAD_ATTACHMENT',
               fileName: file.name,
@@ -651,7 +652,14 @@
               base64Data: base64Data
             })
           });
-          const json = await res.json();
+          const text = await res.text();
+          let json;
+          try {
+            json = JSON.parse(text);
+          } catch (pe) {
+            throw new Error("Apps Script authorization expired or returned an HTML error. Verify Web App Deployment is set to 'Who has access: Anyone'.");
+          }
+
           if (json.success) {
             onComplete(json);
           } else {
@@ -698,6 +706,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'REQUEST_PASSWORD_RESET', leadershipEmail: email })
         });
         const json = await res.json();
@@ -727,6 +736,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'VERIFY_RESET_PIN',
             leadershipEmail: pendingResetEmail,
@@ -977,6 +987,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'UPDATE_PATIENT_STATUS',
             rowNumber: rowNumber,
@@ -1001,7 +1012,7 @@
     }
 
     // ----------------------------------------------------
-    // INJURY & TEMPLATE STUDIO (WITH CDN LH3 EMBEDDING)
+    // INJURY & TEMPLATE STUDIO (MULTI-FORMAT MEDIA ENGINE)
     // ----------------------------------------------------
     async function loadStudioTemplates() {
       showSpinner("Loading injury studio...");
@@ -1097,31 +1108,35 @@
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
           <textarea id="studio_body_${idx}" class="card-textarea" oninput="updateStudioLivePreview(${idx})">${escapeHtml(tpl.bodyText)}</textarea>
 
+          <!-- MULTI-FORMAT MEDIA CONTROLS (IMAGES, PDF, MP4/RAW VIDEOS) -->
           <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
-                <i class="fa-solid fa-image"></i> Step Clinical Image / Diagram:
+                <i class="fa-solid fa-photo-film"></i> Clinical Media (Image, PDF, or MP4/Raw Video):
               </span>
               <div style="display: flex; gap: 8px;">
                 <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 12px; cursor: pointer; padding: 5px 12px;">
-                  <i class="fa-solid fa-upload"></i> ${activeImgSrc ? 'Replace Image' : 'Add New Image'}
-                  <input type="file" accept="image/*" style="display: none;" onchange="handleStudioImageUpload(this, ${idx})" />
+                  <i class="fa-solid fa-upload"></i> ${tpl.attachmentId ? 'Replace Media' : 'Upload Media (Image / PDF / MP4)'}
+                  <input type="file" accept="image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi" style="display: none;" onchange="handleStudioMediaUpload(this, ${idx})" />
                 </label>
-                <button id="studio_remove_img_btn_${idx}" class="btn-pill" style="display: ${activeImgSrc ? 'inline-flex' : 'none'}; background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px; padding: 5px 12px;" onclick="removeStudioImage(${idx})">
-                  <i class="fa-solid fa-trash-can"></i> Remove Image
+                <button id="studio_remove_img_btn_${idx}" class="btn-pill" style="display: ${tpl.attachmentId ? 'inline-flex' : 'none'}; background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px; padding: 5px 12px;" onclick="removeStudioMedia(${idx})">
+                  <i class="fa-solid fa-trash-can"></i> Remove Media
                 </button>
               </div>
             </div>
 
-            <div id="studio_img_wrap_${idx}" style="display: ${activeImgSrc ? 'flex' : 'none'}; align-items: center; gap: 14px; margin-top: 10px; background: rgba(22, 19, 41, 0.7); padding: 8px 12px; border-radius: 8px;">
-              <img id="studio_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 64px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" />
-              <span style="font-size: 12px; color: var(--bc-text-muted);">Click thumbnail to view full image in lightbox.</span>
+            <div id="studio_img_wrap_${idx}" style="display: ${tpl.attachmentId ? 'flex' : 'none'}; align-items: center; gap: 14px; margin-top: 10px; background: rgba(22, 19, 41, 0.7); padding: 8px 12px; border-radius: 8px;">
+              <img id="studio_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" onerror="this.src='https://cdn-icons-png.flaticon.com/512/337/337946.png';" />
+              <div>
+                <div id="studio_file_badge_${idx}" style="font-size: 12px; color: #fff; font-weight: 600;">Media Attached</div>
+                <span style="font-size: 11px; color: var(--bc-text-muted);">Saved in dedicated Google Drive folder.</span>
+              </div>
             </div>
             <input type="hidden" id="studio_att_id_${idx}" value="${tpl.attachmentId || ''}" />
           </div>
 
           <details style="margin-bottom: 14px; cursor: pointer; color: var(--bc-teal); font-size: 12px;" ontoggle="if(this.open) updateStudioLivePreview(${idx})">
-            <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Images</summary>
+            <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Media</summary>
             <div id="studio_preview_box_${idx}" style="background: #ffffff; color: #1e293b; padding: 18px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1;">
               ${renderEmailPreviewHtml(tpl.bodyText)}
             </div>
@@ -1137,20 +1152,38 @@
       });
     }
 
-    function handleStudioImageUpload(fileInput, idx) {
+    function handleStudioMediaUpload(fileInput, idx) {
       uploadFileToDrive(fileInput, (uploaded) => {
-        const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
         document.getElementById(`studio_att_id_${idx}`).value = uploaded.fileId;
 
         const thumb = document.getElementById(`studio_thumb_${idx}`);
-        thumb.src = viewUrl;
-        thumb.onclick = () => openAttachmentPreviewDirect(viewUrl);
-        document.getElementById(`studio_img_wrap_${idx}`).style.display = 'flex';
-        document.getElementById(`studio_remove_img_btn_${idx}`).style.display = 'inline-flex';
+        const wrap = document.getElementById(`studio_img_wrap_${idx}`);
+        const removeBtn = document.getElementById(`studio_remove_img_btn_${idx}`);
+        const badge = document.getElementById(`studio_file_badge_${idx}`);
+
+        wrap.style.display = 'flex';
+        removeBtn.style.display = 'inline-flex';
+        badge.innerText = `${uploaded.fileName} (${uploaded.mediaType.toUpperCase()})`;
 
         const bodyEl = document.getElementById(`studio_body_${idx}`);
-        if (!bodyEl.value.includes(uploaded.fileId)) {
-          bodyEl.value += `\n\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>`;
+
+        if (uploaded.isImage) {
+          const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
+          thumb.src = viewUrl;
+          thumb.onclick = () => openAttachmentPreviewDirect(viewUrl);
+          if (!bodyEl.value.includes(uploaded.fileId)) {
+            bodyEl.value += `\n\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>`;
+          }
+        } else if (uploaded.isVideo) {
+          thumb.src = "https://cdn-icons-png.flaticon.com/512/1179/1179069.png";
+          thumb.onclick = () => window.open(uploaded.viewUrl, '_blank');
+          const videoBlock = `\n\n<div style="margin: 20px 0; text-align: center;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-block; background: #201a38; border: 1px solid #382e5c; border-radius: 12px; padding: 24px; color: #fff;"><div style="font-size: 15px; font-weight: bold; color: #38bdf8;">▶ Watch Clinical Exercise Video</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${uploaded.fileName}</div></a></div>`;
+          if (!bodyEl.value.includes(uploaded.fileId)) bodyEl.value += videoBlock;
+        } else if (uploaded.isPdf) {
+          thumb.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png";
+          thumb.onclick = () => window.open(uploaded.viewUrl, '_blank');
+          const pdfBlock = `\n\n<div style="margin: 16px 0;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:10px; background: #201a38; border: 1px solid #382e5c; border-radius: 8px; padding: 12px 18px; color: #fff;"><span style="font-size: 20px;">📄</span><span style="font-weight: 600; color: #38bdf8;">View Attached Document (${uploaded.fileName})</span></a></div>`;
+          if (!bodyEl.value.includes(uploaded.fileId)) bodyEl.value += pdfBlock;
         }
 
         if (currentDisplayedTemplates[idx]) {
@@ -1162,13 +1195,18 @@
       });
     }
 
-    function removeStudioImage(idx) {
+    function removeStudioMedia(idx) {
       document.getElementById(`studio_att_id_${idx}`).value = '';
       document.getElementById(`studio_img_wrap_${idx}`).style.display = 'none';
       document.getElementById(`studio_remove_img_btn_${idx}`).style.display = 'none';
 
       const bodyEl = document.getElementById(`studio_body_${idx}`);
-      bodyEl.value = bodyEl.value.replace(/<div style="text-align: center; margin: 16px 0;">\s*<img[^>]+>\s*<\/div>/gi, '').replace(/<img[^>]+>/gi, '').trim();
+      bodyEl.value = bodyEl.value
+        .replace(/<div style="text-align: center; margin: 16px 0;">\s*<img[^>]+>\s*<\/div>/gi, '')
+        .replace(/<img[^>]+>/gi, '')
+        .replace(/<div style="margin: 20px 0; text-align: center;">[\s\S]*?<\/div>/gi, '')
+        .replace(/<div style="margin: 16px 0;">[\s\S]*?<\/div>/gi, '')
+        .trim();
 
       if (currentDisplayedTemplates[idx]) {
         currentDisplayedTemplates[idx].attachmentId = '';
@@ -1196,6 +1234,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'SAVE_CONDITION_TEMPLATE',
             branch: branch,
@@ -1221,6 +1260,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'DELETE_SEQUENCE_STEP', milestoneId: milestoneId })
         });
         const json = await res.json();
@@ -1232,7 +1272,7 @@
     }
 
     // ----------------------------------------------------
-    // PATIENT TIMELINE DRAWER (WITH PER-PATIENT IMAGE CONTROLS & TRACK OVERRIDE)
+    // PATIENT TIMELINE DRAWER (MULTI-MEDIA & OVERRIDE CONTROLS)
     // ----------------------------------------------------
     async function openPatientTimeline(rowNumber, conditionOverride = null) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
@@ -1255,6 +1295,7 @@
         const [timelineRes, queueRes] = await Promise.all([
           fetch(API_URL, {
             method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({
               action: 'GET_PATIENT_TIMELINE',
               rowNumber: rowNumber,
@@ -1264,8 +1305,16 @@
           fetch(`${API_URL}?action=GET_PATIENT_QUEUE&patientName=${encodeURIComponent(activePatient.patientName)}`)
         ]);
 
-        const timelineJson = await timelineRes.json();
-        const queueJson = await queueRes.json();
+        const timelineText = await timelineRes.text();
+        const queueText = await queueRes.text();
+
+        let timelineJson, queueJson;
+        try {
+          timelineJson = JSON.parse(timelineText);
+          queueJson = JSON.parse(queueText);
+        } catch (pe) {
+          throw new Error("Apps Script authorization expired or returned an HTML error. Verify Web App Deployment is set to 'Who has access: Anyone'.");
+        }
 
         patientTimelineStore = timelineJson.timeline || [];
         patientQueuedMap = queueJson.queuedItems || {};
@@ -1276,7 +1325,7 @@
 
         renderPatientTimelineCards();
       } catch (err) {
-        cards.innerHTML = `<div style="color:red; padding:16px;">Error: ${err.message}</div>`;
+        cards.innerHTML = `<div style="color:var(--bc-red); padding:16px;">${err.message}</div>`;
       }
     }
 
@@ -1284,7 +1333,6 @@
       const select = document.getElementById('drawerConditionOverride');
       select.innerHTML = '';
 
-      // Populate ALL conditions from both UE & LE so user can switch freely to any protocol track
       const allUE = Array.from(conditionMap.UE || []).sort();
       const allLE = Array.from(conditionMap.LE || []).sort();
 
@@ -1308,7 +1356,6 @@
       });
       select.appendChild(optgroupLE);
 
-      // Lock dropdown value to activeSelectedTrack
       select.value = activeSelectedTrack;
     }
 
@@ -1326,6 +1373,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'SHIFT_PATIENT_START_DATE',
             rowNumber: activePatient.rowNumber,
@@ -1363,7 +1411,9 @@
         const initialTime = queueItem ? queueItem.scheduledTime : '09:00';
         const initialSubj = queueItem ? queueItem.subject : item.subject;
         const initialBody = queueItem ? queueItem.bodyText : item.defaultBody;
-        const attachmentId = queueItem ? (queueItem.attachmentId || '') : (item.attachmentId || '');
+
+        // Inherit global template default attachment if not overridden
+        const attachmentId = queueItem ? (queueItem.attachmentId || item.attachmentId || '') : (item.attachmentId || '');
 
         let activeImgSrc = '';
         if (attachmentId) {
@@ -1425,32 +1475,35 @@
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
           <textarea id="body_${idx}" class="card-textarea" oninput="updateDrawerLivePreview(${idx})" ${isSent ? 'disabled' : ''}>${escapeHtml(initialBody)}</textarea>
 
-          <!-- DEDICATED IMAGE CONTROLS IN PATIENT DRAWER -->
+          <!-- DEDICATED MULTI-MEDIA CONTROLS IN PATIENT DRAWER -->
           <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
-                <i class="fa-solid fa-image"></i> Patient Dedicated Image / Diagram:
+                <i class="fa-solid fa-photo-film"></i> Patient Dedicated Media (Image / PDF / Video):
               </span>
               <div style="display: flex; gap: 8px;">
                 <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 11px; cursor: pointer; padding: 5px 12px;">
-                  <i class="fa-solid fa-upload"></i> ${activeImgSrc ? 'Replace Image' : 'Add New Image'}
-                  <input type="file" accept="image/*" style="display: none;" onchange="handleDrawerImageUpload(this, ${idx})" ${isSent ? 'disabled' : ''} />
+                  <i class="fa-solid fa-upload"></i> ${attachmentId ? 'Replace Media' : 'Upload Media'}
+                  <input type="file" accept="image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi" style="display: none;" onchange="handleDrawerMediaUpload(this, ${idx})" ${isSent ? 'disabled' : ''} />
                 </label>
-                <button id="drawer_remove_img_btn_${idx}" class="btn-pill" style="display: ${activeImgSrc ? 'inline-flex' : 'none'}; background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 11px; padding: 5px 12px;" onclick="removeDrawerImage(${idx})" ${isSent ? 'disabled' : ''}>
-                  <i class="fa-solid fa-trash-can"></i> Remove Image
+                <button id="drawer_remove_img_btn_${idx}" class="btn-pill" style="display: ${attachmentId ? 'inline-flex' : 'none'}; background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 11px; padding: 5px 12px;" onclick="removeDrawerMedia(${idx})" ${isSent ? 'disabled' : ''}>
+                  <i class="fa-solid fa-trash-can"></i> Remove Media
                 </button>
               </div>
             </div>
 
-            <div id="drawer_img_wrap_${idx}" style="display: ${activeImgSrc ? 'flex' : 'none'}; align-items: center; gap: 14px; margin-top: 10px; background: rgba(22, 19, 41, 0.7); padding: 8px 12px; border-radius: 8px;">
-              <img id="drawer_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" />
-              <span style="font-size: 12px; color: var(--bc-text-muted);">Click thumbnail to view full image in lightbox.</span>
+            <div id="drawer_img_wrap_${idx}" style="display: ${attachmentId ? 'flex' : 'none'}; align-items: center; gap: 14px; margin-top: 10px; background: rgba(22, 19, 41, 0.7); padding: 8px 12px; border-radius: 8px;">
+              <img id="drawer_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" onerror="this.src='https://cdn-icons-png.flaticon.com/512/337/337946.png';" />
+              <div>
+                <div id="drawer_file_badge_${idx}" style="font-size: 12px; color: #fff; font-weight: 600;">Media Attached</div>
+                <span style="font-size: 11px; color: var(--bc-text-muted);">Saved in dedicated Drive folder.</span>
+              </div>
             </div>
             <input type="hidden" id="att_id_${idx}" value="${attachmentId}" />
           </div>
 
           <details style="margin-bottom: 10px; cursor: pointer; color: var(--bc-teal); font-size: 12px;" ontoggle="if(this.open) updateDrawerLivePreview(${idx})">
-            <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Images</summary>
+            <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Media</summary>
             <div id="drawer_preview_box_${idx}" style="background: #ffffff; color: #1e293b; padding: 16px; border-radius: 8px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1;">
               ${renderEmailPreviewHtml(initialBody)}
             </div>
@@ -1464,20 +1517,38 @@
       });
     }
 
-    function handleDrawerImageUpload(fileInput, idx) {
+    function handleDrawerMediaUpload(fileInput, idx) {
       uploadFileToDrive(fileInput, (uploaded) => {
-        const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
         document.getElementById(`att_id_${idx}`).value = uploaded.fileId;
 
         const thumb = document.getElementById(`drawer_thumb_${idx}`);
-        thumb.src = viewUrl;
-        thumb.onclick = () => openAttachmentPreviewDirect(viewUrl);
-        document.getElementById(`drawer_img_wrap_${idx}`).style.display = 'flex';
-        document.getElementById(`drawer_remove_img_btn_${idx}`).style.display = 'inline-flex';
+        const wrap = document.getElementById(`drawer_img_wrap_${idx}`);
+        const removeBtn = document.getElementById(`drawer_remove_img_btn_${idx}`);
+        const badge = document.getElementById(`drawer_file_badge_${idx}`);
+
+        wrap.style.display = 'flex';
+        removeBtn.style.display = 'inline-flex';
+        badge.innerText = `${uploaded.fileName} (${uploaded.mediaType.toUpperCase()})`;
 
         const bodyEl = document.getElementById(`body_${idx}`);
-        if (!bodyEl.value.includes(uploaded.fileId)) {
-          bodyEl.value += `\n\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>`;
+
+        if (uploaded.isImage) {
+          const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
+          thumb.src = viewUrl;
+          thumb.onclick = () => openAttachmentPreviewDirect(viewUrl);
+          if (!bodyEl.value.includes(uploaded.fileId)) {
+            bodyEl.value += `\n\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>`;
+          }
+        } else if (uploaded.isVideo) {
+          thumb.src = "https://cdn-icons-png.flaticon.com/512/1179/1179069.png";
+          thumb.onclick = () => window.open(uploaded.viewUrl, '_blank');
+          const videoBlock = `\n\n<div style="margin: 20px 0; text-align: center;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-block; background: #201a38; border: 1px solid #382e5c; border-radius: 12px; padding: 24px; color: #fff;"><div style="font-size: 15px; font-weight: bold; color: #38bdf8;">▶ Watch Clinical Exercise Video</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${uploaded.fileName}</div></a></div>`;
+          if (!bodyEl.value.includes(uploaded.fileId)) bodyEl.value += videoBlock;
+        } else if (uploaded.isPdf) {
+          thumb.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png";
+          thumb.onclick = () => window.open(uploaded.viewUrl, '_blank');
+          const pdfBlock = `\n\n<div style="margin: 16px 0;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:10px; background: #201a38; border: 1px solid #382e5c; border-radius: 8px; padding: 12px 18px; color: #fff;"><span style="font-size: 20px;">📄</span><span style="font-weight: 600; color: #38bdf8;">View Attached Document (${uploaded.fileName})</span></a></div>`;
+          if (!bodyEl.value.includes(uploaded.fileId)) bodyEl.value += pdfBlock;
         }
 
         if (patientTimelineStore[idx]) {
@@ -1489,13 +1560,18 @@
       });
     }
 
-    function removeDrawerImage(idx) {
+    function removeDrawerMedia(idx) {
       document.getElementById(`att_id_${idx}`).value = '';
       document.getElementById(`drawer_img_wrap_${idx}`).style.display = 'none';
       document.getElementById(`drawer_remove_img_btn_${idx}`).style.display = 'none';
 
       const bodyEl = document.getElementById(`body_${idx}`);
-      bodyEl.value = bodyEl.value.replace(/<div style="text-align: center; margin: 16px 0;">\s*<img[^>]+>\s*<\/div>/gi, '').replace(/<img[^>]+>/gi, '').trim();
+      bodyEl.value = bodyEl.value
+        .replace(/<div style="text-align: center; margin: 16px 0;">\s*<img[^>]+>\s*<\/div>/gi, '')
+        .replace(/<img[^>]+>/gi, '')
+        .replace(/<div style="margin: 20px 0; text-align: center;">[\s\S]*?<\/div>/gi, '')
+        .replace(/<div style="margin: 16px 0;">[\s\S]*?<\/div>/gi, '')
+        .trim();
 
       if (patientTimelineStore[idx]) {
         patientTimelineStore[idx].attachmentId = '';
@@ -1545,6 +1621,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'SCHEDULE_OUTREACH',
             rowNumber: activePatient.rowNumber,
@@ -1583,6 +1660,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'SCHEDULE_ALL_OUTREACH',
             rowNumber: activePatient.rowNumber,
@@ -1608,6 +1686,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'DISPATCH_CUSTOM_EMAIL',
             recipientEmail: activePatient.email,
@@ -1629,6 +1708,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'UNFREEZE_SCHEDULED_OUTREACH',
             queueRowIndex: rowIndex,
@@ -1675,7 +1755,6 @@
         return;
       }
 
-      // Group items by patient name
       const grouped = {};
       queueList.forEach(q => {
         const name = (q.patientName || 'Unknown Patient').trim();
@@ -1808,6 +1887,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'DELETE_SCHEDULED_OUTREACH', queueRowIndex: rowIndex })
         });
         const json = await res.json();
