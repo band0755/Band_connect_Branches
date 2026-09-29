@@ -306,7 +306,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;">Patient Management</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Live status updating & email outreach scheduling</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Instant cached loading & background delta synchronization</span>
       </div>
       <div style="display: flex; gap: 12px; align-items: center;">
         <input type="text" id="searchInput" class="search-input" placeholder="🔍 Universal search roster..." oninput="applyAllFilters()" />
@@ -368,7 +368,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical diagrams, PDFs, videos, and two-way Google Docs synchronization</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical diagrams, PDFs, videos, and two-way Google Docs synchronization[cite: 7]</span>
       </div>
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="triggerSyncFromGoogleDocs()">
@@ -402,7 +402,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-envelope-open-text" style="color: var(--bc-orange);"></i> Queued Outreach Schedule</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Grouped patient view: click any patient card to expand, contract, edit schedule, or cancel[cite: 9, 10]</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Grouped patient view: click any patient card to expand, contract, edit schedule, or cancel</span>
       </div>
       <div>
         <button class="btn-pill" onclick="loadQueueDashboard()">
@@ -839,6 +839,9 @@
       document.getElementById('pinInput').value = '';
     }
 
+    // ----------------------------------------------------
+    // HIGH-SPEED INSTANT LOAD & BACKGROUND DELTA SYNC
+    // ----------------------------------------------------
     async function loadPatients(forceFullReload = false) {
       let localRoster = [];
       try {
@@ -847,6 +850,7 @@
 
       let lastSync = localStorage.getItem('BC_LAST_SYNC_TIME') || '0';
 
+      // Render instantly from local storage (0ms render time)
       if (localRoster.length > 0 && !forceFullReload) {
         patientStore = localRoster;
         populateColumnFilterDropdowns(patientStore);
@@ -869,19 +873,22 @@
             result.data.forEach(p => {
               if (!existingRowNumbers.has(p.rowNumber)) localRoster.push(p);
             });
+            patientStore = localRoster;
+            localStorage.setItem('BC_PATIENTS_ROSTER', JSON.stringify(localRoster));
+            populateColumnFilterDropdowns(patientStore);
+            applyAllFilters();
           } else if (!result.isDelta) {
             localRoster = result.data;
+            patientStore = localRoster;
+            localStorage.setItem('BC_PATIENTS_ROSTER', JSON.stringify(localRoster));
+            populateColumnFilterDropdowns(patientStore);
+            applyAllFilters();
           }
 
-          patientStore = localRoster;
-          localStorage.setItem('BC_PATIENTS_ROSTER', JSON.stringify(localRoster));
           localStorage.setItem('BC_LAST_SYNC_TIME', result.syncTime || Date.now());
-
-          populateColumnFilterDropdowns(patientStore);
-          applyAllFilters();
         }
       } catch (err) {
-        console.error('Failed to sync roster:', err);
+        console.error('Failed to sync roster in background:', err);
       } finally {
         hideSpinner();
       }
@@ -1180,7 +1187,6 @@
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
           <textarea id="studio_body_${idx}" class="card-textarea" oninput="updateStudioLivePreview(${idx})">${escapeHtml(tpl.bodyText)}</textarea>
 
-          <!-- MULTI-FORMAT MEDIA CONTROLS -->
           <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
@@ -1567,7 +1573,7 @@
               <img id="drawer_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" onerror="this.src='https://cdn-icons-png.flaticon.com/512/337/337946.png';" />
               <div>
                 <div id="drawer_file_badge_${idx}" style="font-size: 12px; color: #fff; font-weight: 600;">Media Attached</div>
-                <span style="font-size: 11px; color: var(--bc-text-muted);">Saved in designated Drive folder.</span>
+                <span style="font-size: 11px; color: var(--bc-text-muted);">Saved in dedicated Drive folder.</span>
               </div>
             </div>
             <input type="hidden" id="att_id_${idx}" value="${attachmentId}" />
