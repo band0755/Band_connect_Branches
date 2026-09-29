@@ -368,7 +368,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical diagrams, and two-way Google Docs synchronization</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical diagrams, and two-way Google Docs synchronization[cite: 7]</span>
       </div>
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="triggerSyncFromGoogleDocs()">
@@ -411,10 +411,10 @@
       </div>
     </div>
 
-    <!-- Clean Accordion Container -->
     <div id="queueCardsContainer" style="display: flex; flex-direction: column; gap: 14px;"></div>
   </main>
 
+  <!-- PATIENT TIMELINE DRAWER -->
   <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
   <aside id="timelineDrawer" class="drawer-panel">
     <div class="drawer-header">
@@ -434,7 +434,7 @@
           </div>
 
           <div style="flex: 1; min-width: 220px;">
-            <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 3px;">Template Track:</label>
+            <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 3px;">Template Track (Choose protocol sequence):</label>
             <select id="drawerConditionOverride" class="native-input" style="background: var(--bc-midnight) !important; padding: 6px 10px; border-radius: 6px; width: 100%;" onchange="onDrawerConditionOverrideChanged()"></select>
           </div>
         </div>
@@ -450,6 +450,7 @@
     <div class="drawer-body" id="drawerCards"></div>
   </aside>
 
+  <!-- LIGHTBOX PREVIEW MODAL -->
   <div id="imagePreviewModal" class="modal-overlay" onclick="closeImagePreviewModal()" style="z-index: 3000;">
     <div class="modal-box" onclick="event.stopPropagation();" style="max-width: 600px; text-align: center; position: relative;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
@@ -478,6 +479,7 @@
     let patientQueuedMap = {};
     let patientStartDateObj = new Date();
     let currentRawQueue = [];
+    let currentSelectedTrackOverride = null;
 
     let conditionMap = {
       UE: new Set(['General']),
@@ -1229,9 +1231,14 @@
       }
     }
 
+    // ----------------------------------------------------
+    // PATIENT TIMELINE DRAWER (WITH PER-PATIENT IMAGE CONTROLS & TRACK OVERRIDE)
+    // ----------------------------------------------------
     async function openPatientTimeline(rowNumber, conditionOverride = null) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
       if (!activePatient) return;
+
+      currentSelectedTrackOverride = conditionOverride !== null ? conditionOverride : (currentSelectedTrackOverride || activePatient.condition);
 
       document.getElementById('drawerPatientName').innerText = activePatient.patientName;
       document.getElementById('drawerMeta').innerText = `${activePatient.deviceType} • Diagnosed: ${activePatient.condition}`;
@@ -1242,7 +1249,7 @@
       document.getElementById('drawerOverlay').style.display = 'block';
       document.getElementById('timelineDrawer').classList.add('drawer-open');
 
-      populateDrawerConditionOverrideDropdown(activePatient);
+      populateDrawerConditionOverrideDropdown(activePatient, currentSelectedTrackOverride);
 
       try {
         const [timelineRes, queueRes] = await Promise.all([
@@ -1251,7 +1258,7 @@
             body: JSON.stringify({
               action: 'GET_PATIENT_TIMELINE',
               rowNumber: rowNumber,
-              conditionOverride: conditionOverride
+              conditionOverride: currentSelectedTrackOverride
             })
           }),
           fetch(`${API_URL}?action=GET_PATIENT_QUEUE&patientName=${encodeURIComponent(activePatient.patientName)}`)
@@ -1273,28 +1280,41 @@
       }
     }
 
-    function populateDrawerConditionOverrideDropdown(patient) {
+    function populateDrawerConditionOverrideDropdown(patient, activeSelectedTrack) {
       const select = document.getElementById('drawerConditionOverride');
-      const branch = getBranchFromDevice(patient.deviceType);
-      const available = Array.from(conditionMap[branch] || ['General']).sort();
-
       select.innerHTML = '';
-      available.forEach(c => {
+
+      // Populate ALL conditions from both UE & LE so user can switch freely to any protocol track
+      const allUE = Array.from(conditionMap.UE || []).sort();
+      const allLE = Array.from(conditionMap.LE || []).sort();
+
+      const optgroupUE = document.createElement('optgroup');
+      optgroupUE.label = 'UE (Handle / Upper Extremity)';
+      allUE.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c;
-        opt.textContent = c === 'General' ? 'General (Default Baseline)' : c;
-        select.appendChild(opt);
+        opt.textContent = c;
+        optgroupUE.appendChild(opt);
       });
+      select.appendChild(optgroupUE);
 
-      if (available.includes(patient.condition)) {
-        select.value = patient.condition;
-      } else {
-        select.value = 'General';
-      }
+      const optgroupLE = document.createElement('optgroup');
+      optgroupLE.label = 'LE (Cuff / Lower Extremity)';
+      allLE.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        optgroupLE.appendChild(opt);
+      });
+      select.appendChild(optgroupLE);
+
+      // Lock dropdown value to activeSelectedTrack
+      select.value = activeSelectedTrack;
     }
 
     function onDrawerConditionOverrideChanged() {
       const chosenTrack = document.getElementById('drawerConditionOverride').value;
+      currentSelectedTrackOverride = chosenTrack;
       openPatientTimeline(activePatient.rowNumber, chosenTrack);
     }
 
@@ -1320,7 +1340,7 @@
         activePatient.isoStartDate = newDateStr;
         patientStartDateObj = new Date(newDateStr + 'T00:00:00');
 
-        openPatientTimeline(activePatient.rowNumber);
+        openPatientTimeline(activePatient.rowNumber, currentSelectedTrackOverride);
       } finally {
         hideSpinner();
       }
@@ -1344,6 +1364,14 @@
         const initialSubj = queueItem ? queueItem.subject : item.subject;
         const initialBody = queueItem ? queueItem.bodyText : item.defaultBody;
         const attachmentId = queueItem ? (queueItem.attachmentId || '') : (item.attachmentId || '');
+
+        let activeImgSrc = '';
+        if (attachmentId) {
+          activeImgSrc = `https://lh3.googleusercontent.com/d/${attachmentId}`;
+        } else {
+          const match = (initialBody || '').match(/<img[^>]+src=["']([^"']+)["']/i);
+          if (match) activeImgSrc = normalizeImageUrls(match[1]);
+        }
 
         let statusBadge = `<span style="color:var(--bc-teal); font-size:12px;">Track: ${escapeHtml(item.condition)}</span>`;
         let actionButtonsHtml = '';
@@ -1397,7 +1425,29 @@
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
           <textarea id="body_${idx}" class="card-textarea" oninput="updateDrawerLivePreview(${idx})" ${isSent ? 'disabled' : ''}>${escapeHtml(initialBody)}</textarea>
 
-          <input type="hidden" id="att_id_${idx}" value="${attachmentId}" />
+          <!-- DEDICATED IMAGE CONTROLS IN PATIENT DRAWER -->
+          <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
+                <i class="fa-solid fa-image"></i> Patient Dedicated Image / Diagram:
+              </span>
+              <div style="display: flex; gap: 8px;">
+                <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 11px; cursor: pointer; padding: 5px 12px;">
+                  <i class="fa-solid fa-upload"></i> ${activeImgSrc ? 'Replace Image' : 'Add New Image'}
+                  <input type="file" accept="image/*" style="display: none;" onchange="handleDrawerImageUpload(this, ${idx})" ${isSent ? 'disabled' : ''} />
+                </label>
+                <button id="drawer_remove_img_btn_${idx}" class="btn-pill" style="display: ${activeImgSrc ? 'inline-flex' : 'none'}; background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 11px; padding: 5px 12px;" onclick="removeDrawerImage(${idx})" ${isSent ? 'disabled' : ''}>
+                  <i class="fa-solid fa-trash-can"></i> Remove Image
+                </button>
+              </div>
+            </div>
+
+            <div id="drawer_img_wrap_${idx}" style="display: ${activeImgSrc ? 'flex' : 'none'}; align-items: center; gap: 14px; margin-top: 10px; background: rgba(22, 19, 41, 0.7); padding: 8px 12px; border-radius: 8px;">
+              <img id="drawer_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" />
+              <span style="font-size: 12px; color: var(--bc-text-muted);">Click thumbnail to view full image in lightbox.</span>
+            </div>
+            <input type="hidden" id="att_id_${idx}" value="${attachmentId}" />
+          </div>
 
           <details style="margin-bottom: 10px; cursor: pointer; color: var(--bc-teal); font-size: 12px;" ontoggle="if(this.open) updateDrawerLivePreview(${idx})">
             <summary><i class="fa-solid fa-eye"></i> Preview Rendered Email Layout & Images</summary>
@@ -1412,6 +1462,47 @@
         `;
         container.appendChild(card);
       });
+    }
+
+    function handleDrawerImageUpload(fileInput, idx) {
+      uploadFileToDrive(fileInput, (uploaded) => {
+        const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
+        document.getElementById(`att_id_${idx}`).value = uploaded.fileId;
+
+        const thumb = document.getElementById(`drawer_thumb_${idx}`);
+        thumb.src = viewUrl;
+        thumb.onclick = () => openAttachmentPreviewDirect(viewUrl);
+        document.getElementById(`drawer_img_wrap_${idx}`).style.display = 'flex';
+        document.getElementById(`drawer_remove_img_btn_${idx}`).style.display = 'inline-flex';
+
+        const bodyEl = document.getElementById(`body_${idx}`);
+        if (!bodyEl.value.includes(uploaded.fileId)) {
+          bodyEl.value += `\n\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>`;
+        }
+
+        if (patientTimelineStore[idx]) {
+          patientTimelineStore[idx].attachmentId = uploaded.fileId;
+          patientTimelineStore[idx].defaultBody = bodyEl.value;
+        }
+
+        updateDrawerLivePreview(idx);
+      });
+    }
+
+    function removeDrawerImage(idx) {
+      document.getElementById(`att_id_${idx}`).value = '';
+      document.getElementById(`drawer_img_wrap_${idx}`).style.display = 'none';
+      document.getElementById(`drawer_remove_img_btn_${idx}`).style.display = 'none';
+
+      const bodyEl = document.getElementById(`body_${idx}`);
+      bodyEl.value = bodyEl.value.replace(/<div style="text-align: center; margin: 16px 0;">\s*<img[^>]+>\s*<\/div>/gi, '').replace(/<img[^>]+>/gi, '').trim();
+
+      if (patientTimelineStore[idx]) {
+        patientTimelineStore[idx].attachmentId = '';
+        patientTimelineStore[idx].defaultBody = bodyEl.value;
+      }
+
+      updateDrawerLivePreview(idx);
     }
 
     function updateDrawerLivePreview(idx) {
@@ -1469,7 +1560,7 @@
         });
         const json = await res.json();
         alert(json.success ? `✅ ${json.message}` : `❌ ${json.message}`);
-        openPatientTimeline(activePatient.rowNumber);
+        openPatientTimeline(activePatient.rowNumber, currentSelectedTrackOverride);
       } finally {
         hideSpinner();
       }
@@ -1502,7 +1593,7 @@
         });
         const json = await res.json();
         alert(json.message);
-        openPatientTimeline(activePatient.rowNumber);
+        openPatientTimeline(activePatient.rowNumber, currentSelectedTrackOverride);
       } finally {
         hideSpinner();
       }
@@ -1607,7 +1698,6 @@
         const frozen = pData.items.filter(i => (i.status || '').includes('Frozen')).length;
         const canceled = pData.items.filter(i => (i.status || '').includes('Canceled')).length;
 
-        // Build child item rows for this patient
         let childRows = '';
         pData.items.forEach(q => {
           const isScheduled = q.status === 'Scheduled';
@@ -1649,7 +1739,6 @@
           `;
         });
 
-        // Master Summary Card (starts collapsed)
         const card = document.createElement('div');
         card.style.cssText = 'background: var(--bc-card); border: 1px solid var(--bc-border); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3);';
 
@@ -1678,7 +1767,6 @@
             </div>
           </div>
 
-          <!-- Collapsible Body (Hidden by default) -->
           <div id="group_body_${pIdx}" style="display: none; border-top: 1px solid var(--bc-border); background: var(--bc-midnight); overflow-x: auto;">
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
               <thead>
@@ -1733,6 +1821,7 @@
     function closeDrawer() {
       document.getElementById('drawerOverlay').style.display = 'none';
       document.getElementById('timelineDrawer').classList.remove('drawer-open');
+      currentSelectedTrackOverride = null;
     }
 
     function escapeHtml(str) {
