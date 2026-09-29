@@ -397,11 +397,12 @@
     <div id="studioCardsContainer" style="display: flex; flex-direction: column; gap: 16px;"></div>
   </main>
 
+  <!-- VIEW 3: COLLAPSED & GROUPED PATIENT QUEUE (CLEAN ACCORDION) -->
   <main id="queue-view">
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-envelope-open-text" style="color: var(--bc-orange);"></i> Queued Outreach Schedule</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Live status tracking: scheduled emails, pauses, and dispatches</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">Grouped patient view: click any patient to expand their outreach sequence</span>
       </div>
       <div>
         <button class="btn-pill" onclick="loadQueueDashboard()">
@@ -414,13 +415,9 @@
       <table>
         <thead>
           <tr>
-            <th style="min-width: 140px;"><span class="th-title">Patient</span></th>
-            <th style="min-width: 160px;"><span class="th-title">Email</span></th>
-            <th style="min-width: 160px;"><span class="th-title">Scheduled Date & Time</span></th>
-            <th style="min-width: 200px;"><span class="th-title">Subject Line</span></th>
-            <th style="min-width: 100px;"><span class="th-title">Media</span></th>
-            <th style="min-width: 120px;"><span class="th-title">Status</span></th>
-            <th style="min-width: 170px;"><span class="th-title">Actions</span></th>
+            <th colspan="3" style="min-width: 300px;"><span class="th-title">Patient Profile</span></th>
+            <th colspan="2" style="min-width: 240px;"><span class="th-title">Outreach Track Status</span></th>
+            <th style="text-align: right; min-width: 140px;"><span class="th-title">Sequence Action</span></th>
           </tr>
         </thead>
         <tbody id="queueTableBody"></tbody>
@@ -1242,6 +1239,9 @@
       }
     }
 
+    // ----------------------------------------------------
+    // PATIENT TIMELINE DRAWER
+    // ----------------------------------------------------
     async function openPatientTimeline(rowNumber, conditionOverride = null) {
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
       if (!activePatient) return;
@@ -1562,12 +1562,15 @@
         });
         const json = await res.json();
         alert(json.message);
-        openPatientTimeline(activePatient.rowNumber);
+        loadQueueDashboard();
       } finally {
         hideSpinner();
       }
     }
 
+    // ----------------------------------------------------
+    // QUEUED OUTREACH (GROUPED & COLLAPSIBLE ACCORDION)
+    // ----------------------------------------------------
     async function loadQueueDashboard() {
       showSpinner("Loading queued outreach schedule...");
       try {
@@ -1585,47 +1588,127 @@
     }
 
     function renderQueueTable(queueList) {
-      const tbody = document.getElementById('queueTableBody');
-      tbody.innerHTML = '';
-
+      const container = document.getElementById('queueTableBody');
+      
       if (!queueList || queueList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 32px; color: var(--bc-text-muted);">No outreach entries found in the queue.</td></tr>';
+        container.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 32px; color: var(--bc-text-muted);">No outreach entries found in the queue.</td></tr>';
         return;
       }
 
+      // Group items by patient name
+      const grouped = {};
       queueList.forEach(q => {
-        const tr = document.createElement('tr');
-        const isScheduled = q.status === 'Scheduled';
-        const isFrozen = q.status.includes('Frozen');
-        const isSent = q.status === 'Sent';
-
-        let statusPill = `<span class="badge-scheduled">Scheduled</span>`;
-        if (isSent) {
-          statusPill = `<span class="badge-sent"><i class="fa-solid fa-check"></i> Sent</span>`;
-        } else if (isFrozen) {
-          statusPill = `<span class="badge-frozen"><i class="fa-solid fa-pause"></i> ${escapeHtml(q.status)}</span>`;
-        } else if (q.status.includes('Canceled')) {
-          statusPill = `<span class="badge-canceled"><i class="fa-solid fa-ban"></i> Canceled</span>`;
+        const name = (q.patientName || 'Unknown Patient').trim();
+        if (!grouped[name]) {
+          grouped[name] = {
+            email: q.email || '—',
+            items: []
+          };
         }
-
-        const formattedTimeDisplay = formatScheduleDateTime(q.scheduledDate, q.scheduledTime);
-        const mediaBadge = q.attachmentId ? `<span style="color:var(--bc-teal); font-size:12px;"><i class="fa-solid fa-paperclip"></i> Yes</span>` : `<span style="color:var(--bc-text-muted); font-size:12px;">None</span>`;
-
-        tr.innerHTML = `
-          <td style="font-weight: 600;">${escapeHtml(q.patientName)}</td>
-          <td style="color: var(--bc-teal);">${escapeHtml(q.email)}</td>
-          <td><span style="color: var(--bc-orange); font-weight: 600;">${escapeHtml(formattedTimeDisplay)}</span></td>
-          <td style="max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(q.subject)}</td>
-          <td>${mediaBadge}</td>
-          <td>${statusPill}</td>
-          <td>
-            <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">
-              Cancel
-            </button>
-          </td>
-        `;
-        tbody.appendChild(tr);
+        grouped[name].items.push(q);
       });
+
+      let html = '';
+      const patientNames = Object.keys(grouped).sort();
+
+      patientNames.forEach((name, pIdx) => {
+        const pData = grouped[name];
+        const total = pData.items.length;
+        const scheduled = pData.items.filter(i => i.status === 'Scheduled').length;
+        const sent = pData.items.filter(i => i.status === 'Sent').length;
+        const frozen = pData.items.filter(i => (i.status || '').includes('Frozen')).length;
+        const canceled = pData.items.filter(i => (i.status || '').includes('Canceled')).length;
+
+        let childRows = '';
+        pData.items.forEach(q => {
+          const isScheduled = q.status === 'Scheduled';
+          const isFrozen = (q.status || '').includes('Frozen');
+          const isSent = q.status === 'Sent';
+
+          let statusPill = `<span class="badge-scheduled">Scheduled</span>`;
+          if (isSent) {
+            statusPill = `<span class="badge-sent"><i class="fa-solid fa-check"></i> Sent</span>`;
+          } else if (isFrozen) {
+            statusPill = `<span class="badge-frozen"><i class="fa-solid fa-pause"></i> ${escapeHtml(q.status)}</span>`;
+          } else if (q.status.includes('Canceled')) {
+            statusPill = `<span class="badge-canceled"><i class="fa-solid fa-ban"></i> Canceled</span>`;
+          }
+
+          const formattedTime = formatScheduleDateTime(q.scheduledDate, q.scheduledTime);
+          const mediaBadge = q.attachmentId 
+            ? `<span style="color:var(--bc-teal); font-size:12px; cursor:pointer;" onclick="openAttachmentPreview('${q.attachmentId}', 'Media')"><i class="fa-solid fa-paperclip"></i> View</span>` 
+            : `<span style="color:var(--bc-text-muted); font-size:12px;">None</span>`;
+
+          let actionBtn = `<span style="color:var(--bc-text-muted); font-size:12px;">—</span>`;
+          if (isScheduled) {
+            actionBtn = `<button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelQueueRow(${q.queueRowIndex})">Cancel</button>`;
+          } else if (isFrozen) {
+            actionBtn = `<button class="btn-pill" style="padding: 4px 10px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="unfreezeDirect(${q.queueRowIndex})"><i class="fa-solid fa-play"></i> Unfreeze</button>`;
+          }
+
+          childRows += `
+            <tr style="background: rgba(22, 19, 41, 0.45); border-bottom: 1px solid rgba(56, 46, 92, 0.5);">
+              <td colspan="2" style="padding-left: 36px; font-size: 13px; color: var(--bc-text-muted);">
+                <i class="fa-regular fa-envelope" style="margin-right: 6px; color: var(--bc-teal);"></i> ${escapeHtml(q.milestoneId || 'Milestone')}
+              </td>
+              <td style="font-size: 13px; color: var(--bc-orange); font-weight: 600;">${escapeHtml(formattedTime)}</td>
+              <td style="font-size: 13px; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(q.subject)}</td>
+              <td>${mediaBadge}</td>
+              <td>${statusPill} ${actionBtn}</td>
+            </tr>
+          `;
+        });
+
+        // Parent summary row
+        html += `
+          <tr style="cursor: pointer; background: var(--bc-card); border-bottom: 2px solid var(--bc-border); transition: background 0.2s;" onclick="togglePatientQueueGroup(${pIdx})">
+            <td colspan="3" style="padding: 16px 20px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span id="chevron_${pIdx}" style="color: var(--bc-teal); transition: transform 0.2s; font-size: 14px;"><i class="fa-solid fa-chevron-right"></i></span>
+                <div>
+                  <strong style="font-size: 15px; color: #fff;">${escapeHtml(name)}</strong>
+                  <span style="font-size: 12px; color: var(--bc-text-muted); margin-left: 8px;">(${escapeHtml(pData.email)})</span>
+                </div>
+              </div>
+            </td>
+            <td colspan="2" style="padding: 16px 20px;">
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                ${scheduled > 0 ? `<span class="badge-scheduled">${scheduled} Scheduled</span>` : ''}
+                ${sent > 0 ? `<span class="badge-sent">${sent} Sent</span>` : ''}
+                ${frozen > 0 ? `<span class="badge-frozen">${frozen} Frozen</span>` : ''}
+                ${canceled > 0 ? `<span class="badge-canceled">${canceled} Canceled</span>` : ''}
+              </div>
+            </td>
+            <td style="text-align: right; padding: 16px 20px;">
+              <span style="font-size: 12px; color: var(--bc-teal); font-weight: 600;">${total} Emails &bull; View History &rsaquo;</span>
+            </td>
+          </tr>
+          <tbody id="group_body_${pIdx}" style="display: none;">
+            <tr style="background: rgba(0,0,0,0.3); font-size: 11px; text-transform: uppercase; color: var(--bc-text-muted);">
+              <th colspan="2" style="padding-left: 36px;">Step ID</th>
+              <th>Date & Time</th>
+              <th>Subject Line</th>
+              <th>Media</th>
+              <th>Status & Action</th>
+            </tr>
+            ${childRows}
+          </tbody>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function togglePatientQueueGroup(idx) {
+      const body = document.getElementById(`group_body_${idx}`);
+      const chevron = document.getElementById(`chevron_${idx}`);
+      if (!body) return;
+
+      const isHidden = body.style.display === 'none';
+      body.style.display = isHidden ? 'table-row-group' : 'none';
+      if (chevron) {
+        chevron.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+      }
     }
 
     async function cancelQueueRow(rowIndex) {
