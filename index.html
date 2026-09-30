@@ -397,7 +397,6 @@
     <div id="studioCardsContainer" style="display: flex; flex-direction: column; gap: 16px;"></div>
   </main>
 
-  <!-- VIEW 3: COLLAPSED & GROUPED PATIENT QUEUE (CLEAN ACCORDION) -->
   <main id="queue-view">
     <div class="toolbar-bar">
       <div>
@@ -729,7 +728,7 @@
           try {
             json = JSON.parse(text);
           } catch (pe) {
-            throw new Error("Apps Script authorization expired or returned an HTML error. Verify Web App Deployment is set to 'Who has access: Anyone'.");
+            throw new Error("Apps Script authorization expired or returned an HTML error.");
           }
 
           if (json.success) {
@@ -839,6 +838,9 @@
       document.getElementById('pinInput').value = '';
     }
 
+    // ----------------------------------------------------------------------
+    // CLIENT PERSISTENT LOCAL CACHE + TRUE INCREMENTAL DELTA SYNC ENGINE
+    // ----------------------------------------------------------------------
     async function loadPatients(forceFullReload = false) {
       let localRoster = [];
       try {
@@ -847,6 +849,7 @@
 
       let lastSync = localStorage.getItem('BC_LAST_SYNC_TIME') || '0';
 
+      // Instantly render from local cache if available (0ms loading lag)
       if (localRoster.length > 0 && !forceFullReload) {
         patientStore = localRoster;
         populateColumnFilterDropdowns(patientStore);
@@ -862,6 +865,7 @@
 
         if (result.success) {
           if (result.isDelta && result.data.length > 0) {
+            // Update modified rows and append new ones without resetting the roster
             const updateMap = new Map(result.data.map(p => [p.rowNumber, p]));
             localRoster = localRoster.map(p => updateMap.get(p.rowNumber) || p);
             
@@ -873,7 +877,7 @@
             localStorage.setItem('BC_PATIENTS_ROSTER', JSON.stringify(localRoster));
             populateColumnFilterDropdowns(patientStore);
             applyAllFilters();
-          } else if (!result.isDelta) {
+          } else if (!result.isDelta && result.data.length > 0) {
             localRoster = result.data;
             patientStore = localRoster;
             localStorage.setItem('BC_PATIENTS_ROSTER', JSON.stringify(localRoster));
@@ -884,7 +888,7 @@
           localStorage.setItem('BC_LAST_SYNC_TIME', result.syncTime || Date.now());
         }
       } catch (err) {
-        console.error('Failed to sync roster in background:', err);
+        console.error('Failed to sync delta roster:', err);
       } finally {
         hideSpinner();
       }
@@ -1388,7 +1392,7 @@
           timelineJson = JSON.parse(timelineText);
           queueJson = JSON.parse(queueText);
         } catch (pe) {
-          throw new Error("Apps Script authorization expired or returned an HTML error. Verify Web App Deployment is set to 'Who has access: Anyone'.");
+          throw new Error("Apps Script authorization expired or returned an HTML error.");
         }
 
         patientTimelineStore = timelineJson.timeline || [];
