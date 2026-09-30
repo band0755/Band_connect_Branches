@@ -838,9 +838,6 @@
       document.getElementById('pinInput').value = '';
     }
 
-    // ----------------------------------------------------------------------
-    // CLIENT PERSISTENT LOCAL CACHE + TRUE INCREMENTAL DELTA SYNC ENGINE
-    // ----------------------------------------------------------------------
     async function loadPatients(forceFullReload = false) {
       let localRoster = [];
       try {
@@ -849,7 +846,6 @@
 
       let lastSync = localStorage.getItem('BC_LAST_SYNC_TIME') || '0';
 
-      // Instantly render from local cache if available (0ms loading lag)
       if (localRoster.length > 0 && !forceFullReload) {
         patientStore = localRoster;
         populateColumnFilterDropdowns(patientStore);
@@ -865,7 +861,6 @@
 
         if (result.success) {
           if (result.isDelta && result.data.length > 0) {
-            // Update modified rows and append new ones without resetting the roster
             const updateMap = new Map(result.data.map(p => [p.rowNumber, p]));
             localRoster = localRoster.map(p => updateMap.get(p.rowNumber) || p);
             
