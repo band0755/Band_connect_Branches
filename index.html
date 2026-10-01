@@ -517,8 +517,9 @@
           </div>
 
           <div style="flex: 1; min-width: 220px;">
-            <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 3px;">Template:</label>
-            <div id="drawerTemplateNote" style="background: var(--bc-midnight); padding: 8px 10px; border-radius: 6px; font-size: 13px; color: var(--bc-teal); font-weight: 600;">General protocol</div>
+            <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 3px;">Template (choose which emails this patient gets):</label>
+            <select id="drawerTemplateSelect" class="native-input" style="background: var(--bc-midnight) !important; padding: 8px 10px; border-radius: 6px; width: 100%;" onchange="onDrawerTemplateChanged()"></select>
+            <div id="drawerTemplateNote" style="font-size: 11px; color: var(--bc-teal); margin-top: 5px; line-height: 1.5;"></div>
           </div>
         </div>
 
@@ -636,6 +637,9 @@
     let currentRawQueue = [];
     let queuePatientNames = [];
     let sameDayAlertCollapsed = false;
+    // Manual template choice for the patient in the drawer: null = automatic, otherwise { branch, key, label }
+    let drawerTemplateOverride = null;
+    let drawerOverrideRow = null;
     let currentSelectedTrackOverride = null;
 
     // Which emails are ticked for "Schedule Selected" (kept while the drawer stays on the same patient + track)
@@ -1220,30 +1224,65 @@
       return String(c || '').trim().toLowerCase().replace(/\s+/g, ' ');
     }
 
+    // Apps Script sometimes answers with an error page or drops a request for a second. Try again a couple of times.
+    async function fetchJsonWithRetry(url, attempts = 3) {
+      let lastErr;
+      for (let i = 0; i < attempts; i++) {
+        try {
+          const res = await fetch(url);
+          const text = await res.text();
+          return JSON.parse(text);
+        } catch (err) {
+          lastErr = err;
+          if (i < attempts - 1) await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        }
+      }
+      throw lastErr;
+    }
+
+    function showStudioLoadError(message) {
+      document.getElementById('studioGeneralCard').innerHTML = '';
+      document.getElementById('studioChips').innerHTML = '';
+      document.getElementById('studioSelectionBanner').innerHTML = '';
+      document.getElementById('studioCardsContainer').innerHTML = `
+        <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--bc-red); border-radius: 12px; padding: 18px; line-height: 1.7;">
+          <strong style="color: #f87171;"><i class="fa-solid fa-triangle-exclamation"></i> Could not load the studio.</strong><br>
+          <span style="font-size: 13px;">${escapeHtml(message)}</span><br>
+          <span style="font-size: 12px; color: var(--bc-text-muted);">This usually means the server did not answer in time. Press Retry. If it keeps failing, check the Apps Script deployment and its Executions log.</span><br>
+          <button class="btn-pill" style="margin-top: 10px;" onclick="loadStudioTemplates()"><i class="fa-solid fa-rotate-right"></i> Retry</button>
+        </div>`;
+    }
+
     async function loadStudioTemplates() {
       showSpinner("Loading injury studio...");
       try {
-        const [tplRes, tabRes] = await Promise.all([
-          fetch(`${API_URL}?action=GET_ALL_TEMPLATES`),
-          fetch(`${API_URL}?action=GET_CONDITION_TABS`)
+        const [tplResult, tabResult] = await Promise.allSettled([
+          fetchJsonWithRetry(`${API_URL}?action=GET_ALL_TEMPLATES`),
+          fetchJsonWithRetry(`${API_URL}?action=GET_CONDITION_TABS`)
         ]);
 
-        const tplJson = await tplRes.json();
-        if (tplJson.success) allStudioTemplates = tplJson.templates;
+        // The templates are needed. Without them the studio cannot show anything.
+        if (tplResult.status !== 'fulfilled') {
+          showStudioLoadError('Failed to load the templates: ' + (tplResult.reason && tplResult.reason.message ? tplResult.reason.message : 'no answer from the server'));
+          return;
+        }
+        if (!tplResult.value || !tplResult.value.success) {
+          showStudioLoadError('The server answered with an error: ' + ((tplResult.value && tplResult.value.message) || 'unknown error'));
+          return;
+        }
+        allStudioTemplates = tplResult.value.templates || [];
 
+        // The tab links are optional. If they fail, the studio still works (links fall back to the Doc).
         studioTabs = [];
         studioDocUrl = STUDIO_DOC_URL;
-        try {
-          const tabJson = await tabRes.json();
-          if (tabJson && tabJson.success) {
-            studioTabs = tabJson.tabs || [];
-            if (tabJson.docUrl) studioDocUrl = tabJson.docUrl;
-          }
-        } catch (e) { /* older script version without this action */ }
+        if (tabResult.status === 'fulfilled' && tabResult.value && tabResult.value.success) {
+          studioTabs = tabResult.value.tabs || [];
+          if (tabResult.value.docUrl) studioDocUrl = tabResult.value.docUrl;
+        }
 
         renderStudio();
       } catch (e) {
-        alert("Failed to load studio: " + e.message);
+        showStudioLoadError(e.message);
       } finally {
         hideSpinner();
       }
@@ -1694,7 +1733,11 @@
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
       if (!activePatient) return;
 
-      // One protocol per branch: all UE conditions use UE General, all LE conditions use LE General
+      // A manual template choice only lives while the drawer stays on the same patient
+      if (drawerOverrideRow !== rowNumber) {
+        drawerTemplateOverride = null;
+        drawerOverrideRow = rowNumber;
+      }
       currentSelectedTrackOverride = 'General';
       const branchName = getBranchFromDevice(activePatient.deviceType);
 
@@ -1717,7 +1760,8 @@
             body: JSON.stringify({
               action: 'GET_PATIENT_TIMELINE',
               rowNumber: rowNumber,
-              conditionOverride: currentSelectedTrackOverride
+              templateBranch: drawerTemplateOverride ? drawerTemplateOverride.branch : '',
+              templateCondition: drawerTemplateOverride ? drawerTemplateOverride.key : ''
             })
           }),
           fetch(`${API_URL}?action=GET_PATIENT_QUEUE&patientName=${encodeURIComponent(activePatient.patientName)}`)
@@ -1737,15 +1781,30 @@
         patientTimelineStore = timelineJson.timeline || [];
         patientQueuedMap = queueJson.queuedItems || {};
 
-        // Which template does this patient follow: their own condition tab, or the branch General template
+        // Which template does this patient get: the manual choice, their own condition tab, or the branch General template
         const tplSource = timelineJson.templateSource || 'General';
+        const tplBranch = timelineJson.templateBranch || branchName;
         const isCustomTemplate = !!timelineJson.templateIsCustom;
-        currentSelectedTrackOverride = tplSource;
+        const isOverride = !!timelineJson.templateOverride;
+        currentSelectedTrackOverride = tplBranch + '|' + tplSource;
+
+        // If the server could not use the manual choice (template no longer exists), go back to automatic
+        if (drawerTemplateOverride && !isOverride) drawerTemplateOverride = null;
+
+        populateDrawerTemplateSelect(timelineJson.availableTemplates || [], timelineJson.autoTemplate || null, branchName);
+
         const patientCondition = String(activePatient.condition || '').trim();
-        document.getElementById('drawerTemplateNote').innerText = isCustomTemplate
-          ? `${tplSource} template (own template, ${branchName})`
-          : `${branchName} General template` + (patientCondition && patientCondition.toLowerCase() !== 'general' ? ` (${patientCondition} follows it)` : '');
-        
+        const noteEl = document.getElementById('drawerTemplateNote');
+        if (isOverride) {
+          noteEl.style.color = '#fbbf24';
+          noteEl.innerText = `Manual choice: this patient gets the ${tplBranch} ${tplSource === 'General' ? 'General' : tplSource} template instead of the automatic one.`;
+        } else {
+          noteEl.style.color = 'var(--bc-teal)';
+          noteEl.innerText = isCustomTemplate
+            ? `Automatic: ${tplSource} has its own template (${tplBranch}).`
+            : `Automatic: ${tplBranch} General template` + (patientCondition && patientCondition.toLowerCase() !== 'general' ? ` (${patientCondition} follows it).` : '.');
+        }
+
         const isoStart = timelineJson.startDateStr || new Date().toISOString().split('T')[0];
         document.getElementById('drawerStartDate').value = isoStart;
         patientStartDateObj = new Date(isoStart + 'T00:00:00');
@@ -1754,6 +1813,71 @@
       } catch (err) {
         cards.innerHTML = `<div style="color:var(--bc-red); padding:16px;">Error: ${err.message}</div>`;
       }
+    }
+
+    // Fills the template dropdown: "Automatic" first, then every template of the patient's branch, then the other branch
+    function populateDrawerTemplateSelect(available, auto, patientBranch) {
+      const select = document.getElementById('drawerTemplateSelect');
+      if (!select) return;
+      select.innerHTML = '';
+
+      const autoLabel = auto
+        ? (String(auto.condition).toLowerCase() === 'general' ? `${auto.branch} General` : `${auto.condition} (${auto.branch})`)
+        : 'default';
+      const autoOpt = document.createElement('option');
+      autoOpt.value = '';
+      autoOpt.textContent = `Automatic (${autoLabel})`;
+      select.appendChild(autoOpt);
+
+      const branches = [patientBranch, patientBranch === 'UE' ? 'LE' : 'UE'];
+      branches.forEach(b => {
+        const items = (available || [])
+          .filter(t => t.branch === b)
+          .sort((x, y) => (x.key === 'general' ? -1 : 0) - (y.key === 'general' ? -1 : 0) || String(x.condition).localeCompare(String(y.condition)));
+        if (items.length === 0) return;
+
+        const group = document.createElement('optgroup');
+        group.label = `${b} templates${b === patientBranch ? ' (this patient\'s branch)' : ''}`;
+        items.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = `${t.branch}|${t.key}`;
+          opt.dataset.label = t.key === 'general' ? `${t.branch} General` : t.condition;
+          opt.textContent = (t.key === 'general' ? `${t.branch} General template` : t.condition) + ` (${t.count} email${t.count === 1 ? '' : 's'})`;
+          group.appendChild(opt);
+        });
+        select.appendChild(group);
+      });
+
+      select.value = drawerTemplateOverride ? `${drawerTemplateOverride.branch}|${drawerTemplateOverride.key}` : '';
+    }
+
+    async function onDrawerTemplateChanged() {
+      const select = document.getElementById('drawerTemplateSelect');
+      if (!select || !activePatient) return;
+
+      const previous = drawerTemplateOverride ? `${drawerTemplateOverride.branch}|${drawerTemplateOverride.key}` : '';
+      const value = select.value;
+      if (value === previous) return;
+
+      // Emails already in the queue come from the old template. They stay there until they are cancelled.
+      const pending = Object.values(patientQueuedMap || {}).filter(q => {
+        const st = String((q && q.status) || '');
+        return st === 'Scheduled' || st.startsWith('Frozen');
+      }).length;
+      if (pending > 0 && !confirm(`This patient already has ${pending} scheduled or frozen email(s) from the current template.\n\nThey stay in the queue when you switch the template. To avoid double emails, press "Cancel All Scheduled" first (or cancel them in Queued Outreach).\n\nSwitch the template anyway?`)) {
+        select.value = previous;
+        return;
+      }
+
+      if (!value) {
+        drawerTemplateOverride = null;
+      } else {
+        const parts = value.split('|');
+        drawerTemplateOverride = { branch: parts[0], key: parts.slice(1).join('|') };
+      }
+
+      drawerSelection = { key: '', ids: new Set() };
+      await openPatientTimeline(activePatient.rowNumber);
     }
 
     async function onDrawerStartDateChanged() {
@@ -2638,6 +2762,8 @@
       document.getElementById('drawerOverlay').style.display = 'none';
       document.getElementById('timelineDrawer').classList.remove('drawer-open');
       currentSelectedTrackOverride = null;
+      drawerTemplateOverride = null;
+      drawerOverrideRow = null;
       drawerSelection = { key: '', ids: new Set() };
     }
 
