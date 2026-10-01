@@ -205,6 +205,8 @@
     .btn-mini:hover { color: #fff; border-color: var(--bc-teal); }
     .sel-counter { font-size: 12px; color: var(--bc-teal); font-weight: 700; }
 
+    .card-input[readonly], .card-textarea[readonly], .interval-input[readonly] { opacity: 0.85; cursor: default; }
+
     /* Media manager (Add / Replace / Delete) */
     .media-box { background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px; }
     .media-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; font-weight: 600; color: var(--bc-teal); }
@@ -404,13 +406,22 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Manage template steps, clinical diagrams, PDFs, videos, and two-way Google Docs synchronization</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">View-only copy of the email templates from Google Docs</span>
       </div>
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <a class="btn-pill" style="text-decoration: none; background: var(--bc-card-inner); border-color: var(--bc-teal); color: var(--bc-teal);" href="https://docs.google.com/document/d/1um8Caz2x0ZZ1w6cr_lbC1W49x9WDGMXGNG56eh25ZXc/edit" target="_blank" rel="noopener">
+          <i class="fa-solid fa-file-pen"></i> Open Google Doc
+        </a>
         <button class="btn-pill" style="background: var(--bc-purple-primary);" onclick="triggerSyncFromGoogleDocs()">
           <i class="fa-solid fa-file-arrow-down"></i> 🔄 Sync from Google Docs
         </button>
       </div>
+    </div>
+
+    <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid var(--bc-teal); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; font-size: 13px; line-height: 1.7;">
+      <strong style="color: var(--bc-teal);"><i class="fa-solid fa-circle-info"></i> Templates are edited in Google Docs, not here. This page is view-only.</strong><br>
+      1. Click <strong>Open Google Doc</strong> and edit the email there.<br>
+      2. Come back here and click <strong>Sync from Google Docs</strong> to bring the changes into the portal.
     </div>
 
     <div style="display: flex; gap: 14px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; background: var(--bc-card); padding: 16px; border-radius: 12px; border: 1px solid var(--bc-border);">
@@ -1241,28 +1252,23 @@
               <strong style="font-size: 15px; margin-left: 4px;">${escapeHtml(tpl.condition)}</strong>
               ${variantFromId(tpl.milestoneId) ? `<span style="background: rgba(245, 158, 11, 0.15); border: 1px solid var(--bc-orange); color: #fbbf24; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;">${variantLabel(variantFromId(tpl.milestoneId))}</span>` : ''}
             </div>
-            <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); padding: 5px 12px; font-size: 11px;" onclick="deleteTemplateStep('${tpl.milestoneId}', '${tpl.branch}')">
-              <i class="fa-solid fa-trash"></i> Delete Step
-            </button>
+            <span style="font-size: 11px; color: var(--bc-text-muted);"><i class="fa-solid fa-lock"></i> Edit in Google Docs</span>
           </div>
 
           <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px;">
             <span style="font-size: 12px; color: var(--bc-text-muted); font-weight: 600;">Day Offset:</span>
-            <input type="number" id="studio_offset_${idx}" class="interval-input" value="${tpl.dayOffset}" />
+            <input type="number" id="studio_offset_${idx}" class="interval-input" value="${tpl.dayOffset}" readonly />
           </div>
 
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
-          <input type="text" id="studio_subj_${idx}" class="card-input" value="${escapeHtml(tpl.subject)}" />
+          <input type="text" id="studio_subj_${idx}" class="card-input" value="${escapeHtml(tpl.subject)}" readonly />
 
-          <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content (Graphic inserts at cursor blinker)</label>
-          <textarea id="studio_body_${idx}" class="card-textarea" onblur="this.dataset.cursor=this.selectionStart" oninput="updateStudioLivePreview(${idx}); renderMediaList('studio', ${idx})">${escapeHtml(tpl.bodyText)}</textarea>
+          <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content</label>
+          <textarea id="studio_body_${idx}" class="card-textarea" readonly>${escapeHtml(tpl.bodyText)}</textarea>
 
           <div class="media-box">
             <div class="media-head">
-              <span><i class="fa-solid fa-photo-film"></i> Media (image / video / PDF)</span>
-              <label class="btn-pill media-add-btn"><i class="fa-solid fa-plus"></i> Add Media
-                <input type="file" accept="image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi" style="display: none;" onchange="mediaAdd('studio', ${idx}, this)" />
-              </label>
+              <span><i class="fa-solid fa-photo-film"></i> Media in this email</span>
             </div>
             <div id="studio_media_list_${idx}" class="media-list"></div>
             <input type="hidden" id="studio_att_id_${idx}" value="${tpl.attachmentId || ''}" />
@@ -1275,11 +1281,6 @@
             </div>
           </details>
 
-          <div style="display:flex; justify-content:flex-end;">
-            <button class="btn-pill" style="background: var(--bc-teal); color: #000; font-size: 12px;" onclick="saveStudioTemplate(${idx}, '${tpl.branch}', '${tpl.condition}', '${tpl.milestoneId}')">
-              <i class="fa-solid fa-floppy-disk"></i> Save & Push to Google Docs
-            </button>
-          </div>
         `;
         container.appendChild(card);
         renderMediaList('studio', idx);
@@ -1362,7 +1363,7 @@
       const attEl = document.getElementById(c.attId);
       if (!box || !bodyEl) return;
 
-      const readOnly = bodyEl.disabled;
+      const readOnly = bodyEl.disabled || bodyEl.readOnly;
       const blocks = parseMediaBlocks(bodyEl.value);
       const attId = attEl ? attEl.value : '';
       const attInBody = blocks.some(b => b.id && b.id === attId);
@@ -1504,53 +1505,6 @@
       const previewBox = document.getElementById(`studio_preview_box_${idx}`);
       if (textarea && previewBox) {
         previewBox.innerHTML = renderEmailPreviewHtml(textarea.value);
-      }
-    }
-
-    async function saveStudioTemplate(idx, branch, condition, milestoneId) {
-      const dayOffset = document.getElementById(`studio_offset_${idx}`).value;
-      const subject = document.getElementById(`studio_subj_${idx}`).value;
-      const bodyText = document.getElementById(`studio_body_${idx}`).value;
-      const attachmentId = document.getElementById(`studio_att_id_${idx}`).value;
-
-      showSpinner(`Saving Day ${dayOffset} & pushing to Google Docs...`);
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'SAVE_CONDITION_TEMPLATE',
-            branch: branch,
-            condition: condition,
-            milestoneId: milestoneId,
-            dayOffset: dayOffset,
-            subject: subject,
-            bodyText: bodyText,
-            attachmentId: attachmentId || ''
-          })
-        });
-        const json = await res.json();
-        alert(json.message);
-        loadStudioTemplates();
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    async function deleteTemplateStep(milestoneId, branch) {
-      if (!confirm("Delete this sequence step?")) return;
-      showSpinner("Deleting step...");
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'DELETE_SEQUENCE_STEP', milestoneId: milestoneId, branch: branch || '' })
-        });
-        const json = await res.json();
-        alert(json.message);
-        loadStudioTemplates();
-      } finally {
-        hideSpinner();
       }
     }
 
