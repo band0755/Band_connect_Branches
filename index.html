@@ -1385,7 +1385,7 @@
       } else {
         rows = studioRowsFor(branch, 'general');
         bannerStyle = 'background: rgba(245, 158, 11, 0.12); border: 1px solid var(--bc-orange);';
-        bannerText = `<strong>${escapeHtml(selected.name)}</strong> has no template of its own yet, so ${selected.patients === 0 ? 'its patients will follow' : (selected.patients === 1 ? '1 patient follows' : selected.patients + ' patients follow')} the <strong>${branch} General template</strong> shown below. To give it its own template, add emails to its tab in Google Docs and press Sync.`;
+        bannerText = `<strong>${escapeHtml(selected.name)}</strong> has no template of its own yet. Patients with this condition will follow the <strong>${branch} General template</strong> shown below. To give it its own template, add emails to its tab in Google Docs and press Sync.`;
       }
 
       document.getElementById('studioSelectionBanner').innerHTML = `
