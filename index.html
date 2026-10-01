@@ -500,8 +500,8 @@
         <!-- Email selection bar: tick / untick which emails go into "Schedule Selected" -->
         <div class="selection-bar">
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="btn-mini" onclick="setAllMilestoneSelection(true)"><i class="fa-solid fa-square-check"></i> Select All</button>
-            <button type="button" class="btn-mini" onclick="setAllMilestoneSelection(false)"><i class="fa-regular fa-square"></i> Deselect All</button>
+            <button type="button" class="btn-mini" onclick="setAllMilestoneSelection(true)"><i class="fa-solid fa-square-check" style="color: #34d399;"></i> Select All</button>
+            <button type="button" class="btn-mini" onclick="setAllMilestoneSelection(false)"><i class="fa-solid fa-square-xmark" style="color: #f87171;"></i> Deselect All</button>
             <button type="button" id="cancelAllBtn" class="btn-mini" style="display: none; border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelAllFromDrawer()"><i class="fa-solid fa-ban"></i> Cancel All Scheduled</button>
             <span id="selectionCounter" class="sel-counter">0 of 0 selected</span>
           </div>
@@ -610,6 +610,7 @@
     let patientStartDateObj = new Date();
     let currentRawQueue = [];
     let queuePatientNames = [];
+    let sameDayAlertCollapsed = false;
     let currentSelectedTrackOverride = null;
 
     // Which emails are ticked for "Schedule Selected" (kept while the drawer stays on the same patient + track)
@@ -1621,6 +1622,7 @@
       const key = `${activePatient ? activePatient.rowNumber : ''}|${currentSelectedTrackOverride || ''}`;
       if (drawerSelection.key !== key) {
         drawerSelection = { key: key, ids: new Set() };
+        sameDayAlertCollapsed = false;
         patientTimelineStore.forEach(item => {
           if (!isMilestoneSent(item)) drawerSelection.ids.add(String(item.id));
         });
@@ -1667,6 +1669,11 @@
       updateSelectionUI();
     }
 
+    function toggleSameDayAlert() {
+      sameDayAlertCollapsed = !sameDayAlertCollapsed;
+      updateSameDayAlert();
+    }
+
     // Warns when more than one email is going out (or already scheduled / sent) on the same day
     function updateSameDayAlert() {
       const box = document.getElementById('sameDayAlert');
@@ -1697,7 +1704,22 @@
       }
 
       const lines = days.map(d => `• <strong>Day ${d}</strong>: ${byDay[d].map(x => `${x.label} (${x.state})`).join(', ')}`);
-      box.innerHTML = `⚠️ <strong>More than one email for the same day.</strong> The patient will receive all of them.<br>${lines.join('<br>')}<br>Untick the ones that do not fit, or press <strong>Cancel</strong> on an email that is already scheduled.`;
+      const collapsed = sameDayAlertCollapsed;
+      const title = collapsed
+        ? `⚠️ <strong>${days.length} day(s) have more than one email</strong> <span style="font-weight: 400;">(Day ${days.join(', ')})</span>`
+        : `⚠️ <strong>More than one email for the same day.</strong> The patient will receive all of them.`;
+
+      box.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+          <div>${title}</div>
+          <button type="button" onclick="toggleSameDayAlert()" title="${collapsed ? 'Show details' : 'Hide details'}"
+            style="flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--bc-orange); background: rgba(245, 158, 11, 0.15); color: #fbbf24; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+            <i class="fa-solid ${collapsed ? 'fa-chevron-down' : 'fa-chevron-up'}"></i>
+          </button>
+        </div>
+        <div style="display: ${collapsed ? 'none' : 'block'}; margin-top: 6px;">
+          ${lines.join('<br>')}<br>Untick the ones that do not fit, or press <strong>Cancel</strong> on an email that is already scheduled.
+        </div>`;
       box.style.display = 'block';
     }
 
