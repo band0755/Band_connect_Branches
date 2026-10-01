@@ -205,6 +205,21 @@
     .btn-mini:hover { color: #fff; border-color: var(--bc-teal); }
     .sel-counter { font-size: 12px; color: var(--bc-teal); font-weight: 700; }
 
+    /* Media manager (Add / Replace / Delete) */
+    .media-box { background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+    .media-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; font-weight: 600; color: var(--bc-teal); }
+    .media-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .media-row { display: flex; align-items: center; gap: 12px; background: rgba(22, 19, 41, 0.7); padding: 8px 12px; border-radius: 8px; }
+    .media-thumb { width: 52px; height: 52px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer; background: #fff; flex-shrink: 0; }
+    .media-thumb-icon { display: flex; align-items: center; justify-content: center; background: var(--bc-card); color: var(--bc-teal); font-size: 22px; }
+    .media-label { flex: 1; font-size: 12px; font-weight: 600; color: #fff; min-width: 0; }
+    .media-label small { display: block; font-weight: 400; color: var(--bc-text-muted); font-size: 11px; margin-top: 2px; }
+    .media-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .media-empty { font-size: 12px; color: var(--bc-text-muted); padding: 4px 2px; }
+    .media-btn-replace { display: inline-flex; align-items: center; gap: 5px; border-color: var(--bc-teal); color: var(--bc-teal); background: rgba(56, 189, 248, 0.12); }
+    .media-btn-delete { display: inline-flex; align-items: center; gap: 5px; border-color: var(--bc-red); color: var(--bc-red); background: rgba(239, 68, 68, 0.12); }
+    .media-add-btn { background: rgba(16, 185, 129, 0.15); border-color: var(--bc-green); color: #34d399; font-size: 11px; cursor: pointer; padding: 5px 12px; }
+
     .picker-box {
       display: inline-flex; align-items: center; background: var(--bc-midnight);
       border: 1px solid var(--bc-border); border-radius: 8px; padding: 5px 12px; gap: 8px;
@@ -509,28 +524,17 @@
       <input type="text" id="editSubject" class="card-input" />
 
       <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content (Graphic inserts at cursor blinker)</label>
-      <textarea id="editBody" class="card-textarea" style="min-height: 120px;" oninput="updateEditModalPreview()"></textarea>
+      <textarea id="editBody" class="card-textarea" style="min-height: 120px;" onblur="this.dataset.cursor=this.selectionStart" oninput="updateEditModalPreview(); renderMediaList('edit', 0)"></textarea>
 
       <!-- Attached Media Controller in Edit Modal -->
-      <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-          <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
-            <i class="fa-solid fa-paperclip"></i> Attached Media (Inserts at cursor blinker):
-          </span>
-          <div style="display: flex; gap: 8px;">
-            <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 11px; cursor: pointer; padding: 5px 12px;">
-              <i class="fa-solid fa-upload"></i> Upload / Insert
-              <input type="file" accept="image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi" style="display: none;" onchange="handleEditModalMediaUpload(this)" />
-            </label>
-            <button id="editModalRemoveMediaBtn" class="btn-pill" style="display: none; background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 11px; padding: 5px 12px;" onclick="removeEditModalMedia()">
-              <i class="fa-solid fa-trash-can"></i> Remove
-            </button>
-          </div>
+      <div class="media-box">
+        <div class="media-head">
+          <span><i class="fa-solid fa-photo-film"></i> Media (image / video / PDF)</span>
+          <label class="btn-pill media-add-btn"><i class="fa-solid fa-plus"></i> Add Media
+            <input type="file" accept="image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi" style="display: none;" onchange="mediaAdd('edit', 0, this)" />
+          </label>
         </div>
-        <div id="editModalMediaWrap" style="display: none; align-items: center; gap: 12px; margin-top: 10px; background: rgba(22, 19, 41, 0.7); padding: 8px 12px; border-radius: 8px;">
-          <img id="editModalThumb" src="" alt="Thumbnail" style="width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect(this.src)" />
-          <div id="editModalFileBadge" style="font-size: 12px; color: #fff; font-weight: 600;">Media Attached</div>
-        </div>
+        <div id="editModalMediaList" class="media-list"></div>
         <input type="hidden" id="editAttachmentId" />
       </div>
 
@@ -786,6 +790,7 @@
         } catch (err) {
           alert("Upload network error: " + err.message);
         } finally {
+          fileInput.value = '';
           hideSpinner();
         }
       };
@@ -1227,31 +1232,16 @@
           <input type="text" id="studio_subj_${idx}" class="card-input" value="${escapeHtml(tpl.subject)}" />
 
           <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content (Graphic inserts at cursor blinker)</label>
-          <textarea id="studio_body_${idx}" class="card-textarea" oninput="updateStudioLivePreview(${idx})">${escapeHtml(tpl.bodyText)}</textarea>
+          <textarea id="studio_body_${idx}" class="card-textarea" onblur="this.dataset.cursor=this.selectionStart" oninput="updateStudioLivePreview(${idx}); renderMediaList('studio', ${idx})">${escapeHtml(tpl.bodyText)}</textarea>
 
-          <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-              <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
-                <i class="fa-solid fa-photo-film"></i> Clinical Media (Inserts at cursor blinker):
-              </span>
-              <div style="display: flex; gap: 8px;">
-                <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 12px; cursor: pointer; padding: 5px 12px;">
-                  <i class="fa-solid fa-upload"></i> ${tpl.attachmentId ? 'Replace Media' : 'Upload Media'}
-                  <input type="file" accept="image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi" style="display: none;" onchange="handleStudioMediaUpload(this, ${idx})" />
-                </label>
-                <button id="studio_remove_img_btn_${idx}" class="btn-pill" style="display: ${tpl.attachmentId ? 'inline-flex' : 'none'}; background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px; padding: 5px 12px;" onclick="removeStudioMedia(${idx})">
-                  <i class="fa-solid fa-trash-can"></i> Remove Media
-                </button>
-              </div>
+          <div class="media-box">
+            <div class="media-head">
+              <span><i class="fa-solid fa-photo-film"></i> Media (image / video / PDF)</span>
+              <label class="btn-pill media-add-btn"><i class="fa-solid fa-plus"></i> Add Media
+                <input type="file" accept="image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi" style="display: none;" onchange="mediaAdd('studio', ${idx}, this)" />
+              </label>
             </div>
-
-            <div id="studio_img_wrap_${idx}" style="display: ${tpl.attachmentId ? 'flex' : 'none'}; align-items: center; gap: 14px; margin-top: 10px; background: rgba(22, 19, 41, 0.7); padding: 8px 12px; border-radius: 8px;">
-              <img id="studio_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" onerror="this.src='https://cdn-icons-png.flaticon.com/512/337/337946.png';" />
-              <div>
-                <div id="studio_file_badge_${idx}" style="font-size: 12px; color: #fff; font-weight: 600;">Media Attached</div>
-                <span style="font-size: 11px; color: var(--bc-text-muted);">Saved in designated Drive folder.</span>
-              </div>
-            </div>
+            <div id="studio_media_list_${idx}" class="media-list"></div>
             <input type="hidden" id="studio_att_id_${idx}" value="${tpl.attachmentId || ''}" />
           </div>
 
@@ -1269,72 +1259,221 @@
           </div>
         `;
         container.appendChild(card);
+        renderMediaList('studio', idx);
       });
     }
 
-    function handleStudioMediaUpload(fileInput, idx) {
-      uploadFileToDrive(fileInput, (uploaded) => {
-        document.getElementById(`studio_att_id_${idx}`).value = uploaded.fileId;
+    // ----------------------------------------------------
+    // MEDIA MANAGER: Add Media / Replace Media / Delete Media
+    // Works on the email body (media lives in the body as html blocks)
+    // ----------------------------------------------------
+    const MEDIA_BLOCK_SRC = '<div[^>]*>\\s*<img[^>]*>\\s*<\\/div>|<div style="margin: 20px 0; text-align: center;"><a [\\s\\S]*?<\\/a><\\/div>|<div style="margin: 16px 0;"><a [\\s\\S]*?<\\/a><\\/div>|<img[^>]*>';
+    const MEDIA_ACCEPT = 'image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi';
 
-        const thumb = document.getElementById(`studio_thumb_${idx}`);
-        const wrap = document.getElementById(`studio_img_wrap_${idx}`);
-        const removeBtn = document.getElementById(`studio_remove_img_btn_${idx}`);
-        const badge = document.getElementById(`studio_file_badge_${idx}`);
-
-        wrap.style.display = 'flex';
-        removeBtn.style.display = 'inline-flex';
-        badge.innerText = `${uploaded.fileName} (${uploaded.mediaType.toUpperCase()})`;
-
-        const bodyEl = document.getElementById(`studio_body_${idx}`);
-        let snippet = '';
-
-        if (uploaded.isImage) {
-          const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
-          thumb.src = viewUrl;
-          thumb.onclick = () => openAttachmentPreviewDirect(viewUrl);
-          snippet = `\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>\n`;
-        } else if (uploaded.isVideo) {
-          thumb.src = "https://cdn-icons-png.flaticon.com/512/1179/1179069.png";
-          thumb.onclick = () => window.open(uploaded.viewUrl, '_blank');
-          snippet = `\n<div style="margin: 20px 0; text-align: center;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-block; background: #201a38; border: 1px solid #382e5c; border-radius: 12px; padding: 24px; color: #fff;"><div style="font-size: 15px; font-weight: bold; color: #38bdf8;">▶ Watch Clinical Exercise Video</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${uploaded.fileName}</div></a></div>\n`;
-        } else if (uploaded.isPdf) {
-          thumb.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png";
-          thumb.onclick = () => window.open(uploaded.viewUrl, '_blank');
-          snippet = `\n<div style="margin: 16px 0;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:10px; background: #201a38; border: 1px solid #382e5c; border-radius: 8px; padding: 12px 18px; color: #fff;"><span style="font-size: 20px;">📄</span><span style="font-weight: 600; color: #38bdf8;">View Attached Document (${uploaded.fileName})</span></a></div>\n`;
-        }
-
-        const startPos = bodyEl.selectionStart;
-        const endPos = bodyEl.selectionEnd;
-        bodyEl.value = bodyEl.value.substring(0, startPos) + snippet + bodyEl.value.substring(endPos);
-
-        if (currentDisplayedTemplates[idx]) {
-          currentDisplayedTemplates[idx].attachmentId = uploaded.fileId;
-          currentDisplayedTemplates[idx].bodyText = bodyEl.value;
-        }
-
-        updateStudioLivePreview(idx);
-      });
+    function mediaCtx(kind, idx) {
+      if (kind === 'drawer') {
+        return {
+          bodyId: `body_${idx}`, attId: `att_id_${idx}`, listId: `drawer_media_list_${idx}`,
+          store: () => patientTimelineStore[idx], storeBody: 'defaultBody',
+          refresh: () => updateDrawerLivePreview(idx)
+        };
+      }
+      if (kind === 'studio') {
+        return {
+          bodyId: `studio_body_${idx}`, attId: `studio_att_id_${idx}`, listId: `studio_media_list_${idx}`,
+          store: () => currentDisplayedTemplates[idx], storeBody: 'bodyText',
+          refresh: () => updateStudioLivePreview(idx)
+        };
+      }
+      return {
+        bodyId: 'editBody', attId: 'editAttachmentId', listId: 'editModalMediaList',
+        store: () => null, storeBody: '',
+        refresh: () => updateEditModalPreview()
+      };
     }
 
-    function removeStudioMedia(idx) {
-      document.getElementById(`studio_att_id_${idx}`).value = '';
-      document.getElementById(`studio_img_wrap_${idx}`).style.display = 'none';
-      document.getElementById(`studio_remove_img_btn_${idx}`).style.display = 'none';
+    function parseMediaBlocks(body) {
+      const re = new RegExp(MEDIA_BLOCK_SRC, 'gi');
+      const blocks = [];
+      let m;
+      while ((m = re.exec(body || '')) !== null) {
+        const html = m[0];
+        let type = 'pdf';
+        if (/<img/i.test(html)) type = 'image';
+        else if (/Watch Clinical Exercise Video/i.test(html)) type = 'video';
 
-      const bodyEl = document.getElementById(`studio_body_${idx}`);
-      bodyEl.value = bodyEl.value
-        .replace(/<div style="text-align: center; margin: 16px 0;">\s*<img[^>]+>\s*<\/div>/gi, '')
-        .replace(/<img[^>]+>/gi, '')
-        .replace(/<div style="margin: 20px 0; text-align: center;">[\s\S]*?<\/div>/gi, '')
-        .replace(/<div style="margin: 16px 0;">[\s\S]*?<\/div>/gi, '')
-        .trim();
+        const srcMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+        const hrefMatch = html.match(/<a [^>]*href=["']([^"']+)["']/i);
+        const url = srcMatch ? srcMatch[1] : (hrefMatch ? hrefMatch[1] : '');
+        const idMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
 
-      if (currentDisplayedTemplates[idx]) {
-        currentDisplayedTemplates[idx].attachmentId = '';
-        currentDisplayedTemplates[idx].bodyText = bodyEl.value;
+        blocks.push({
+          start: m.index, end: m.index + html.length, html: html, type: type, url: url,
+          id: idMatch ? idMatch[1] : '', isLogo: /bc-logo/.test(html)
+        });
+        if (m[0].length === 0) re.lastIndex++;
+      }
+      return blocks;
+    }
+
+    function buildMediaSnippet(uploaded) {
+      if (uploaded.isImage) {
+        const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
+        return `\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>\n`;
+      }
+      if (uploaded.isVideo) {
+        return `\n<div style="margin: 20px 0; text-align: center;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-block; background: #201a38; border: 1px solid #382e5c; border-radius: 12px; padding: 24px; color: #fff;"><div style="font-size: 15px; font-weight: bold; color: #38bdf8;">▶ Watch Clinical Exercise Video</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${uploaded.fileName}</div></a></div>\n`;
+      }
+      return `\n<div style="margin: 16px 0;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:10px; background: #201a38; border: 1px solid #382e5c; border-radius: 8px; padding: 12px 18px; color: #fff;"><span style="font-size: 20px;">📄</span><span style="font-weight: 600; color: #38bdf8;">View Attached Document (${uploaded.fileName})</span></a></div>\n`;
+    }
+
+    function openMediaUrl(el) {
+      const url = el && el.dataset ? el.dataset.url : '';
+      if (url) window.open(url, '_blank');
+    }
+
+    function renderMediaList(kind, idx) {
+      const c = mediaCtx(kind, idx);
+      const box = document.getElementById(c.listId);
+      const bodyEl = document.getElementById(c.bodyId);
+      const attEl = document.getElementById(c.attId);
+      if (!box || !bodyEl) return;
+
+      const readOnly = bodyEl.disabled;
+      const blocks = parseMediaBlocks(bodyEl.value);
+      const attId = attEl ? attEl.value : '';
+      const attInBody = blocks.some(b => b.id && b.id === attId);
+
+      const rows = [];
+      let imgNo = 0;
+
+      blocks.forEach((b, i) => {
+        let thumb, title, sub = '';
+        if (b.type === 'image') {
+          imgNo++;
+          const src = normalizeImageUrls(b.url);
+          thumb = `<img class="media-thumb" src="${escapeHtml(src)}" alt="Media" onclick="openAttachmentPreviewDirect(this.src)" />`;
+          title = b.isLogo ? 'Band Connect logo' : `Image ${imgNo}`;
+        } else if (b.type === 'video') {
+          thumb = `<div class="media-thumb media-thumb-icon" data-url="${escapeHtml(b.url)}" onclick="openMediaUrl(this)"><i class="fa-solid fa-circle-play"></i></div>`;
+          title = 'Video link';
+        } else {
+          thumb = `<div class="media-thumb media-thumb-icon" data-url="${escapeHtml(b.url)}" onclick="openMediaUrl(this)"><i class="fa-solid fa-file-pdf"></i></div>`;
+          title = 'PDF document';
+        }
+        rows.push(mediaRowHtml(kind, idx, i, thumb, title, sub, readOnly));
+      });
+
+      // Attachment set on the email but not placed inside the body (it is appended at the end when sent)
+      if (attId && !attInBody) {
+        const thumb = `<img class="media-thumb" src="https://lh3.googleusercontent.com/d/${escapeHtml(attId)}" alt="Attached" onclick="openAttachmentPreviewDirect(this.src)" onerror="this.style.visibility='hidden'" />`;
+        rows.push(mediaRowHtml(kind, idx, -1, thumb, 'Attached file', 'Added at the end of the email', readOnly));
       }
 
-      updateStudioLivePreview(idx);
+      box.innerHTML = rows.length ? rows.join('') : '<div class="media-empty">No media in this email yet. Use Add Media.</div>';
+    }
+
+    function mediaRowHtml(kind, idx, blockIdx, thumb, title, sub, readOnly) {
+      const actions = readOnly ? '' : `
+        <div class="media-actions">
+          <label class="btn-mini media-btn-replace"><i class="fa-solid fa-arrows-rotate"></i> Replace
+            <input type="file" accept="${MEDIA_ACCEPT}" style="display: none;" onchange="mediaReplace('${kind}', ${idx}, ${blockIdx}, this)" />
+          </label>
+          <button type="button" class="btn-mini media-btn-delete" onclick="mediaDelete('${kind}', ${idx}, ${blockIdx})"><i class="fa-solid fa-trash-can"></i> Delete</button>
+        </div>`;
+      return `<div class="media-row">${thumb}<div class="media-label">${title}${sub ? `<small>${sub}</small>` : ''}</div>${actions}</div>`;
+    }
+
+    // Writes the new body, keeps the attachment id consistent with what is really inside the body
+    function applyMediaBody(kind, idx, newBody, forceAttId) {
+      const c = mediaCtx(kind, idx);
+      const bodyEl = document.getElementById(c.bodyId);
+      const attEl = document.getElementById(c.attId);
+      bodyEl.value = newBody;
+
+      let attId = '';
+      if (forceAttId !== undefined) {
+        attId = forceAttId;
+      } else {
+        const blocks = parseMediaBlocks(newBody);
+        const pick = blocks.find(b => b.type === 'pdf' && b.id)
+                  || blocks.find(b => b.type === 'video' && b.id)
+                  || blocks.find(b => b.type === 'image' && !b.isLogo && b.id);
+        attId = pick ? pick.id : '';
+      }
+      if (attEl) attEl.value = attId;
+
+      const st = c.store();
+      if (st) {
+        st.attachmentId = attId;
+        if (c.storeBody) st[c.storeBody] = newBody;
+      }
+
+      renderMediaList(kind, idx);
+      c.refresh();
+    }
+
+    function insertPositionFor(bodyEl) {
+      const len = bodyEl.value.length;
+      if (bodyEl.dataset.cursor !== undefined && bodyEl.dataset.cursor !== '') {
+        const pos = Number(bodyEl.dataset.cursor);
+        if (!isNaN(pos)) return Math.min(pos, len);
+      }
+      return len;
+    }
+
+    // ADD: inserts new media at the cursor (or at the end), keeps all existing media
+    function mediaAdd(kind, idx, input) {
+      uploadFileToDrive(input, (uploaded) => {
+        const c = mediaCtx(kind, idx);
+        const bodyEl = document.getElementById(c.bodyId);
+        const pos = insertPositionFor(bodyEl);
+        const snippet = buildMediaSnippet(uploaded);
+        const newBody = bodyEl.value.substring(0, pos) + snippet + bodyEl.value.substring(pos);
+        applyMediaBody(kind, idx, newBody);
+      });
+    }
+
+    // REPLACE: swaps one existing media block with the new file, in the same position
+    function mediaReplace(kind, idx, blockIdx, input) {
+      uploadFileToDrive(input, (uploaded) => {
+        const c = mediaCtx(kind, idx);
+        const bodyEl = document.getElementById(c.bodyId);
+        const body = bodyEl.value;
+        const snippet = buildMediaSnippet(uploaded);
+        const blocks = parseMediaBlocks(body);
+        const target = blockIdx >= 0 ? blocks[blockIdx] : null;
+
+        if (target) {
+          const newBody = body.substring(0, target.start) + snippet.trim() + body.substring(target.end);
+          applyMediaBody(kind, idx, newBody);
+        } else {
+          // attachment that was not inside the body: drop it and add the new file at the cursor
+          const pos = insertPositionFor(bodyEl);
+          const newBody = body.substring(0, pos) + snippet + body.substring(pos);
+          applyMediaBody(kind, idx, newBody);
+        }
+      });
+    }
+
+    // DELETE: removes one media block from the email
+    function mediaDelete(kind, idx, blockIdx) {
+      if (!confirm('Delete this media from the email?')) return;
+      const c = mediaCtx(kind, idx);
+      const bodyEl = document.getElementById(c.bodyId);
+      const body = bodyEl.value;
+
+      if (blockIdx < 0) {
+        applyMediaBody(kind, idx, body, '');
+        return;
+      }
+
+      const blocks = parseMediaBlocks(body);
+      const target = blocks[blockIdx];
+      if (!target) return;
+      const newBody = (body.substring(0, target.start) + body.substring(target.end))
+        .replace(/\n{3,}/g, '\n\n');
+      applyMediaBody(kind, idx, newBody);
     }
 
     function updateStudioLivePreview(idx) {
@@ -1662,31 +1801,16 @@
           <input type="text" id="subj_${idx}" class="card-input" value="${escapeHtml(initialSubj)}" ${isSent ? 'disabled' : ''} />
 
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Email Body Content (Graphic inserts at cursor blinker)</label>
-          <textarea id="body_${idx}" class="card-textarea" oninput="updateDrawerLivePreview(${idx})" ${isSent ? 'disabled' : ''}>${escapeHtml(initialBody)}</textarea>
+          <textarea id="body_${idx}" class="card-textarea" onblur="this.dataset.cursor=this.selectionStart" oninput="updateDrawerLivePreview(${idx}); renderMediaList('drawer', ${idx})" ${isSent ? 'disabled' : ''}>${escapeHtml(initialBody)}</textarea>
 
-          <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--bc-border); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-              <span style="font-size: 12px; font-weight: 600; color: var(--bc-teal);">
-                <i class="fa-solid fa-photo-film"></i> Patient Dedicated Media (Inserts at cursor blinker):
-              </span>
-              <div style="display: flex; gap: 8px;">
-                <label class="btn-pill" style="background: rgba(56, 189, 248, 0.15); border-color: var(--bc-teal); color: var(--bc-teal); font-size: 11px; cursor: pointer; padding: 5px 12px;">
-                  <i class="fa-solid fa-upload"></i> ${attachmentId ? 'Replace Media' : 'Upload Media'}
-                  <input type="file" accept="image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi" style="display: none;" onchange="handleDrawerMediaUpload(this, ${idx})" ${isSent ? 'disabled' : ''} />
-                </label>
-                <button id="drawer_remove_img_btn_${idx}" class="btn-pill" style="display: ${attachmentId ? 'inline-flex' : 'none'}; background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 11px; padding: 5px 12px;" onclick="removeDrawerMedia(${idx})" ${isSent ? 'disabled' : ''}>
-                  <i class="fa-solid fa-trash-can"></i> Remove Media
-                </button>
-              </div>
+          <div class="media-box">
+            <div class="media-head">
+              <span><i class="fa-solid fa-photo-film"></i> Media (image / video / PDF)</span>
+              ${isSent ? '' : `<label class="btn-pill media-add-btn"><i class="fa-solid fa-plus"></i> Add Media
+                <input type="file" accept="image/*,application/pdf,video/*,.mp4,.mov,.m4v,.webm,.avi" style="display: none;" onchange="mediaAdd('drawer', ${idx}, this)" />
+              </label>`}
             </div>
-
-            <div id="drawer_img_wrap_${idx}" style="display: ${attachmentId ? 'flex' : 'none'}; align-items: center; gap: 14px; margin-top: 10px; background: rgba(22, 19, 41, 0.7); padding: 8px 12px; border-radius: 8px;">
-              <img id="drawer_thumb_${idx}" src="${activeImgSrc}" alt="Thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bc-border); cursor: pointer;" onclick="openAttachmentPreviewDirect('${activeImgSrc}')" onerror="this.src='https://cdn-icons-png.flaticon.com/512/337/337946.png';" />
-              <div>
-                <div id="drawer_file_badge_${idx}" style="font-size: 12px; color: #fff; font-weight: 600;">Media Attached</div>
-                <span style="font-size: 11px; color: var(--bc-text-muted);">Saved in designated Drive folder.</span>
-              </div>
-            </div>
+            <div id="drawer_media_list_${idx}" class="media-list"></div>
             <input type="hidden" id="att_id_${idx}" value="${attachmentId}" />
           </div>
 
@@ -1702,74 +1826,10 @@
           </div>
         `;
         container.appendChild(card);
+        renderMediaList('drawer', idx);
       });
 
       updateSelectionUI();
-    }
-
-    function handleDrawerMediaUpload(fileInput, idx) {
-      uploadFileToDrive(fileInput, (uploaded) => {
-        document.getElementById(`att_id_${idx}`).value = uploaded.fileId;
-
-        const thumb = document.getElementById(`drawer_thumb_${idx}`);
-        const wrap = document.getElementById(`drawer_img_wrap_${idx}`);
-        const removeBtn = document.getElementById(`drawer_remove_img_btn_${idx}`);
-        const badge = document.getElementById(`drawer_file_badge_${idx}`);
-
-        wrap.style.display = 'flex';
-        removeBtn.style.display = 'inline-flex';
-        badge.innerText = `${uploaded.fileName} (${uploaded.mediaType.toUpperCase()})`;
-
-        const bodyEl = document.getElementById(`body_${idx}`);
-        let snippet = '';
-
-        if (uploaded.isImage) {
-          const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
-          thumb.src = viewUrl;
-          thumb.onclick = () => openAttachmentPreviewDirect(viewUrl);
-          snippet = `\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>\n`;
-        } else if (uploaded.isVideo) {
-          thumb.src = "https://cdn-icons-png.flaticon.com/512/1179/1179069.png";
-          thumb.onclick = () => window.open(uploaded.viewUrl, '_blank');
-          snippet = `\n<div style="margin: 20px 0; text-align: center;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-block; background: #201a38; border: 1px solid #382e5c; border-radius: 12px; padding: 24px; color: #fff;"><div style="font-size: 15px; font-weight: bold; color: #38bdf8;">▶ Watch Clinical Exercise Video</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${uploaded.fileName}</div></a></div>\n`;
-        } else if (uploaded.isPdf) {
-          thumb.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png";
-          thumb.onclick = () => window.open(uploaded.viewUrl, '_blank');
-          snippet = `\n<div style="margin: 16px 0;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:10px; background: #201a38; border: 1px solid #382e5c; border-radius: 8px; padding: 12px 18px; color: #fff;"><span style="font-size: 20px;">📄</span><span style="font-weight: 600; color: #38bdf8;">View Attached Document (${uploaded.fileName})</span></a></div>\n`;
-        }
-
-        const startPos = bodyEl.selectionStart;
-        const endPos = bodyEl.selectionEnd;
-        bodyEl.value = bodyEl.value.substring(0, startPos) + snippet + bodyEl.value.substring(endPos);
-
-        if (patientTimelineStore[idx]) {
-          patientTimelineStore[idx].attachmentId = uploaded.fileId;
-          patientTimelineStore[idx].defaultBody = bodyEl.value;
-        }
-
-        updateDrawerLivePreview(idx);
-      });
-    }
-
-    function removeDrawerMedia(idx) {
-      document.getElementById(`att_id_${idx}`).value = '';
-      document.getElementById(`drawer_img_wrap_${idx}`).style.display = 'none';
-      document.getElementById(`drawer_remove_img_btn_${idx}`).style.display = 'none';
-
-      const bodyEl = document.getElementById(`body_${idx}`);
-      bodyEl.value = bodyEl.value
-        .replace(/<div style="text-align: center; margin: 16px 0;">\s*<img[^>]+>\s*<\/div>/gi, '')
-        .replace(/<img[^>]+>/gi, '')
-        .replace(/<div style="margin: 20px 0; text-align: center;">[\s\S]*?<\/div>/gi, '')
-        .replace(/<div style="margin: 16px 0;">[\s\S]*?<\/div>/gi, '')
-        .trim();
-
-      if (patientTimelineStore[idx]) {
-        patientTimelineStore[idx].attachmentId = '';
-        patientTimelineStore[idx].defaultBody = bodyEl.value;
-      }
-
-      updateDrawerLivePreview(idx);
     }
 
     function updateDrawerLivePreview(idx) {
@@ -2192,21 +2252,8 @@
 
       const attId = qItem.attachmentId || '';
       document.getElementById('editAttachmentId').value = attId;
-
-      const wrap = document.getElementById('editModalMediaWrap');
-      const thumb = document.getElementById('editModalThumb');
-      const removeBtn = document.getElementById('editModalRemoveMediaBtn');
-      const badge = document.getElementById('editModalFileBadge');
-
-      if (attId) {
-        wrap.style.display = 'flex';
-        removeBtn.style.display = 'inline-flex';
-        thumb.src = `https://lh3.googleusercontent.com/d/${attId}`;
-        badge.innerText = `Media ID: ${attId.slice(0, 10)}...`;
-      } else {
-        wrap.style.display = 'none';
-        removeBtn.style.display = 'none';
-      }
+      delete document.getElementById('editBody').dataset.cursor;
+      renderMediaList('edit', 0);
 
       updateEditModalPreview();
       document.getElementById('editQueueModal').style.display = 'flex';
@@ -2220,50 +2267,6 @@
       const body = document.getElementById('editBody').value;
       const box = document.getElementById('editModalPreviewBox');
       if (box) box.innerHTML = renderEmailPreviewHtml(body);
-    }
-
-    function handleEditModalMediaUpload(fileInput) {
-      uploadFileToDrive(fileInput, (uploaded) => {
-        document.getElementById('editAttachmentId').value = uploaded.fileId;
-        const wrap = document.getElementById('editModalMediaWrap');
-        const thumb = document.getElementById('editModalThumb');
-        const removeBtn = document.getElementById('editModalRemoveMediaBtn');
-        const badge = document.getElementById('editModalFileBadge');
-
-        wrap.style.display = 'flex';
-        removeBtn.style.display = 'inline-flex';
-        badge.innerText = `${uploaded.fileName} (${uploaded.mediaType.toUpperCase()})`;
-
-        const bodyEl = document.getElementById('editBody');
-        let snippet = '';
-
-        if (uploaded.isImage) {
-          const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
-          thumb.src = viewUrl;
-          snippet = `\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>\n`;
-        } else if (uploaded.isVideo) {
-          thumb.src = "https://cdn-icons-png.flaticon.com/512/1179/1179069.png";
-          snippet = `\n<div style="margin: 20px 0; text-align: center;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-block; background: #201a38; border: 1px solid #382e5c; border-radius: 12px; padding: 24px; color: #fff;"><div style="font-size: 15px; font-weight: bold; color: #38bdf8;">▶ Watch Clinical Exercise Video</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${uploaded.fileName}</div></a></div>\n`;
-        } else if (uploaded.isPdf) {
-          thumb.src = "https://cdn-icons-png.flaticon.com/512/337/337946.png";
-          snippet = `\n<div style="margin: 16px 0;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:10px; background: #201a38; border: 1px solid #382e5c; border-radius: 8px; padding: 12px 18px; color: #fff;"><span style="font-size: 20px;">📄</span><span style="font-weight: 600; color: #38bdf8;">View Attached Document (${uploaded.fileName})</span></a></div>\n`;
-        }
-
-        const startPos = bodyEl.selectionStart;
-        const endPos = bodyEl.selectionEnd;
-        bodyEl.value = bodyEl.value.substring(0, startPos) + snippet + bodyEl.value.substring(endPos);
-
-        updateEditModalPreview();
-      });
-    }
-
-    function removeEditModalMedia() {
-      document.getElementById('editAttachmentId').value = '';
-      document.getElementById('editModalMediaWrap').style.display = 'none';
-      document.getElementById('editModalRemoveMediaBtn').style.display = 'none';
-      const bodyEl = document.getElementById('editBody');
-      bodyEl.value = bodyEl.value.replace(/<div style="text-align: center; margin: 16px 0;">\s*<img[^>]+>\s*<\/div>/gi, '').replace(/<img[^>]+>/gi, '').trim();
-      updateEditModalPreview();
     }
 
     async function submitEditQueueOutreach() {
