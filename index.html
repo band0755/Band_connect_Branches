@@ -191,9 +191,20 @@
       display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none;
     }
     .select-check input[type="checkbox"] {
-      width: 18px; height: 18px; accent-color: var(--bc-green); cursor: pointer; flex-shrink: 0;
+      -webkit-appearance: none; appearance: none;
+      width: 22px; height: 22px; flex-shrink: 0; cursor: pointer; position: relative;
+      background: var(--bc-midnight); border: 2px solid #8b7fb8; border-radius: 6px;
+      transition: background 0.15s ease, border-color 0.15s ease;
     }
-    .select-check input[type="checkbox"]:disabled { cursor: not-allowed; opacity: 0.5; }
+    .select-check input[type="checkbox"]:hover:not(:disabled) { border-color: var(--bc-green); }
+    .select-check input[type="checkbox"]:checked { background: var(--bc-green); border-color: var(--bc-green); }
+    .select-check input[type="checkbox"]:checked::after {
+      content: ''; position: absolute; left: 50%; top: 50%;
+      width: 5px; height: 10px; border: solid #ffffff; border-width: 0 3px 3px 0;
+      transform: translate(-50%, -60%) rotate(45deg);
+    }
+    .select-check input[type="checkbox"]:disabled { cursor: not-allowed; opacity: 0.55; }
+    .select-check input[type="checkbox"]:focus-visible { outline: 2px solid var(--bc-teal); outline-offset: 2px; }
     .selection-bar {
       display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
       padding-top: 10px; border-top: 1px dashed var(--bc-border);
@@ -1783,7 +1794,7 @@
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap: 10px; flex-wrap: wrap;">
             <label class="select-check" title="${isSent ? 'Already sent' : 'Include this email in Schedule Selected'}">
-              <input type="checkbox" id="sel_${idx}" ${isSelected ? 'checked' : ''} ${isSent ? 'disabled' : ''} onchange="onMilestoneToggle(${idx})" />
+              <input type="checkbox" id="sel_${idx}" ${(isSelected || isSent) ? 'checked' : ''} ${isSent ? 'disabled' : ''} onchange="onMilestoneToggle(${idx})" />
               <strong style="color:#fff; font-size: 15px;">${escapeHtml(item.title)}</strong>
             </label>
             ${statusBadge}
