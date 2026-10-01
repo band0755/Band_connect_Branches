@@ -214,6 +214,8 @@
       background: transparent; border: 1px solid var(--bc-border); color: var(--bc-text-muted);
     }
     .btn-mini:hover { color: #fff; border-color: var(--bc-teal); }
+    .btn-mini.active-select { background: rgba(16, 185, 129, 0.22); border-color: var(--bc-green); color: #34d399; font-weight: 700; box-shadow: 0 0 0 1px var(--bc-green) inset; }
+    .btn-mini.active-deselect { background: rgba(239, 68, 68, 0.22); border-color: var(--bc-red); color: #f87171; font-weight: 700; box-shadow: 0 0 0 1px var(--bc-red) inset; }
     .sel-counter { font-size: 12px; color: var(--bc-teal); font-weight: 700; }
 
     .card-input[readonly], .card-textarea[readonly], .interval-input[readonly] { opacity: 0.85; cursor: default; }
@@ -500,8 +502,8 @@
         <!-- Email selection bar: tick / untick which emails go into "Schedule Selected" -->
         <div class="selection-bar">
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="btn-mini" onclick="setAllMilestoneSelection(true)"><i class="fa-solid fa-square-check" style="color: #34d399;"></i> Select All</button>
-            <button type="button" class="btn-mini" onclick="setAllMilestoneSelection(false)"><i class="fa-solid fa-square-xmark" style="color: #f87171;"></i> Deselect All</button>
+            <button type="button" id="selectAllBtn" class="btn-mini" onclick="setAllMilestoneSelection(true)"><i class="fa-solid fa-square-check" style="color: #34d399;"></i> Select All</button>
+            <button type="button" id="deselectAllBtn" class="btn-mini" onclick="setAllMilestoneSelection(false)"><i class="fa-solid fa-square-xmark" style="color: #f87171;"></i> Deselect All</button>
             <button type="button" id="cancelAllBtn" class="btn-mini" style="display: none; border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelAllFromDrawer()"><i class="fa-solid fa-ban"></i> Cancel All Scheduled</button>
             <span id="selectionCounter" class="sel-counter">0 of 0 selected</span>
           </div>
@@ -1742,6 +1744,12 @@
 
       const counter = document.getElementById('selectionCounter');
       if (counter) counter.innerText = `${selected} of ${selectable} selected`;
+
+      // Highlight the active mode: all ticked = Select All, none ticked = Deselect All, otherwise neither
+      const selAllBtn = document.getElementById('selectAllBtn');
+      const deselAllBtn = document.getElementById('deselectAllBtn');
+      if (selAllBtn) selAllBtn.classList.toggle('active-select', selectable > 0 && selected === selectable);
+      if (deselAllBtn) deselAllBtn.classList.toggle('active-deselect', selectable > 0 && selected === 0);
 
       const btn = document.getElementById('scheduleSelectedBtn');
       if (btn) {
