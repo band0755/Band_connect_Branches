@@ -218,6 +218,38 @@
     .btn-mini.active-deselect { background: rgba(239, 68, 68, 0.22); border-color: var(--bc-red); color: #f87171; font-weight: 700; box-shadow: 0 0 0 1px var(--bc-red) inset; }
     .sel-counter { font-size: 12px; color: var(--bc-teal); font-weight: 700; }
 
+    /* Studio: branch toggle, General card, condition chips */
+    .studio-branch-toggle { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .studio-general {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+      background: linear-gradient(135deg, rgba(111, 88, 168, 0.30), rgba(56, 189, 248, 0.10));
+      border: 1px solid var(--bc-purple-primary); border-radius: 14px; padding: 16px 18px; cursor: pointer;
+    }
+    .studio-general.selected { box-shadow: 0 0 0 2px var(--bc-teal) inset; }
+    .studio-general-main { display: flex; align-items: center; gap: 10px; font-size: 16px; flex-wrap: wrap; }
+    .studio-general-sub { font-size: 12px; color: var(--bc-text-muted); flex-basis: 100%; order: 3; }
+    .studio-branch-badge { background: var(--bc-purple-primary); padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    .studio-count { font-size: 12px; color: var(--bc-teal); font-weight: 700; background: rgba(56, 189, 248, 0.12); padding: 3px 10px; border-radius: 20px; }
+    .studio-doc-btn { text-decoration: none; background: var(--bc-card-inner); border-color: var(--bc-teal); color: var(--bc-teal); }
+    .studio-section-title { margin: 18px 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--bc-text-muted); }
+    .studio-section-title span { color: var(--bc-teal); }
+    .studio-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .studio-chip {
+      display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 20px;
+      border: 1px solid var(--bc-border); background: var(--bc-card-inner); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .studio-chip:hover { border-color: var(--bc-teal); }
+    .studio-chip.own { border-color: var(--bc-green); background: rgba(16, 185, 129, 0.10); }
+    .studio-chip.selected { background: rgba(111, 88, 168, 0.50); border-color: var(--bc-purple-primary); box-shadow: 0 0 0 1px var(--bc-purple-primary) inset; }
+    .studio-chip-meta { font-size: 11px; color: var(--bc-text-muted); font-weight: 600; }
+    .studio-chip a { color: var(--bc-teal); text-decoration: none; font-size: 13px; }
+    .studio-empty { font-size: 12px; color: var(--bc-text-muted); }
+    .studio-banner {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+      margin: 22px 0 14px; padding: 14px 16px; border-radius: 12px; font-size: 13px; line-height: 1.6;
+    }
+
     .card-input[readonly], .card-textarea[readonly], .interval-input[readonly] { opacity: 0.85; cursor: default; }
 
     /* Media manager (Add / Replace / Delete) */
@@ -419,7 +451,7 @@
     <div class="toolbar-bar">
       <div>
         <h2 style="font-size: 22px; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--bc-teal);"></i> Injury & Template Studio</h2>
-        <span style="font-size: 13px; color: var(--bc-text-muted);">View-only copy of the email templates from Google Docs</span>
+        <span style="font-size: 13px; color: var(--bc-text-muted);">View-only copy of the email templates from Google Docs: UE and LE General templates, plus conditions with their own template</span>
       </div>
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <a class="btn-pill" style="text-decoration: none; background: var(--bc-card-inner); border-color: var(--bc-teal); color: var(--bc-teal);" href="https://docs.google.com/document/d/1um8Caz2x0ZZ1w6cr_lbC1W49x9WDGMXGNG56eh25ZXc/edit" target="_blank" rel="noopener">
@@ -437,23 +469,14 @@
       2. Come back here and click <strong>Sync from Google Docs</strong> to bring the changes into the portal.
     </div>
 
-    <div style="display: flex; gap: 14px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; background: var(--bc-card); padding: 16px; border-radius: 12px; border: 1px solid var(--bc-border);">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Branch:</span>
-        <select id="studioBranchFilter" class="native-input" onchange="onStudioBranchChanged()" style="background: var(--bc-midnight) !important; padding: 6px 12px; border-radius: 6px;">
-          <option value="UE">UE (Upper Extremity / Handle)</option>
-          <option value="LE">LE (Lower Extremity / Cuff)</option>
-        </select>
-      </div>
-      <span style="font-size: 12px; color: var(--bc-text-muted);">All conditions under the selected branch follow this one protocol.</span>
-
-      <div style="display: none; align-items: center; gap: 8px;">
-        <span style="font-size: 13px; color: var(--bc-text-muted);">Condition:</span>
-        <select id="studioConditionFilter" class="native-input" onchange="filterStudioTemplates()" style="background: var(--bc-midnight) !important; padding: 6px 12px; border-radius: 6px;">
-          <option value="General">General (Default Baseline)</option>
-        </select>
-      </div>
+    <div class="studio-branch-toggle">
+      <button id="studioBtnUE" class="btn-pill" onclick="setStudioBranch('UE')"><i class="fa-solid fa-hand"></i> UE · Upper Extremity (Handle)</button>
+      <button id="studioBtnLE" class="btn-pill" onclick="setStudioBranch('LE')"><i class="fa-solid fa-person-walking"></i> LE · Lower Extremity (Cuff)</button>
     </div>
+
+    <div id="studioGeneralCard"></div>
+    <div id="studioChips"></div>
+    <div id="studioSelectionBanner"></div>
 
     <div id="studioCardsContainer" style="display: flex; flex-direction: column; gap: 16px;"></div>
   </main>
@@ -1186,15 +1209,38 @@
     // ----------------------------------------------------
     // INJURY & TEMPLATE STUDIO
     // ----------------------------------------------------
+    const STUDIO_DOC_URL = 'https://docs.google.com/document/d/1um8Caz2x0ZZ1w6cr_lbC1W49x9WDGMXGNG56eh25ZXc/edit';
+    let studioTabs = [];
+    let studioDocUrl = STUDIO_DOC_URL;
+    let studioState = { branch: 'UE', selected: 'general' };
+
+    // Condition names are compared in lower case ("L Shoulder" == "L shoulder")
+    function condKey(c) {
+      return String(c || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
     async function loadStudioTemplates() {
       showSpinner("Loading injury studio...");
       try {
-        const res = await fetch(`${API_URL}?action=GET_ALL_TEMPLATES`);
-        const json = await res.json();
-        if (json.success) {
-          allStudioTemplates = json.templates;
-          onStudioBranchChanged();
-        }
+        const [tplRes, tabRes] = await Promise.all([
+          fetch(`${API_URL}?action=GET_ALL_TEMPLATES`),
+          fetch(`${API_URL}?action=GET_CONDITION_TABS`)
+        ]);
+
+        const tplJson = await tplRes.json();
+        if (tplJson.success) allStudioTemplates = tplJson.templates;
+
+        studioTabs = [];
+        studioDocUrl = STUDIO_DOC_URL;
+        try {
+          const tabJson = await tabRes.json();
+          if (tabJson && tabJson.success) {
+            studioTabs = tabJson.tabs || [];
+            if (tabJson.docUrl) studioDocUrl = tabJson.docUrl;
+          }
+        } catch (e) { /* older script version without this action */ }
+
+        renderStudio();
       } catch (e) {
         alert("Failed to load studio: " + e.message);
       } finally {
@@ -1202,44 +1248,158 @@
       }
     }
 
-    function onStudioBranchChanged() {
-      const branchVal = document.getElementById('studioBranchFilter').value;
-      const select = document.getElementById('studioConditionFilter');
-      const conditions = new Set();
-
-      // Only the General protocol is used (all conditions of a branch follow it)
-      allStudioTemplates
-        .filter(t => t.branch === branchVal && String(t.condition).toLowerCase() === 'general')
-        .forEach(t => conditions.add(t.condition));
-
-      select.innerHTML = '';
-      Array.from(conditions).sort().forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c === 'General' ? 'General (Default Baseline)' : c;
-        select.appendChild(opt);
-      });
-
-      if (conditions.has('General')) {
-        select.value = 'General';
-      } else if (conditions.size > 0) {
-        select.value = Array.from(conditions)[0];
-      }
-
-      filterStudioTemplates();
+    function setStudioBranch(branch) {
+      studioState.branch = branch;
+      studioState.selected = 'general';
+      renderStudio();
     }
 
-    function filterStudioTemplates() {
-      const branchVal = document.getElementById('studioBranchFilter').value;
-      const condVal = document.getElementById('studioConditionFilter').value;
+    function selectStudioCondition(key) {
+      studioState.selected = key;
+      renderStudio();
+      const banner = document.getElementById('studioSelectionBanner');
+      if (banner && banner.scrollIntoView) banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
-      currentDisplayedTemplates = allStudioTemplates.filter(t => {
-        const matchBranch = t.branch === branchVal;
-        const matchCond = condVal === 'ALL' || t.condition === condVal;
-        return matchBranch && matchCond;
-      }).sort((a, b) => (a.dayOffset - b.dayOffset) || (variantRank(variantFromId(a.milestoneId)) - variantRank(variantFromId(b.milestoneId))));
+    // Emails of one template (branch + condition), ordered by day and compliance version
+    function studioRowsFor(branch, key) {
+      return allStudioTemplates
+        .filter(t => t.branch === branch && condKey(t.condition) === key)
+        .sort((a, b) => (a.dayOffset - b.dayOffset) || (variantRank(variantFromId(a.milestoneId)) - variantRank(variantFromId(b.milestoneId))));
+    }
 
+    function studioTabFor(branch, key) {
+      return studioTabs.find(t => t.branch === branch && condKey(t.condition) === key) || null;
+    }
+
+    // Link to the Google Docs tab of a condition (falls back to the branch tab, then to the Doc)
+    function studioUrlFor(branch, key) {
+      const own = studioTabFor(branch, key);
+      if (own && own.url) return own.url;
+      const general = studioTabFor(branch, 'general');
+      if (general && general.url) return general.url;
+      return studioDocUrl;
+    }
+
+    // Conditions of a branch: from the patients (Handle = UE, Cuff = LE) plus every condition tab in the Doc
+    function studioConditionList(branch) {
+      const map = {};
+
+      (patientStore || []).forEach(p => {
+        if (getBranchFromDevice(p.deviceType) !== branch) return;
+        const name = String(p.condition || '').trim();
+        const key = condKey(name);
+        if (!key || key === 'general' || name === '—') return;
+        if (!map[key]) map[key] = { key: key, spellings: {}, patients: 0 };
+        map[key].patients++;
+        map[key].spellings[name] = (map[key].spellings[name] || 0) + 1;
+      });
+
+      studioTabs
+        .filter(t => t.branch === branch && condKey(t.condition) !== 'general')
+        .forEach(t => {
+          const key = condKey(t.condition);
+          if (!map[key]) map[key] = { key: key, spellings: {}, patients: 0 };
+          map[key].spellings[t.condition] = (map[key].spellings[t.condition] || 0) + 0.5;
+        });
+
+      return Object.values(map).map(c => {
+        const name = Object.keys(c.spellings).sort((a, b) => c.spellings[b] - c.spellings[a])[0];
+        const tab = studioTabFor(branch, c.key);
+        return {
+          key: c.key,
+          name: name,
+          patients: c.patients,
+          count: studioRowsFor(branch, c.key).length,
+          hasTab: !!tab,
+          url: tab ? tab.url : ''
+        };
+      });
+    }
+
+    function renderStudio() {
+      const branch = studioState.branch;
+      const list = studioConditionList(branch);
+      let key = studioState.selected;
+      if (key !== 'general' && !list.some(c => c.key === key)) key = 'general';
+      studioState.selected = key;
+
+      // Branch toggle
+      ['UE', 'LE'].forEach(b => {
+        const btn = document.getElementById(`studioBtn${b}`);
+        if (!btn) return;
+        const active = b === branch;
+        btn.style.background = active ? 'var(--bc-purple-primary)' : 'var(--bc-card-inner)';
+        btn.style.borderColor = active ? 'var(--bc-purple-primary)' : 'var(--bc-border)';
+      });
+
+      // General card
+      const generalRows = studioRowsFor(branch, 'general');
+      document.getElementById('studioGeneralCard').innerHTML = `
+        <div class="studio-general ${key === 'general' ? 'selected' : ''}" onclick="selectStudioCondition('general')">
+          <div class="studio-general-main">
+            <span class="studio-branch-badge">${branch}</span>
+            <strong>${branch} General Template</strong>
+            <span class="studio-count">${generalRows.length} email${generalRows.length === 1 ? '' : 's'}</span>
+          </div>
+          <a class="btn-pill studio-doc-btn" href="${escapeHtml(studioUrlFor(branch, 'general'))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+            <i class="fa-solid fa-file-pen"></i> Open Google Doc
+          </a>
+          <div class="studio-general-sub">Used by every ${branch} condition that does not have its own template.</div>
+        </div>`;
+
+      // Condition chips
+      const own = list.filter(c => c.count > 0).sort((a, b) => a.name.localeCompare(b.name));
+      const follow = list.filter(c => c.count === 0).sort((a, b) => (b.patients - a.patients) || a.name.localeCompare(b.name));
+
+      const chipHtml = (c, isOwn) => `
+        <span class="studio-chip ${isOwn ? 'own' : ''} ${c.key === key ? 'selected' : ''}" data-key="${escapeHtml(c.key)}" onclick="selectStudioCondition(this.dataset.key)">
+          <span>${escapeHtml(c.name)}</span>
+          <span class="studio-chip-meta">${isOwn ? `${c.count} email${c.count === 1 ? '' : 's'}${c.patients ? ' · ' + c.patients + ' pt' + (c.patients === 1 ? '' : 's') : ''}` : `${c.patients} pt${c.patients === 1 ? '' : 's'}`}</span>
+          ${c.hasTab ? `<a href="${escapeHtml(c.url)}" target="_blank" rel="noopener" title="Open this condition's tab in Google Docs" onclick="event.stopPropagation()"><i class="fa-solid fa-file-pen"></i></a>` : ''}
+        </span>`;
+
+      document.getElementById('studioChips').innerHTML = `
+        <div class="studio-section-title">Conditions with their own template <span>(${own.length})</span></div>
+        <div class="studio-chip-row">
+          ${own.length ? own.map(c => chipHtml(c, true)).join('') : `<span class="studio-empty">None yet. Add emails to a condition tab in Google Docs, then press Sync.</span>`}
+        </div>
+        <div class="studio-section-title">Conditions following the ${branch} General template <span>(${follow.length})</span></div>
+        <div class="studio-chip-row">
+          ${follow.length ? follow.map(c => chipHtml(c, false)).join('') : `<span class="studio-empty">No other conditions found for ${branch}.</span>`}
+        </div>`;
+
+      // What is shown below
+      const selected = list.find(c => c.key === key) || null;
+      let rows = studioRowsFor(branch, key);
+      let bannerStyle, bannerText;
+      const docLink = `<a class="btn-pill studio-doc-btn" href="${escapeHtml(studioUrlFor(branch, key))}" target="_blank" rel="noopener"><i class="fa-solid fa-file-pen"></i> Open ${selected && selected.hasTab ? 'this tab' : 'Google Doc'}</a>`;
+
+      if (key === 'general') {
+        bannerStyle = 'background: rgba(111, 88, 168, 0.18); border: 1px solid var(--bc-purple-primary);';
+        bannerText = `Showing the <strong>${branch} General template</strong> (${rows.length} emails). Every ${branch} condition without its own template follows it.`;
+      } else if (rows.length > 0) {
+        bannerStyle = 'background: rgba(16, 185, 129, 0.12); border: 1px solid var(--bc-green);';
+        bannerText = `Showing the own template of <strong>${escapeHtml(selected.name)}</strong> (${rows.length} emails). Patients with this condition get this sequence.`;
+      } else {
+        rows = studioRowsFor(branch, 'general');
+        bannerStyle = 'background: rgba(245, 158, 11, 0.12); border: 1px solid var(--bc-orange);';
+        bannerText = `<strong>${escapeHtml(selected.name)}</strong> has no template of its own yet, so ${selected.patients === 0 ? 'its patients will follow' : (selected.patients === 1 ? '1 patient follows' : selected.patients + ' patients follow')} the <strong>${branch} General template</strong> shown below. To give it its own template, add emails to its tab in Google Docs and press Sync.`;
+      }
+
+      document.getElementById('studioSelectionBanner').innerHTML = `
+        <div class="studio-banner" style="${bannerStyle}">
+          <div style="flex: 1; min-width: 240px;">${bannerText}</div>
+          ${docLink}
+        </div>`;
+
+      currentDisplayedTemplates = rows;
       renderStudioCards();
+
+      if (rows.length === 0) {
+        document.getElementById('studioCardsContainer').innerHTML =
+          '<div class="studio-empty" style="padding: 12px;">No emails here yet. Press <strong>Sync from Google Docs</strong> to bring them in.</div>';
+      }
     }
 
     function renderStudioCards() {
@@ -1535,7 +1695,7 @@
 
       document.getElementById('drawerPatientName').innerText = activePatient.patientName;
       document.getElementById('drawerMeta').innerText = `${activePatient.deviceType} • Diagnosed: ${activePatient.condition}`;
-      document.getElementById('drawerTemplateNote').innerText = `${branchName} General protocol (same for all ${branchName} conditions)`;
+      document.getElementById('drawerTemplateNote').innerText = 'Loading template...';
       
       const cards = document.getElementById('drawerCards');
       cards.innerHTML = '<div style="text-align:center; padding:20px; color:var(--bc-text-muted);">Loading patient sequence & status...</div>';
@@ -1571,6 +1731,15 @@
 
         patientTimelineStore = timelineJson.timeline || [];
         patientQueuedMap = queueJson.queuedItems || {};
+
+        // Which template does this patient follow: their own condition tab, or the branch General template
+        const tplSource = timelineJson.templateSource || 'General';
+        const isCustomTemplate = !!timelineJson.templateIsCustom;
+        currentSelectedTrackOverride = tplSource;
+        const patientCondition = String(activePatient.condition || '').trim();
+        document.getElementById('drawerTemplateNote').innerText = isCustomTemplate
+          ? `${tplSource} template (own template, ${branchName})`
+          : `${branchName} General template` + (patientCondition && patientCondition.toLowerCase() !== 'general' ? ` (${patientCondition} follows it)` : '');
         
         const isoStart = timelineJson.startDateStr || new Date().toISOString().split('T')[0];
         document.getElementById('drawerStartDate').value = isoStart;
