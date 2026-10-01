@@ -421,8 +421,9 @@
           <option value="LE">LE (Lower Extremity / Cuff)</option>
         </select>
       </div>
+      <span style="font-size: 12px; color: var(--bc-text-muted);">All conditions under the selected branch follow this one protocol.</span>
 
-      <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="display: none; align-items: center; gap: 8px;">
         <span style="font-size: 13px; color: var(--bc-text-muted);">Condition:</span>
         <select id="studioConditionFilter" class="native-input" onchange="filterStudioTemplates()" style="background: var(--bc-midnight) !important; padding: 6px 12px; border-radius: 6px;">
           <option value="General">General (Default Baseline)</option>
@@ -469,8 +470,8 @@
           </div>
 
           <div style="flex: 1; min-width: 220px;">
-            <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 3px;">Template Track (Choose protocol sequence):</label>
-            <select id="drawerConditionOverride" class="native-input" style="background: var(--bc-midnight) !important; padding: 6px 10px; border-radius: 6px; width: 100%;" onchange="onDrawerConditionOverrideChanged()"></select>
+            <label style="font-size: 11px; color: var(--bc-text-muted); display: block; margin-bottom: 3px;">Template:</label>
+            <div id="drawerTemplateNote" style="background: var(--bc-midnight); padding: 8px 10px; border-radius: 6px; font-size: 13px; color: var(--bc-teal); font-weight: 600;">General protocol</div>
           </div>
         </div>
 
@@ -486,8 +487,9 @@
           </button>
         </div>
         <div style="font-size: 11px; color: var(--bc-text-muted); line-height: 1.5;">
-          Some days have Low / Average / High compliance versions. Only the <strong>Average</strong> one is pre-ticked. Untick it and tick the version that fits this patient.
+          Some days have Low / Average / High compliance versions. All emails are ticked. Untick the ones that do not fit this patient.
         </div>
+        <div id="sameDayAlert" style="display: none; background: rgba(245, 158, 11, 0.12); border: 1px solid var(--bc-orange); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #fbbf24; line-height: 1.6;"></div>
       </div>
     </div>
 
@@ -1178,8 +1180,9 @@
       const select = document.getElementById('studioConditionFilter');
       const conditions = new Set();
 
+      // Only the General protocol is used (all conditions of a branch follow it)
       allStudioTemplates
-        .filter(t => t.branch === branchVal)
+        .filter(t => t.branch === branchVal && String(t.condition).toLowerCase() === 'general')
         .forEach(t => conditions.add(t.condition));
 
       select.innerHTML = '';
@@ -1236,7 +1239,7 @@
               <strong style="font-size: 15px; margin-left: 4px;">${escapeHtml(tpl.condition)}</strong>
               ${variantFromId(tpl.milestoneId) ? `<span style="background: rgba(245, 158, 11, 0.15); border: 1px solid var(--bc-orange); color: #fbbf24; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;">${variantLabel(variantFromId(tpl.milestoneId))}</span>` : ''}
             </div>
-            <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); padding: 5px 12px; font-size: 11px;" onclick="deleteTemplateStep('${tpl.milestoneId}')">
+            <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); padding: 5px 12px; font-size: 11px;" onclick="deleteTemplateStep('${tpl.milestoneId}', '${tpl.branch}')">
               <i class="fa-solid fa-trash"></i> Delete Step
             </button>
           </div>
@@ -1532,14 +1535,14 @@
       }
     }
 
-    async function deleteTemplateStep(milestoneId) {
+    async function deleteTemplateStep(milestoneId, branch) {
       if (!confirm("Delete this sequence step?")) return;
       showSpinner("Deleting step...");
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'DELETE_SEQUENCE_STEP', milestoneId: milestoneId })
+          body: JSON.stringify({ action: 'DELETE_SEQUENCE_STEP', milestoneId: milestoneId, branch: branch || '' })
         });
         const json = await res.json();
         alert(json.message);
@@ -1556,10 +1559,13 @@
       activePatient = patientStore.find(p => p.rowNumber === rowNumber);
       if (!activePatient) return;
 
-      currentSelectedTrackOverride = conditionOverride !== null ? conditionOverride : (currentSelectedTrackOverride || activePatient.condition);
+      // One protocol per branch: all UE conditions use UE General, all LE conditions use LE General
+      currentSelectedTrackOverride = 'General';
+      const branchName = getBranchFromDevice(activePatient.deviceType);
 
       document.getElementById('drawerPatientName').innerText = activePatient.patientName;
       document.getElementById('drawerMeta').innerText = `${activePatient.deviceType} • Diagnosed: ${activePatient.condition}`;
+      document.getElementById('drawerTemplateNote').innerText = `${branchName} General protocol (same for all ${branchName} conditions)`;
       
       const cards = document.getElementById('drawerCards');
       cards.innerHTML = '<div style="text-align:center; padding:20px; color:var(--bc-text-muted);">Loading patient sequence & status...</div>';
@@ -1567,7 +1573,6 @@
       document.getElementById('drawerOverlay').style.display = 'block';
       document.getElementById('timelineDrawer').classList.add('drawer-open');
 
-      populateDrawerConditionOverrideDropdown(activePatient, currentSelectedTrackOverride);
 
       try {
         const [timelineRes, queueRes] = await Promise.all([
@@ -1605,42 +1610,6 @@
       } catch (err) {
         cards.innerHTML = `<div style="color:var(--bc-red); padding:16px;">Error: ${err.message}</div>`;
       }
-    }
-
-    function populateDrawerConditionOverrideDropdown(patient, activeSelectedTrack) {
-      const select = document.getElementById('drawerConditionOverride');
-      select.innerHTML = '';
-
-      const allUE = Array.from(conditionMap.UE || []).sort();
-      const allLE = Array.from(conditionMap.LE || []).sort();
-
-      const optgroupUE = document.createElement('optgroup');
-      optgroupUE.label = 'UE (Handle / Upper Extremity)';
-      allUE.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-        optgroupUE.appendChild(opt);
-      });
-      select.appendChild(optgroupUE);
-
-      const optgroupLE = document.createElement('optgroup');
-      optgroupLE.label = 'LE (Cuff / Lower Extremity)';
-      allLE.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-        optgroupLE.appendChild(opt);
-      });
-      select.appendChild(optgroupLE);
-
-      select.value = activeSelectedTrack;
-    }
-
-    function onDrawerConditionOverrideChanged() {
-      const chosenTrack = document.getElementById('drawerConditionOverride').value;
-      currentSelectedTrackOverride = chosenTrack;
-      openPatientTimeline(activePatient.rowNumber, chosenTrack);
     }
 
     async function onDrawerStartDateChanged() {
@@ -1686,10 +1655,22 @@
       if (drawerSelection.key !== key) {
         drawerSelection = { key: key, ids: new Set() };
         patientTimelineStore.forEach(item => {
-          // Days with Low / Average / High variants: only Average is pre-ticked, Tara ticks the right one
-          if (!isMilestoneSent(item) && (!item.variant || item.variant === 'avg')) drawerSelection.ids.add(String(item.id));
+          if (!isMilestoneSent(item)) drawerSelection.ids.add(String(item.id));
         });
       }
+    }
+
+    // Queue times come back as "09:00 AM"; <input type="time"> needs 24h "09:00"
+    function to24hTime(t) {
+      const v = String(t || '09:00').trim();
+      const m = v.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm)?$/i);
+      if (!m) return '09:00';
+      let hh = parseInt(m[1], 10);
+      const mm = m[2];
+      const ap = (m[3] || '').toLowerCase();
+      if (ap === 'pm' && hh < 12) hh += 12;
+      if (ap === 'am' && hh === 12) hh = 0;
+      return String(hh).padStart(2, '0') + ':' + mm;
     }
 
     function onMilestoneToggle(idx) {
@@ -1719,9 +1700,45 @@
       updateSelectionUI();
     }
 
+    // Warns when more than one email is going out (or already scheduled / sent) on the same day
+    function updateSameDayAlert() {
+      const box = document.getElementById('sameDayAlert');
+      if (!box) return;
+
+      const byDay = {};
+      patientTimelineStore.forEach((item, idx) => {
+        const q = patientQueuedMap[item.id];
+        const status = q ? String(q.status || '') : '';
+        const sent = status === 'Sent';
+        const queued = status === 'Scheduled' || status.startsWith('Frozen');
+        const cb = document.getElementById(`sel_${idx}`);
+        const ticked = !!(cb && cb.checked) && !sent;
+        if (sent || queued || ticked) {
+          if (!byDay[item.dayOffset]) byDay[item.dayOffset] = [];
+          byDay[item.dayOffset].push({
+            label: variantLabel(item.variant) || 'Standard',
+            state: sent ? 'already sent' : (queued ? 'scheduled' : 'ticked')
+          });
+        }
+      });
+
+      const days = Object.keys(byDay).filter(d => byDay[d].length > 1).sort((a, b) => Number(a) - Number(b));
+      if (days.length === 0) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+      }
+
+      const lines = days.map(d => `• <strong>Day ${d}</strong>: ${byDay[d].map(x => `${x.label} (${x.state})`).join(', ')}`);
+      box.innerHTML = `⚠️ <strong>More than one email for the same day.</strong> The patient will receive all of them.<br>${lines.join('<br>')}<br>Untick the ones that do not fit, or press <strong>Cancel</strong> on an email that is already scheduled.`;
+      box.style.display = 'block';
+    }
+
     function updateSelectionUI() {
       const selectable = patientTimelineStore.filter(item => !isMilestoneSent(item)).length;
       const selected = patientTimelineStore.filter(item => !isMilestoneSent(item) && drawerSelection.ids.has(String(item.id))).length;
+
+      updateSameDayAlert();
 
       const counter = document.getElementById('selectionCounter');
       if (counter) counter.innerText = `${selected} of ${selectable} selected`;
@@ -1753,7 +1770,7 @@
         if (!isSent && !isSelected) card.classList.add('deselected');
 
         const initialDate = queueItem ? queueItem.scheduledDate : item.isoDate;
-        const initialTime = queueItem ? queueItem.scheduledTime : '09:00';
+        const initialTime = queueItem ? to24hTime(queueItem.scheduledTime) : '09:00';
         const initialSubj = queueItem ? queueItem.subject : item.subject;
         const initialBody = queueItem ? queueItem.bodyText : item.defaultBody;
 
@@ -1767,7 +1784,10 @@
           if (match) activeImgSrc = normalizeImageUrls(match[1]);
         }
 
-        let statusBadge = `<span style="color:var(--bc-teal); font-size:12px;">Track: ${escapeHtml(item.condition)}</span>`;
+        let statusBadge = item.variant
+          ? `<span style="background: rgba(245, 158, 11, 0.15); border: 1px solid var(--bc-orange); color: #fbbf24; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;">${variantLabel(item.variant)}</span>`
+          : `<span style="color:var(--bc-teal); font-size:12px;">Standard email</span>`;
+        const isCanceled = !!(queueItem && String(queueItem.status || '').includes('Canceled'));
         let actionButtonsHtml = '';
 
         if (isSent) {
@@ -1775,11 +1795,14 @@
           actionButtonsHtml = `<span style="font-size:12px; color:#34d399;"><i class="fa-solid fa-circle-check"></i> Dispatched to patient.</span>`;
         } else if (isFrozen) {
           statusBadge = `<span class="badge-frozen"><i class="fa-solid fa-pause"></i> Frozen (${queueItem.status})</span>`;
-          actionButtonsHtml = `<button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="unfreezeDirect(${queueItem.queueRowIndex})"><i class="fa-solid fa-play"></i> Unfreeze</button>`;
+          actionButtonsHtml = `<button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: var(--bc-purple-accent); color: #fff;" onclick="unfreezeDirect(${queueItem.queueRowIndex})"><i class="fa-solid fa-play"></i> Unfreeze</button>
+            <button class="btn-pill" style="padding: 5px 12px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelFromDrawer(${queueItem.queueRowIndex})"><i class="fa-solid fa-ban"></i> Cancel</button>`;
         } else if (isScheduled) {
           statusBadge = `<span class="badge-scheduled"><i class="fa-solid fa-clock"></i> Scheduled for ${formatScheduleDateTime(queueItem.scheduledDate, queueItem.scheduledTime)}</span>`;
-          actionButtonsHtml = `<button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">🚀 Send Now</button>`;
+          actionButtonsHtml = `<button class="btn-pill" style="background:var(--bc-purple-primary); font-size:12px;" onclick="sendNow(${idx})">🚀 Send Now</button>
+            <button class="btn-pill" style="background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red); font-size: 12px;" onclick="cancelFromDrawer(${queueItem.queueRowIndex})"><i class="fa-solid fa-ban"></i> Cancel</button>`;
         } else {
+          if (isCanceled) statusBadge = `<span class="badge-canceled"><i class="fa-solid fa-ban"></i> Canceled</span>`;
           actionButtonsHtml = `
             <button class="btn-pill" style="background: #2563eb; color: #ffffff; font-size: 12px;" onclick="scheduleOutreach(${idx}, '${item.id}')">
               <i class="fa-solid fa-clock"></i> Schedule
@@ -2026,6 +2049,25 @@
       }
     }
 
+    async function cancelFromDrawer(queueRowIndex) {
+      if (!confirm("Cancel this scheduled email for this patient?")) return;
+      showSpinner("Canceling scheduled email...");
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'DELETE_SCHEDULED_OUTREACH', queueRowIndex: queueRowIndex })
+        });
+        const json = await res.json();
+        alert(json.message);
+      } catch (err) {
+        alert("Cancel failed: " + err.message);
+      } finally {
+        hideSpinner();
+      }
+      if (activePatient) await openPatientTimeline(activePatient.rowNumber, currentSelectedTrackOverride);
+    }
+
     async function unfreezeDirect(rowIndex) {
       showSpinner("Unfreezing email...");
       try {
@@ -2043,6 +2085,8 @@
       } finally {
         hideSpinner();
       }
+      const drawerOpen = document.getElementById('timelineDrawer').classList.contains('drawer-open');
+      if (drawerOpen && activePatient) await openPatientTimeline(activePatient.rowNumber, currentSelectedTrackOverride);
     }
 
     async function unfreezeAllPatient(patientName) {
@@ -2116,6 +2160,14 @@
         const frozen = pData.items.filter(i => (i.status || '').includes('Frozen')).length;
         const canceled = pData.items.filter(i => (i.status || '').includes('Canceled')).length;
 
+        // Emails of one patient that are active on the same date
+        const activeByDate = {};
+        pData.items.forEach(q => {
+          const st = String(q.status || '');
+          if (st === 'Scheduled' || st.includes('Frozen')) activeByDate[q.scheduledDate] = (activeByDate[q.scheduledDate] || 0) + 1;
+        });
+        const dupDates = Object.keys(activeByDate).filter(d => activeByDate[d] > 1);
+
         let childRows = '';
         pData.items.forEach(q => {
           const isScheduled = q.status === 'Scheduled';
@@ -2165,11 +2217,11 @@
           }
 
           childRows += `
-            <tr style="border-bottom: 1px solid rgba(56, 46, 92, 0.4);">
+            <tr style="border-bottom: 1px solid rgba(56, 46, 92, 0.4); ${(dupDates.includes(q.scheduledDate) && (isScheduled || isFrozen)) ? 'background: rgba(245, 158, 11, 0.08);' : ''}">
               <td style="padding: 12px 16px; font-size: 13px; color: var(--bc-text-muted);">
-                <i class="fa-regular fa-envelope" style="margin-right: 6px; color: var(--bc-teal);"></i> ${escapeHtml(q.milestoneId || 'Milestone')}
+                <i class="fa-regular fa-envelope" style="margin-right: 6px; color: var(--bc-teal);"></i> ${escapeHtml(q.milestoneId || 'Milestone')}${variantFromId(q.milestoneId) ? ` <span style="color:#fbbf24; font-size:11px;">(${variantLabel(variantFromId(q.milestoneId))})</span>` : ''}
               </td>
-              <td style="padding: 12px 16px; font-size: 13px; color: var(--bc-orange); font-weight: 600;">${escapeHtml(formattedTime)}</td>
+              <td style="padding: 12px 16px; font-size: 13px; color: var(--bc-orange); font-weight: 600;">${(dupDates.includes(q.scheduledDate) && (isScheduled || isFrozen)) ? '⚠️ ' : ''}${escapeHtml(formattedTime)}</td>
               <td style="padding: 12px 16px; font-size: 13px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(q.subject)}</td>
               <td style="padding: 12px 16px;">${mediaBadge}</td>
               <td style="padding: 12px 16px;">${statusPill}</td>
@@ -2208,6 +2260,7 @@
                 ${sent > 0 ? `<span class="badge-sent">${sent} Sent</span>` : ''}
                 ${frozen > 0 ? `<span class="badge-frozen">${frozen} Frozen</span>` : ''}
                 ${canceled > 0 ? `<span class="badge-canceled">${canceled} Canceled</span>` : ''}
+                ${dupDates.length > 0 ? `<span class="badge-scheduled" title="More than one email on the same date: ${escapeHtml(dupDates.join(', '))}">⚠️ ${dupDates.length} day(s) with multiple emails</span>` : ''}
               </div>
               ${unfreezeAllBtn}
               <span style="font-size: 12px; color: var(--bc-teal); font-weight: 600; padding: 6px 12px; background: rgba(56, 189, 248, 0.1); border-radius: 20px;">
