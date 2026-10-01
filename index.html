@@ -480,6 +480,7 @@
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <button type="button" class="btn-mini" onclick="setAllMilestoneSelection(true)"><i class="fa-solid fa-square-check"></i> Select All</button>
             <button type="button" class="btn-mini" onclick="setAllMilestoneSelection(false)"><i class="fa-regular fa-square"></i> Deselect All</button>
+            <button type="button" id="cancelAllBtn" class="btn-mini" style="display: none; border-color: var(--bc-red); color: var(--bc-red);" onclick="cancelAllFromDrawer()"><i class="fa-solid fa-ban"></i> Cancel All Scheduled</button>
             <span id="selectionCounter" class="sel-counter">0 of 0 selected</span>
           </div>
           <button id="scheduleSelectedBtn" class="btn-pill" style="background: #10b981; color: #000; font-size: 12px; padding: 7px 16px;" onclick="scheduleAllSequence()">
@@ -586,6 +587,7 @@
     let patientQueuedMap = {};
     let patientStartDateObj = new Date();
     let currentRawQueue = [];
+    let queuePatientNames = [];
     let currentSelectedTrackOverride = null;
 
     // Which emails are ticked for "Schedule Selected" (kept while the drawer stays on the same patient + track)
@@ -1740,6 +1742,17 @@
 
       updateSameDayAlert();
 
+      // Cancel All button: counts every pending email of this patient (also ones not shown as cards, e.g. old template ids)
+      const pending = Object.values(patientQueuedMap || {}).filter(q => {
+        const st = String((q && q.status) || '');
+        return st === 'Scheduled' || st.startsWith('Frozen');
+      }).length;
+      const cancelAllBtn = document.getElementById('cancelAllBtn');
+      if (cancelAllBtn) {
+        cancelAllBtn.style.display = pending > 0 ? 'inline-block' : 'none';
+        cancelAllBtn.innerHTML = `<i class="fa-solid fa-ban"></i> Cancel All Scheduled (${pending})`;
+      }
+
       const counter = document.getElementById('selectionCounter');
       if (counter) counter.innerText = `${selected} of ${selectable} selected`;
 
@@ -2049,6 +2062,40 @@
       }
     }
 
+    // Cancels every Scheduled / Frozen email of a patient at once (Sent emails are not touched)
+    async function cancelAllForPatient(patientName) {
+      if (!confirm(`Cancel ALL scheduled and frozen emails for ${patientName}?\n\nEmails that were already sent are not affected.`)) return false;
+      showSpinner(`Canceling all pending emails for ${patientName}...`);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'CANCEL_ALL_PATIENT_OUTREACH', patientName: patientName })
+        });
+        const json = await res.json();
+        alert(json.success ? `✅ ${json.message}` : `❌ ${json.message}`);
+        return !!json.success;
+      } catch (err) {
+        alert("Cancel all failed: " + err.message);
+        return false;
+      } finally {
+        hideSpinner();
+      }
+    }
+
+    async function cancelAllFromDrawer() {
+      if (!activePatient) return;
+      const ok = await cancelAllForPatient(activePatient.patientName);
+      if (ok) await openPatientTimeline(activePatient.rowNumber, currentSelectedTrackOverride);
+    }
+
+    async function cancelAllFromQueue(pIdx) {
+      const name = queuePatientNames[pIdx];
+      if (!name) return;
+      const ok = await cancelAllForPatient(name);
+      if (ok) loadQueueDashboard();
+    }
+
     async function cancelFromDrawer(queueRowIndex) {
       if (!confirm("Cancel this scheduled email for this patient?")) return;
       showSpinner("Canceling scheduled email...");
@@ -2151,6 +2198,7 @@
       });
 
       const patientNames = Object.keys(grouped).sort();
+      queuePatientNames = patientNames;
 
       patientNames.forEach((name, pIdx) => {
         const pData = grouped[name];
@@ -2239,6 +2287,15 @@
           `;
         }
 
+        let cancelAllBtn = '';
+        if (scheduled + frozen > 0) {
+          cancelAllBtn = `
+            <button class="btn-pill" style="padding: 4px 12px; font-size: 11px; background: rgba(239,68,68,0.15); border-color: var(--bc-red); color: var(--bc-red);" onclick="event.stopPropagation(); cancelAllFromQueue(${pIdx})">
+              <i class="fa-solid fa-ban"></i> Cancel All (${scheduled + frozen})
+            </button>
+          `;
+        }
+
         const card = document.createElement('div');
         card.style.cssText = 'background: var(--bc-card); border: 1px solid var(--bc-border); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3);';
 
@@ -2263,6 +2320,7 @@
                 ${dupDates.length > 0 ? `<span class="badge-scheduled" title="More than one email on the same date: ${escapeHtml(dupDates.join(', '))}">⚠️ ${dupDates.length} day(s) with multiple emails</span>` : ''}
               </div>
               ${unfreezeAllBtn}
+              ${cancelAllBtn}
               <span style="font-size: 12px; color: var(--bc-teal); font-weight: 600; padding: 6px 12px; background: rgba(56, 189, 248, 0.1); border-radius: 20px;">
                 ${total} Total Emails <i class="fa-solid fa-chevron-down" style="margin-left: 4px; font-size: 10px;"></i>
               </span>
