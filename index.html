@@ -100,6 +100,7 @@
       display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;
     }
     .btn-pill:hover { background: var(--bc-purple-primary); }
+    .btn-pill:disabled { opacity: 0.45; cursor: not-allowed; }
 
     .filter-reset-row { display: flex; justify-content: flex-end; margin-bottom: 12px; gap: 10px; }
     .btn-clear-filters {
@@ -183,6 +184,26 @@
       background: var(--bc-card-inner); border: 1px solid var(--bc-border);
       border-radius: 14px; padding: 18px; position: relative; transition: all 0.2s ease;
     }
+    .milestone-card.deselected { opacity: 0.5; border-style: dashed; }
+
+    /* Selection checkbox (Schedule All) */
+    .select-check {
+      display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none;
+    }
+    .select-check input[type="checkbox"] {
+      width: 18px; height: 18px; accent-color: var(--bc-green); cursor: pointer; flex-shrink: 0;
+    }
+    .select-check input[type="checkbox"]:disabled { cursor: not-allowed; opacity: 0.5; }
+    .selection-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+      padding-top: 10px; border-top: 1px dashed var(--bc-border);
+    }
+    .btn-mini {
+      padding: 5px 12px; font-size: 11px; font-weight: 600; border-radius: 20px; cursor: pointer;
+      background: transparent; border: 1px solid var(--bc-border); color: var(--bc-text-muted);
+    }
+    .btn-mini:hover { color: #fff; border-color: var(--bc-teal); }
+    .sel-counter { font-size: 12px; color: var(--bc-teal); font-weight: 700; }
 
     .picker-box {
       display: inline-flex; align-items: center; background: var(--bc-midnight);
@@ -438,9 +459,15 @@
           </div>
         </div>
 
-        <div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; margin-top: 4px;">
-          <button class="btn-pill" style="background: #10b981; color: #000; font-size: 12px; padding: 7px 16px;" onclick="scheduleAllSequence()">
-            <i class="fa-solid fa-calendar-check"></i> 🚀 Schedule All Check-ins
+        <!-- Email selection bar: tick / untick which emails go into "Schedule Selected" -->
+        <div class="selection-bar">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn-mini" onclick="setAllMilestoneSelection(true)"><i class="fa-solid fa-square-check"></i> Select All</button>
+            <button type="button" class="btn-mini" onclick="setAllMilestoneSelection(false)"><i class="fa-regular fa-square"></i> Deselect All</button>
+            <span id="selectionCounter" class="sel-counter">0 of 0 selected</span>
+          </div>
+          <button id="scheduleSelectedBtn" class="btn-pill" style="background: #10b981; color: #000; font-size: 12px; padding: 7px 16px;" onclick="scheduleAllSequence()">
+            <i class="fa-solid fa-calendar-check"></i> 🚀 Schedule Selected
           </button>
         </div>
       </div>
@@ -552,6 +579,9 @@
     let currentRawQueue = [];
     let currentSelectedTrackOverride = null;
 
+    // Which emails are ticked for "Schedule Selected" (kept while the drawer stays on the same patient + track)
+    let drawerSelection = { key: '', ids: new Set() };
+
     let conditionMap = {
       UE: new Set(['General']),
       LE: new Set(['General'])
@@ -572,7 +602,13 @@
     function renderEmailPreviewHtml(rawBody) {
       let cleanBody = normalizeImageUrls(rawBody || '');
       let html = cleanBody.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
-      if (!html.includes('band_connect_logo') && !html.includes('bandCONNECT') && !html.includes('WhatsApp')) {
+      // Only add the signature logo if the email body does not already contain a Band Connect logo
+      const hasLogo = html.includes('bc-logo') ||
+                      html.includes('band_connect_logo') ||
+                      html.includes('band-connect-logo') ||
+                      html.includes('bandCONNECT') ||
+                      html.includes('WhatsApp');
+      if (!hasLogo) {
         html += BAND_CONNECT_SIGNATURE_LOGO;
       }
       return html;
@@ -594,6 +630,17 @@
       input.type = input.type === 'password' ? 'text' : 'password';
       icon.classList.toggle('fa-eye');
       icon.classList.toggle('fa-eye-slash');
+    }
+
+    function openForgotView() {
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('forgot-view').style.display = 'flex';
+    }
+
+    function backToLogin() {
+      document.getElementById('forgot-view').style.display = 'none';
+      document.getElementById('verify-view').style.display = 'none';
+      document.getElementById('login-view').style.display = 'flex';
     }
 
     function getStatusClass(status) {
@@ -1468,18 +1515,84 @@
       }
     }
 
+    // ----------------------------------------------------
+    // EMAIL SELECTION (tick / untick emails for Schedule Selected)
+    // ----------------------------------------------------
+    function isMilestoneSent(item) {
+      const q = patientQueuedMap[item.id];
+      return !!(q && q.status === 'Sent');
+    }
+
+    // Start a fresh selection when the patient or track changes; otherwise keep Tara's manual ticks
+    function initDrawerSelection() {
+      const key = `${activePatient ? activePatient.rowNumber : ''}|${currentSelectedTrackOverride || ''}`;
+      if (drawerSelection.key !== key) {
+        drawerSelection = { key: key, ids: new Set() };
+        patientTimelineStore.forEach(item => {
+          if (!isMilestoneSent(item)) drawerSelection.ids.add(String(item.id));
+        });
+      }
+    }
+
+    function onMilestoneToggle(idx) {
+      const item = patientTimelineStore[idx];
+      const cb = document.getElementById(`sel_${idx}`);
+      if (!item || !cb) return;
+
+      if (cb.checked) drawerSelection.ids.add(String(item.id));
+      else drawerSelection.ids.delete(String(item.id));
+
+      const card = document.getElementById(`card_${idx}`);
+      if (card) card.classList.toggle('deselected', !cb.checked);
+      updateSelectionUI();
+    }
+
+    function setAllMilestoneSelection(flag) {
+      patientTimelineStore.forEach((item, idx) => {
+        if (isMilestoneSent(item)) return;
+        const cb = document.getElementById(`sel_${idx}`);
+        if (!cb) return;
+        cb.checked = flag;
+        if (flag) drawerSelection.ids.add(String(item.id));
+        else drawerSelection.ids.delete(String(item.id));
+        const card = document.getElementById(`card_${idx}`);
+        if (card) card.classList.toggle('deselected', !flag);
+      });
+      updateSelectionUI();
+    }
+
+    function updateSelectionUI() {
+      const selectable = patientTimelineStore.filter(item => !isMilestoneSent(item)).length;
+      const selected = patientTimelineStore.filter(item => !isMilestoneSent(item) && drawerSelection.ids.has(String(item.id))).length;
+
+      const counter = document.getElementById('selectionCounter');
+      if (counter) counter.innerText = `${selected} of ${selectable} selected`;
+
+      const btn = document.getElementById('scheduleSelectedBtn');
+      if (btn) {
+        btn.disabled = selected === 0;
+        btn.innerHTML = `<i class="fa-solid fa-calendar-check"></i> 🚀 Schedule Selected (${selected})`;
+      }
+    }
+
     function renderPatientTimelineCards() {
       const container = document.getElementById('drawerCards');
       container.innerHTML = '';
 
+      initDrawerSelection();
+
       patientTimelineStore.forEach((item, idx) => {
         const card = document.createElement('div');
         card.className = 'milestone-card';
+        card.id = `card_${idx}`;
 
         const queueItem = patientQueuedMap[item.id] || null;
         const isScheduled = queueItem && queueItem.status === 'Scheduled';
         const isFrozen = queueItem && queueItem.status.includes('Frozen');
         const isSent = queueItem && queueItem.status === 'Sent';
+
+        const isSelected = !isSent && drawerSelection.ids.has(String(item.id));
+        if (!isSent && !isSelected) card.classList.add('deselected');
 
         const initialDate = queueItem ? queueItem.scheduledDate : item.isoDate;
         const initialTime = queueItem ? queueItem.scheduledTime : '09:00';
@@ -1520,8 +1633,11 @@
         }
 
         card.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <strong style="color:#fff; font-size: 15px;">${escapeHtml(item.title)}</strong>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap: 10px; flex-wrap: wrap;">
+            <label class="select-check" title="${isSent ? 'Already sent' : 'Include this email in Schedule Selected'}">
+              <input type="checkbox" id="sel_${idx}" ${isSelected ? 'checked' : ''} ${isSent ? 'disabled' : ''} onchange="onMilestoneToggle(${idx})" />
+              <strong style="color:#fff; font-size: 15px;">${escapeHtml(item.title)}</strong>
+            </label>
             ${statusBadge}
           </div>
 
@@ -1587,6 +1703,8 @@
         `;
         container.appendChild(card);
       });
+
+      updateSelectionUI();
     }
 
     function handleDrawerMediaUpload(fileInput, idx) {
@@ -1730,18 +1848,32 @@
       }
     }
 
+    // Schedules ONLY the emails that are ticked in the drawer
     async function scheduleAllSequence() {
       if (!activePatient || !activePatient.email) return alert("Patient does not have a registered email.");
-      if (!confirm(`Schedule all ${patientTimelineStore.length} check-in emails for ${activePatient.patientName}?`)) return;
 
-      const itemsToSchedule = patientTimelineStore.map((item, idx) => ({
-        milestoneId: item.id,
-        sendDate: document.getElementById(`date_${idx}`).value || item.isoDate,
-        timeStr: document.getElementById(`time_${idx}`).value || '09:00',
-        subject: document.getElementById(`subj_${idx}`).value,
-        bodyText: document.getElementById(`body_${idx}`).value,
-        attachmentId: document.getElementById(`att_id_${idx}`).value || ''
-      }));
+      const itemsToSchedule = [];
+      patientTimelineStore.forEach((item, idx) => {
+        if (isMilestoneSent(item)) return;
+        const cb = document.getElementById(`sel_${idx}`);
+        if (!cb || !cb.checked) return;
+
+        itemsToSchedule.push({
+          milestoneId: item.id,
+          sendDate: document.getElementById(`date_${idx}`).value || item.isoDate,
+          timeStr: document.getElementById(`time_${idx}`).value || '09:00',
+          subject: document.getElementById(`subj_${idx}`).value,
+          bodyText: document.getElementById(`body_${idx}`).value,
+          attachmentId: document.getElementById(`att_id_${idx}`).value || ''
+        });
+      });
+
+      if (itemsToSchedule.length === 0) return alert("No emails selected. Tick at least one email to schedule.");
+
+      const totalSelectable = patientTimelineStore.filter(item => !isMilestoneSent(item)).length;
+      const skipped = totalSelectable - itemsToSchedule.length;
+      const skipNote = skipped > 0 ? `\n\n${skipped} unticked email(s) will be skipped (left untouched).` : '';
+      if (!confirm(`Schedule ${itemsToSchedule.length} of ${totalSelectable} check-in emails for ${activePatient.patientName}?${skipNote}`)) return;
 
       showSpinner(`Batch-scheduling ${itemsToSchedule.length} check-ins...`);
       try {
@@ -2192,6 +2324,7 @@
       document.getElementById('drawerOverlay').style.display = 'none';
       document.getElementById('timelineDrawer').classList.remove('drawer-open');
       currentSelectedTrackOverride = null;
+      drawerSelection = { key: '', ids: new Set() };
     }
 
     function escapeHtml(str) {
