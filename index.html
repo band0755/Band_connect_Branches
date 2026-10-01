@@ -485,6 +485,9 @@
             <i class="fa-solid fa-calendar-check"></i> 🚀 Schedule Selected
           </button>
         </div>
+        <div style="font-size: 11px; color: var(--bc-text-muted); line-height: 1.5;">
+          Some days have Low / Average / High compliance versions. Only the <strong>Average</strong> one is pre-ticked. Untick it and tick the version that fits this patient.
+        </div>
       </div>
     </div>
 
@@ -595,6 +598,20 @@
       <div style="margin-top: 24px; padding-top: 12px;">
         <img src="band_connect_logo.jpeg" alt="Band Connect" style="width: 140px; height: auto; display: block;" />
       </div>`;
+
+    // Compliance variants (Low / Average / High) are encoded in the milestone id, e.g. general_d63_low
+    function variantFromId(id) {
+      const m = String(id || '').match(/_d(?:minus)?\d+_(low|avg|high)/i);
+      return m ? m[1].toLowerCase() : '';
+    }
+
+    function variantLabel(v) {
+      return v === 'low' ? 'Low Compliance' : (v === 'avg' ? 'Average Compliance' : (v === 'high' ? 'High Compliance' : ''));
+    }
+
+    function variantRank(v) {
+      return v === 'low' ? 1 : (v === 'avg' ? 2 : (v === 'high' ? 3 : 0));
+    }
 
     function normalizeImageUrls(rawHtml) {
       if (!rawHtml) return '';
@@ -1190,7 +1207,7 @@
         const matchBranch = t.branch === branchVal;
         const matchCond = condVal === 'ALL' || t.condition === condVal;
         return matchBranch && matchCond;
-      }).sort((a, b) => a.dayOffset - b.dayOffset);
+      }).sort((a, b) => (a.dayOffset - b.dayOffset) || (variantRank(variantFromId(a.milestoneId)) - variantRank(variantFromId(b.milestoneId))));
 
       renderStudioCards();
     }
@@ -1217,6 +1234,7 @@
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="background: var(--bc-purple-primary); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${escapeHtml(tpl.branch)}</span>
               <strong style="font-size: 15px; margin-left: 4px;">${escapeHtml(tpl.condition)}</strong>
+              ${variantFromId(tpl.milestoneId) ? `<span style="background: rgba(245, 158, 11, 0.15); border: 1px solid var(--bc-orange); color: #fbbf24; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;">${variantLabel(variantFromId(tpl.milestoneId))}</span>` : ''}
             </div>
             <button class="btn-pill" style="background: rgba(239, 68, 68, 0.15); border-color: var(--bc-red); color: var(--bc-red); padding: 5px 12px; font-size: 11px;" onclick="deleteTemplateStep('${tpl.milestoneId}')">
               <i class="fa-solid fa-trash"></i> Delete Step
@@ -1668,7 +1686,8 @@
       if (drawerSelection.key !== key) {
         drawerSelection = { key: key, ids: new Set() };
         patientTimelineStore.forEach(item => {
-          if (!isMilestoneSent(item)) drawerSelection.ids.add(String(item.id));
+          // Days with Low / Average / High variants: only Average is pre-ticked, Tara ticks the right one
+          if (!isMilestoneSent(item) && (!item.variant || item.variant === 'avg')) drawerSelection.ids.add(String(item.id));
         });
       }
     }
@@ -1930,10 +1949,22 @@
 
       if (itemsToSchedule.length === 0) return alert("No emails selected. Tick at least one email to schedule.");
 
+      // Warn if more than one email of the same day is selected (the patient would get all of them)
+      const dayCounts = {};
+      patientTimelineStore.forEach((item, idx) => {
+        if (isMilestoneSent(item)) return;
+        const cb = document.getElementById(`sel_${idx}`);
+        if (cb && cb.checked) dayCounts[item.dayOffset] = (dayCounts[item.dayOffset] || 0) + 1;
+      });
+      const multiDays = Object.keys(dayCounts).filter(d => dayCounts[d] > 1);
+      const multiNote = multiDays.length > 0
+        ? `\n\n⚠️ More than one email is ticked for: Day ${multiDays.join(', Day ')}. The patient will receive all of them on that day.`
+        : '';
+
       const totalSelectable = patientTimelineStore.filter(item => !isMilestoneSent(item)).length;
       const skipped = totalSelectable - itemsToSchedule.length;
       const skipNote = skipped > 0 ? `\n\n${skipped} unticked email(s) will be skipped (left untouched).` : '';
-      if (!confirm(`Schedule ${itemsToSchedule.length} of ${totalSelectable} check-in emails for ${activePatient.patientName}?${skipNote}`)) return;
+      if (!confirm(`Schedule ${itemsToSchedule.length} of ${totalSelectable} check-in emails for ${activePatient.patientName}?${skipNote}${multiNote}`)) return;
 
       showSpinner(`Batch-scheduling ${itemsToSchedule.length} check-ins...`);
       try {
