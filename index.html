@@ -655,6 +655,30 @@
         <img src="band_connect_logo.jpeg" alt="Band Connect" style="width: 140px; height: auto; display: block;" />
       </div>`;
 
+    // Every picture in an email fits a square box of this size (px). Same rule as the email that is sent.
+    const EMAIL_IMAGE_BOX = 480;
+
+    function emailImageWidth(w, hgt) {
+      if (w > 0 && hgt > 0 && hgt > w) return Math.max(120, Math.round(EMAIL_IMAGE_BOX * w / hgt));
+      return EMAIL_IMAGE_BOX;
+    }
+
+    function emailImageTag(src, width, alt) {
+      return `<img src="${src}" alt="${escapeHtml(alt || '')}" data-bc-img="1" width="${width}" style="width:100%;max-width:${width}px;height:auto;display:block;margin:0 auto;border:0;border-radius:8px;" />`;
+    }
+
+    // Gives every Doc / Drive picture the same size (old saved emails too). The logo and already sized pictures stay as they are.
+    function normalizeEmailImages(html) {
+      return String(html || '').replace(/<img\b[^>]*>/gi, function (tag) {
+        if (/class=["'][^"']*bc-logo/i.test(tag)) return tag;
+        if (/data-bc-img=/i.test(tag)) return tag;
+        const m = tag.match(/\ssrc=["']([^"']+)["']/i);
+        if (!m || m[1].indexOf('googleusercontent.com') === -1) return tag;
+        const altMatch = tag.match(/\salt=["']([^"']*)["']/i);
+        return emailImageTag(m[1], emailImageWidth(0, 0), altMatch ? altMatch[1] : '');
+      });
+    }
+
     // Compliance variants (Low / Average / High) are encoded in the milestone id, e.g. general_d63_low
     function variantFromId(id) {
       const m = String(id || '').match(/_d(?:minus)?\d+_(low|avg|high)/i);
@@ -679,6 +703,7 @@
     function renderEmailPreviewHtml(rawBody) {
       let cleanBody = normalizeImageUrls(rawBody || '');
       let html = cleanBody.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+      html = normalizeEmailImages(html);
       // Only add the signature logo if the email body does not already contain a Band Connect logo
       const hasLogo = html.includes('bc-logo') ||
                       html.includes('band_connect_logo') ||
@@ -831,6 +856,16 @@
         return alert("File exceeds the 50 MB limit.");
       }
 
+      // Width and height of a picture (only used to size it the same way as the other pictures)
+      let imgW = 0, imgH = 0;
+      if (file.type && file.type.indexOf('image/') === 0 && typeof createImageBitmap === 'function') {
+        try {
+          const bmp = await createImageBitmap(file);
+          imgW = bmp.width; imgH = bmp.height;
+          if (bmp.close) bmp.close();
+        } catch (e) { /* size unknown: the default size is used */ }
+      }
+
       showSpinner(`Uploading ${file.name} (${Math.round(file.size / (1024 * 1024))} MB)...`);
       const reader = new FileReader();
 
@@ -856,6 +891,8 @@
           }
 
           if (json.success) {
+            json.imgW = imgW;
+            json.imgH = imgH;
             onComplete(json);
           } else {
             alert(`Upload failed: ${json.message}`);
@@ -1561,7 +1598,7 @@
     function buildMediaSnippet(uploaded) {
       if (uploaded.isImage) {
         const viewUrl = `https://lh3.googleusercontent.com/d/${uploaded.fileId}`;
-        return `\n<div style="text-align: center; margin: 16px 0;"><img src="${viewUrl}" style="max-width: 100%; border-radius: 8px;" /></div>\n`;
+        return `\n<div style="text-align: center; margin: 16px 0;">${emailImageTag(viewUrl, emailImageWidth(uploaded.imgW, uploaded.imgH))}</div>\n`;
       }
       if (uploaded.isVideo) {
         return `\n<div style="margin: 20px 0; text-align: center;"><a href="${uploaded.viewUrl}" target="_blank" style="text-decoration:none; display:inline-block; background: #201a38; border: 1px solid #382e5c; border-radius: 12px; padding: 24px; color: #fff;"><div style="font-size: 15px; font-weight: bold; color: #38bdf8;">▶ Watch Clinical Exercise Video</div><div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${uploaded.fileName}</div></a></div>\n`;
