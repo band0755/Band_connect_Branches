@@ -536,9 +536,10 @@
           </button>
         </div>
         <div style="font-size: 11px; color: var(--bc-text-muted); line-height: 1.5;">
-          Some days have Low / Average / High compliance versions. All emails are ticked. Untick the ones that do not fit this patient.
+          Some days have Low / Average / High compliance versions. All emails are ticked, except the Day -2 welcome email (the Sheet already sends it automatically). Untick the ones that do not fit this patient.
         </div>
         <div id="sameDayAlert" style="display: none; background: rgba(245, 158, 11, 0.12); border: 1px solid var(--bc-orange); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #fbbf24; line-height: 1.6;"></div>
+        <div id="pastDateAlert" style="display: none; background: rgba(239, 68, 68, 0.12); border: 1px solid var(--bc-red); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #fca5a5; line-height: 1.6;"></div>
       </div>
     </div>
 
@@ -1961,7 +1962,7 @@
         drawerSelection = { key: key, ids: new Set() };
         sameDayAlertCollapsed = false;
         patientTimelineStore.forEach(item => {
-          if (!isMilestoneSent(item)) drawerSelection.ids.add(String(item.id));
+          if (!isMilestoneSent(item) && !isWelcomeEmail(item)) drawerSelection.ids.add(String(item.id));
         });
       }
     }
@@ -1977,6 +1978,72 @@
       if (ap === 'pm' && hh < 12) hh += 12;
       if (ap === 'am' && hh === 12) hh = 0;
       return String(hh).padStart(2, '0') + ':' + mm;
+    }
+
+    // The Day -2 welcome email: the Sheet already sends a welcome email by itself, so it is not ticked by default
+    function isWelcomeEmail(item) {
+      return !!item && (Number(item.dayOffset) === -2 || /welcome to band connect/i.test(String(item.subject || '')));
+    }
+
+    // Send date and time of a card as a Date (browser time). Time defaults to 09:00 like on the server.
+    function cardSendDateTime(idx) {
+      const dEl = document.getElementById(`date_${idx}`);
+      if (!dEl || !dEl.value) return null;
+      const tEl = document.getElementById(`time_${idx}`);
+      const [y, m, d] = dEl.value.split('-').map(Number);
+      const [hh, mm] = String((tEl && tEl.value) || '09:00').split(':').map(Number);
+      if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
+      return new Date(y, m - 1, d, isNaN(hh) ? 9 : hh, isNaN(mm) ? 0 : mm);
+    }
+
+    function isCardDatePassed(idx) {
+      const dt = cardSendDateTime(idx);
+      return !!dt && dt.getTime() < Date.now();
+    }
+
+    function emailShortName(item) {
+      const v = variantLabel(item.variant);
+      return `Day ${item.dayOffset}${v ? ' (' + v + ')' : ''}`;
+    }
+
+    // Small warning inside a card when its date has already passed
+    function updateCardDateWarning(idx) {
+      const box = document.getElementById(`datewarn_${idx}`);
+      if (!box) return;
+      const item = patientTimelineStore[idx];
+      if (!item || isMilestoneSent(item)) { box.style.display = 'none'; return; }
+      box.style.display = isCardDatePassed(idx) ? 'block' : 'none';
+    }
+
+    function onCardDateChanged(idx) {
+      updateCardDateWarning(idx);
+      updateSelectionUI();
+    }
+
+    // Ticked emails (that will really be scheduled) whose date has already passed
+    function collectPastTickedEmails() {
+      const list = [];
+      patientTimelineStore.forEach((item, idx) => {
+        if (isMilestoneSent(item)) return;
+        const q = patientQueuedMap[item.id];
+        if (q && String(q.status || '').includes('Canceled')) return;
+        const cb = document.getElementById(`sel_${idx}`);
+        if (!cb || !cb.checked) return;
+        if (isCardDatePassed(idx)) list.push(emailShortName(item));
+      });
+      return list;
+    }
+
+    function updatePastDateAlert() {
+      const box = document.getElementById('pastDateAlert');
+      if (!box) return;
+      const past = collectPastTickedEmails();
+      if (past.length === 0) { box.style.display = 'none'; box.innerHTML = ''; return; }
+      const shown = past.slice(0, 8).join(', ') + (past.length > 8 ? ', ...' : '');
+      box.innerHTML = `⚠️ <strong>${past.length} ticked email${past.length === 1 ? ' has' : 's have'} a date that has already passed.</strong> ` +
+        `${past.length === 1 ? 'It' : 'They'} will be sent right away (within about 10 minutes) when you press Schedule Selected: ${shown}.<br>` +
+        `Change the date or untick ${past.length === 1 ? 'it' : 'them'} if the patient should not get ${past.length === 1 ? 'it' : 'them'} now.`;
+      box.style.display = 'block';
     }
 
     function onMilestoneToggle(idx) {
@@ -2065,6 +2132,7 @@
       const selected = patientTimelineStore.filter(item => !isMilestoneSent(item) && drawerSelection.ids.has(String(item.id))).length;
 
       updateSameDayAlert();
+      updatePastDateAlert();
 
       // Cancel All button: counts every pending email of this patient (also ones not shown as cards, e.g. old template ids)
       const pending = Object.values(patientQueuedMap || {}).filter(q => {
@@ -2172,15 +2240,20 @@
 
               <div class="picker-box" onclick="triggerPicker('date_${idx}')">
                 <i class="fa-solid fa-calendar-days icon-calendar-color"></i>
-                <input type="date" id="date_${idx}" class="native-input" value="${initialDate}" ${isSent ? 'disabled' : ''} />
+                <input type="date" id="date_${idx}" class="native-input" value="${initialDate}" onchange="onCardDateChanged(${idx})" ${isSent ? 'disabled' : ''} />
               </div>
 
               <div class="picker-box" onclick="triggerPicker('time_${idx}')">
                 <i class="fa-solid fa-clock icon-clock-color"></i>
-                <input type="time" id="time_${idx}" class="native-input" value="${initialTime}" ${isSent ? 'disabled' : ''} />
+                <input type="time" id="time_${idx}" class="native-input" value="${initialTime}" onchange="onCardDateChanged(${idx})" ${isSent ? 'disabled' : ''} />
               </div>
             </div>
           </div>
+
+          <div id="datewarn_${idx}" style="display: none; margin: -4px 0 12px 0; padding: 8px 12px; border-radius: 8px; background: rgba(239, 68, 68, 0.12); border: 1px solid var(--bc-red); color: #fca5a5; font-size: 12px;">
+            ⚠️ This date has already passed. The email will be sent right away when it is scheduled.
+          </div>
+          ${(!isSent && isWelcomeEmail(item)) ? `<div style="margin: -4px 0 12px 0; padding: 8px 12px; border-radius: 8px; background: rgba(245, 158, 11, 0.10); border: 1px solid var(--bc-orange); color: #fbbf24; font-size: 12px;">ℹ️ Not ticked by default: the Sheet already sends the welcome email automatically. Tick it only if the patient should get it from the portal too.</div>` : ''}
 
           <label style="font-size:11px; color:var(--bc-text-muted); display: block; margin-bottom: 4px;">Subject</label>
           <input type="text" id="subj_${idx}" class="card-input" value="${escapeHtml(initialSubj)}" ${isSent ? 'disabled' : ''} />
@@ -2212,6 +2285,7 @@
         `;
         container.appendChild(card);
         renderMediaList('drawer', idx);
+        updateCardDateWarning(idx);
       });
 
       updateSelectionUI();
@@ -2240,6 +2314,7 @@
       const isoStr = targetDate.toISOString().split('T')[0];
       document.getElementById(`date_${idx}`).value = isoStr;
       patientTimelineStore[idx].isoDate = isoStr;
+      onCardDateChanged(idx);
     }
 
     async function scheduleOutreach(idx, milestoneId) {
@@ -2252,6 +2327,12 @@
 
       if (!chosenDate) return alert("Please select a send date.");
       if (!subject || !body) return alert("Subject and body cannot be empty.");
+
+      const itemForCheck = patientTimelineStore[idx];
+      let warnText = '';
+      if (isCardDatePassed(idx)) warnText += '⚠️ This date has already passed, so the email will be sent right away.\n\n';
+      if (itemForCheck && isWelcomeEmail(itemForCheck)) warnText += '⚠️ The Sheet already sends the welcome email automatically. This patient may get it twice.\n\n';
+      if (warnText && !confirm(warnText + 'Schedule it anyway?')) return;
 
       showSpinner(`Queueing outreach for ${chosenDate}...`);
       try {
@@ -2327,10 +2408,23 @@
         ? `\n\n⚠️ More than one email is ticked for: Day ${multiDays.join(', Day ')}. The patient will receive all of them on that day.`
         : '';
 
+      // Dates that have already passed are sent right away; the welcome email may come twice
+      const pastTicked = collectPastTickedEmails();
+      const pastNote = pastTicked.length > 0
+        ? `\n\n⚠️ ${pastTicked.length} selected email${pastTicked.length === 1 ? ' has' : 's have'} a date that has already passed and will be sent right away: ${pastTicked.slice(0, 8).join(', ')}${pastTicked.length > 8 ? ', ...' : ''}.`
+        : '';
+      const welcomeTicked = patientTimelineStore.some((item, idx) => {
+        const cb = document.getElementById(`sel_${idx}`);
+        return !isMilestoneSent(item) && isWelcomeEmail(item) && cb && cb.checked;
+      });
+      const welcomeNote = welcomeTicked
+        ? '\n\n⚠️ The welcome email (Day -2) is ticked. The Sheet already sends a welcome email automatically, so this patient may get it twice.'
+        : '';
+
       const totalSelectable = patientTimelineStore.filter(item => !isMilestoneSent(item)).length;
       const skipped = totalSelectable - itemsToSchedule.length;
       const skipNote = skipped > 0 ? `\n\n${skipped} unticked email(s) will be skipped (left untouched).` : '';
-      if (!confirm(`Schedule ${itemsToSchedule.length} of ${totalSelectable} check-in emails for ${activePatient.patientName}?${skipNote}${multiNote}`)) return;
+      if (!confirm(`Schedule ${itemsToSchedule.length} of ${totalSelectable} check-in emails for ${activePatient.patientName}?${skipNote}${multiNote}${pastNote}${welcomeNote}`)) return;
 
       showSpinner(`Batch-scheduling ${itemsToSchedule.length} check-ins...`);
       try {
@@ -2367,6 +2461,8 @@
     }
 
     async function sendNow(idx) {
+      const itemForCheck = patientTimelineStore[idx];
+      if (itemForCheck && isWelcomeEmail(itemForCheck) && !confirm('⚠️ The Sheet already sends the welcome email automatically. This patient may get it twice.\n\nSend it now anyway?')) return;
       const subject = document.getElementById(`subj_${idx}`).value;
       const body = document.getElementById(`body_${idx}`).value;
       const attachmentId = document.getElementById(`att_id_${idx}`).value;
