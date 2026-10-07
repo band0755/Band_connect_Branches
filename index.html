@@ -625,7 +625,7 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzJH2-7AO5fpCYDn_4PsOA7Qs9lkDKVM5L7xfMwfVdFeRil7TJ7E2ZSHYup5X2biieSJA/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxf3JnCrGYYdj9jae5CcFaCTEDzg7RNk_hoTDLGdRD7LTpX0WgilwsU11sYUwLOqdORaQ/exec";
 
     let patientStore = [];
     let activePatient = null;
@@ -2041,7 +2041,7 @@
       if (past.length === 0) { box.style.display = 'none'; box.innerHTML = ''; return; }
       const shown = past.slice(0, 8).join(', ') + (past.length > 8 ? ', ...' : '');
       box.innerHTML = `⚠️ <strong>${past.length} ticked email${past.length === 1 ? ' has' : 's have'} a date that has already passed.</strong> ` +
-        `${past.length === 1 ? 'It' : 'They'} will be sent right away (within about 10 minutes) when you press Schedule Selected: ${shown}.<br>` +
+        `${past.length === 1 ? 'It' : 'They'} will be sent right away (within about 30 minutes) when you press Schedule Selected: ${shown}.<br>` +
         `Change the date or untick ${past.length === 1 ? 'it' : 'them'} if the patient should not get ${past.length === 1 ? 'it' : 'them'} now.`;
       box.style.display = 'block';
     }
